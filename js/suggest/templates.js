@@ -110,6 +110,75 @@ export const TEMPLATES = [
     steps: (s) => [`Boil the ${lc(s.carbs.name)}.`, `Mix the ${lc(s.protein.name)} with herbs, salt and a little water.`, `Serve with the ${lc(s.veg.name)}.`],
   },
 
+  // ---- Low-carb main meals (energy from cheese, avocado, nuts or oil) ------
+  {
+    id: 'lc-plate',
+    meals: ['lunch', 'dinner'],
+    minutes: 20,
+    cuisines: ['german', 'mediterranean'],
+    title: (s) => `${s.protein.name} with ${lc(s.veg.name)} and ${lc(s.extra.name)}`,
+    slots: {
+      protein: { role: 'protein', pick: { cat: 'protein', tag: 'main' }, exclude: ['lentils', 'chickpeas', 'eggs'] },
+      veg: { role: 'fixed', grams: 200, pick: { cat: 'veg', tag: 'cook' } },
+      extra: { role: 'energy', pick: { ids: ['feta', 'mozzarella', 'gouda', 'avocado', 'almonds', 'walnuts'] } },
+      oil: { role: 'fixed', grams: 10, pick: { ids: ['olive-oil', 'butter'] }, optional: true },
+    },
+    steps: (s) => [
+      `Cook the ${lc(s.protein.name)} in a pan${s.oil ? ` with the ${lc(s.oil.name)}` : ''}.`,
+      `Steam or pan-fry the ${lc(s.veg.name)}.`,
+      `Serve with the ${lc(s.extra.name)}${s.extra.cat === 'dairy' ? ' melted or crumbled over the top' : ' on the side'}.`,
+    ],
+  },
+  {
+    id: 'omelette',
+    meals: ['breakfast', 'lunch', 'dinner'],
+    minutes: 10,
+    cuisines: ['german', 'mediterranean'],
+    title: (s) => `Omelette with ${lc(s.veg.name)}${s.cheese ? ` and ${lc(s.cheese.name)}` : ''}`,
+    slots: {
+      eggs: { role: 'protein', pick: { id: 'eggs' } },
+      veg: { role: 'fixed', grams: 100, pick: { ids: ['spinach', 'peppers', 'tomatoes', 'mushrooms', 'zucchini'] } },
+      cheese: { role: 'energy', pick: { ids: ['feta', 'gouda', 'mozzarella', 'ham'] }, optional: true },
+      fat: { role: 'fixed', grams: 5, pick: { ids: ['butter', 'olive-oil'] }, optional: true },
+    },
+    steps: (s) => [
+      `Fry the ${lc(s.veg.name)} briefly${s.fat ? ` in the ${lc(s.fat.name)}` : ''}.`,
+      'Whisk the eggs with salt and pepper and pour them over.',
+      s.cheese ? `Add the ${lc(s.cheese.name)}, fold, and cook until set.` : 'Fold and cook until set.',
+    ],
+  },
+  {
+    id: 'lc-salad',
+    meals: ['lunch', 'dinner'],
+    minutes: 10,
+    cuisines: ['mediterranean'],
+    title: (s) => `${s.protein.name} salad with ${lc(s.extra.name)}`,
+    slots: {
+      protein: { role: 'protein', pick: { cat: 'protein', tag: 'cold' }, exclude: ['chickpeas'] },
+      veg: { role: 'fixed', grams: 150, pick: { cat: 'veg', tag: 'salad' } },
+      extra: { role: 'energy', pick: { ids: ['avocado', 'feta', 'mozzarella', 'walnuts', 'almonds'] } },
+      oil: { role: 'fixed', grams: 10, pick: { id: 'olive-oil' }, optional: true },
+    },
+    steps: (s) => [
+      `Wash and chop the ${lc(s.veg.name)}.`,
+      `Add the ${lc(s.protein.name)} and ${lc(s.extra.name)}.`,
+      `Dress with ${s.oil ? 'the olive oil, ' : ''}lemon juice or vinegar, salt and pepper.`,
+    ],
+  },
+  {
+    id: 'eggs-cottage',
+    meals: ['breakfast', 'lunch'],
+    minutes: 10,
+    cuisines: ['german'],
+    title: (s) => `Eggs with ${lc(s.side.name)} and ${lc(s.veg.name)}`,
+    slots: {
+      eggs: { role: 'protein', pick: { id: 'eggs' } },
+      side: { role: 'energy', pick: { ids: ['cottage', 'quark', 'feta', 'ham', 'avocado'] } },
+      veg: { role: 'fixed', grams: 120, pick: { ids: ['cucumber', 'tomatoes', 'peppers'] } },
+    },
+    steps: (s) => ['Boil, scramble or fry the eggs.', `Serve with the ${lc(s.side.name)} and sliced ${lc(s.veg.name)}.`],
+  },
+
   // ---- Breakfast -----------------------------------------------------------
   {
     id: 'oats',
@@ -204,6 +273,20 @@ export const TEMPLATES = [
       spread: { role: 'protein', pick: { ids: ['cottage', 'quark', 'peanut-butter', 'hummus'] } },
     },
     steps: (s) => [`Spread the ${lc(s.spread.name)} on the rice cakes.`],
+  },
+  {
+    id: 'protein-plate',
+    meals: ['snacks'],
+    snack: true,
+    minutes: 3,
+    cuisines: [],
+    title: (s) => `${s.protein.name} with ${lc(s.extra.name)}${s.veg ? ` and ${lc(s.veg.name)}` : ''}`,
+    slots: {
+      protein: { role: 'protein', pick: { ids: ['cottage', 'quark', 'skyr', 'ham', 'eggs', 'turkey'] } },
+      extra: { role: 'energy', pick: { ids: ['almonds', 'walnuts', 'gouda', 'mozzarella', 'avocado'] } },
+      veg: { role: 'fixed', grams: 120, pick: { ids: ['cucumber', 'peppers', 'tomatoes'] }, optional: true },
+    },
+    steps: (s) => [`Put the ${lc(s.protein.name)}${s.veg ? `, ${lc(s.veg.name)}` : ''} and ${lc(s.extra.name)} on a plate.`],
   },
   {
     id: 'veg-dip',

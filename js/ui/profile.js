@@ -1,6 +1,6 @@
 import { h, toast } from './dom.js';
 import { t, fmtKcal, fmtNumber } from '../i18n/i18n.js';
-import { ACTIVITY_LEVELS, GOALS, RATES, validateProfile } from '../core/calc.js';
+import { ACTIVITY_LEVELS, GOALS, RATES, DIET_STYLES, validateProfile } from '../core/calc.js';
 import * as store from '../data/store.js';
 import { recommendationFor } from './targets-compare.js';
 
@@ -70,6 +70,7 @@ function profileForm(profile) {
       field('rateKgPerWeek', t('profile.rate'), rateSel),
     ),
     field('targetWeightKg', t('profile.targetWeight'), numInput('targetWeightKg', p.targetWeightKg, t('common.kg'))),
+    field('dietStyle', t('profile.dietStyle'), select('dietStyle', DIET_STYLES.map((d) => [d, t(`profile.dietStyle.${d}`)]), p.dietStyle || 'balanced'), t('profile.dietStyle.hint')),
     h('h2', {}, t('profile.foodSection')),
     h('p', { class: 'muted small' }, t('profile.foodHint'), ' ', h('a', { class: 'link-btn', href: '#/tastes' }, `${t('profile.likesLink')} →`)),
     field('diet', t('profile.diet'), h('input', { id: 'diet', type: 'text', value: (p.diet || []).join(', '), placeholder: t('profile.diet.ph') })),
@@ -91,6 +92,7 @@ function profileForm(profile) {
       activity: v('activity'),
       goal: v('goal'),
       rateKgPerWeek: Number(v('rateKgPerWeek')),
+      dietStyle: v('dietStyle'),
       diet: splitList(v('diet')),
       allergies: splitList(v('allergies')),
       dislikes: splitList(v('dislikes')),
@@ -222,8 +224,9 @@ function targetsCard(targets, rec) {
           h('li', {}, t(`targets.how.adj.${adjKey}`, { n: fmtKcal(Math.abs(d.adjustment)), rate: fmtNumber(Math.abs(d.adjustment) * 7 / 7700, 2) })),
           d.flags.clampedToBmr ? h('li', { class: 'warn' }, t('targets.how.clamped')) : null,
           h('li', {}, t(adjKey === 'lose' ? 'targets.how.protein.lose' : 'targets.how.protein.other', { perKg: fmtNumber(d.basis.proteinPerKg, 1), kg: fmtNumber(d.basis.proteinRefWeight, 1) })),
-          h('li', {}, t('targets.how.fat', { pct: Math.round(d.basis.fatShare * 100), min: fmtNumber(d.basis.fatMinPerKg, 1) })),
-          h('li', {}, t('targets.how.carbs')),
+          ...(d.basis.dietStyle === 'lowcarb'
+            ? [h('li', {}, t('targets.how.lowcarb.carbs', { n: d.basis.lowCarbGrams })), h('li', {}, t('targets.how.lowcarb.fat'))]
+            : [h('li', {}, t('targets.how.fat', { pct: Math.round(d.basis.fatShare * 100), min: fmtNumber(d.basis.fatMinPerKg, 1) })), h('li', {}, t('targets.how.carbs'))]),
         ),
       ),
     );

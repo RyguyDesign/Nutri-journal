@@ -59,6 +59,10 @@ export default {
   'profile.rate': 'Rate of change',
   'profile.rate.option': '{n} kg/week',
   'profile.rate.none': 'Not applicable',
+  'profile.dietStyle': 'Diet style',
+  'profile.dietStyle.balanced': 'Balanced',
+  'profile.dietStyle.lowcarb': 'Low carb, high protein (about 50 g carbs a day)',
+  'profile.dietStyle.hint': 'Changes your recommended targets and the meal suggestions. After saving, tap “Use all recommended” below.',
   'profile.foodSection': 'Food preferences',
   'profile.foodHint': 'Separate items with commas. Suggestions never include these.',
   'profile.likesLink': 'Choose foods I like',
@@ -101,6 +105,8 @@ export default {
   'targets.how.protein.other': 'Protein: {perKg} g per kg of current weight ({kg} kg).',
   'targets.how.fat': 'Fat: {pct}% of calories, and at least {min} g per kg of body weight.',
   'targets.how.carbs': 'Carbohydrates: the calories that remain after protein and fat.',
+  'targets.how.lowcarb.carbs': 'Carbohydrates: fixed at {n} g a day (low carb).',
+  'targets.how.lowcarb.fat': 'Fat: the calories that remain after protein and carbohydrates.',
   'targets.disclaimer': 'These figures are estimates from standard formulas, not a medical prescription. Individual needs vary. If you have a medical condition, are pregnant or breastfeeding, or take medication that affects appetite or weight, check targets with a doctor or registered dietitian.',
 
   'data.title': 'Your data',
@@ -143,6 +149,8 @@ export default {
   'source.database': 'Open Food Facts',
   'source.ai': 'AI estimate',
   'source.typical': 'Typical values (estimate)',
+  'entry.typicalHead': 'Everyday foods (typical values)',
+  'entry.typicalPiece': '{kcal} kcal per {unit} (about {g} g)',
 
   'nav.ideas': 'Suggestions',
 

@@ -19,10 +19,20 @@ test('catalogue values are internally consistent', () => {
 });
 
 test('every template can produce a meal', () => {
+  // Several templates share a main ingredient (eggs), and only one per main
+  // ingredient is shown at a time, so try each meal and a few shuffles.
+  const times = { breakfast: '08:00', lunch: '12:00', snacks: '15:30', dinner: '19:00' };
   for (const t of TEMPLATES) {
-    const meal = t.meals[0];
-    const r = suggest({ remaining: { kcal: 2000, protein: 140, carbs: 220, fat: 60 }, now: { breakfast: '08:00', lunch: '12:00', snacks: '15:30', dinner: '19:00' }[meal], tastes: { plan: '3+1' }, limit: 50 });
-    assert.ok(all(r).some((s) => s.templateId === t.id), `template ${t.id} produced nothing`);
+    let found = false;
+    for (const meal of t.meals) {
+      for (const seed of ['a', 'b', 'c', 'd', 'e', 'f']) {
+        for (const profile of [{}, { dietStyle: 'lowcarb' }]) {
+          const r = suggest({ remaining: { kcal: 2000, protein: 140, carbs: profile.dietStyle ? 50 : 220, fat: profile.dietStyle ? 150 : 60 }, now: times[meal], tastes: { plan: '3+1' }, profile, seed, limit: 50 });
+          if (all(r).some((s) => s.templateId === t.id)) found = true;
+        }
+      }
+    }
+    assert.ok(found, `template ${t.id} produced nothing`);
   }
 });
 
@@ -111,4 +121,49 @@ test('same seed gives the same suggestions; a new seed shuffles', () => {
   const a = suggest({ remaining, now: '12:30', seed: 's1', tastes: { plan: '3+1' } });
   const b = suggest({ remaining, now: '12:30', seed: 's1', tastes: { plan: '3+1' } });
   assert.deepEqual(all(a).map((s) => s.id), all(b).map((s) => s.id));
+});
+
+test('meals never exceed their share of the carbohydrate target', () => {
+  for (const carbs of [40, 80, 150]) {
+    for (const [now, log] of [['08:00', []], ['12:30', ['breakfast']], ['19:00', ['breakfast', 'lunch', 'snacks']]]) {
+      for (const seed of ['1', '2', '3']) {
+        const r = suggest({ remaining: { kcal: 1800, protein: 140, carbs, fat: 90 }, now, loggedMeals: log, tastes: { plan: '3+1' }, seed, limit: 10 });
+        for (const g of ['quick', 'regular', 'protein', 'pantry']) {
+          for (const s of r.groups[g]) assert.ok(s.totals.carbs <= r.target.carbsMax + 1e-9, `${s.title}: ${s.totals.carbs} g carbs > ${r.target.carbsMax}`);
+        }
+        assert.ok(r.target.carbsMax <= Math.max(r.target.carbs * 1.15, r.target.carbs + 4, 6) + 1e-9);
+      }
+    }
+  }
+});
+
+test('low-carb style: targets about 50 g carbs, high protein, and low-carb meals', async () => {
+  const { recommendTargets } = await import('../js/core/calc.js');
+  const p = { age: 40, sex: 'male', heightCm: 180, weightKg: 90, targetWeightKg: 80, activity: 'moderate', goal: 'maintain', rateKgPerWeek: 0 };
+  const bal = recommendTargets(p);
+  const lc = recommendTargets({ ...p, dietStyle: 'lowcarb' });
+  assert.equal(lc.carbs, 50);
+  assert.equal(lc.calories, bal.calories);
+  assert.ok(lc.protein >= 180 && lc.protein > bal.protein, `${lc.protein}`);
+  assert.ok(Math.abs(lc.protein * 4 + lc.carbs * 4 + lc.fat * 9 - lc.calories) <= 10);
+  for (const now of ['08:00', '12:30', '15:30', '19:00']) {
+    const r = suggest({ remaining: { kcal: 2000, protein: 180, carbs: 50, fat: 140 }, now, profile: { dietStyle: 'lowcarb' }, tastes: { plan: '3+1' }, seed: now });
+    const meals = all(r);
+    assert.ok(meals.length > 0, `nothing at ${now}`);
+    for (const s of meals) {
+      for (const it of s.items) assert.ok(FOOD_BY_ID[it.id].per.carbs < 15, `${it.name} is not low carb`);
+    }
+  }
+  // "keto" or "low carb" typed as a diet preference counts too
+  const r = suggest({ remaining: { kcal: 2000, protein: 180, carbs: 50, fat: 140 }, now: '12:30', profile: { diet: ['low carb'] }, seed: 'x' });
+  assert.ok(all(r).every((s) => s.items.every((it) => !['rice', 'pasta', 'potatoes', 'wholemeal-bread'].includes(it.id))));
+});
+
+test('everyday foods can be found by name, plural or not', async () => {
+  const { searchCatalog, typicalPortion } = await import('../js/suggest/catalog.js');
+  assert.equal(searchCatalog('eggs')[0].id, 'eggs');
+  assert.equal(searchCatalog('cucumbers')[0].id, 'cucumber');
+  assert.equal(searchCatalog('cottage cheese')[0].id, 'cottage');
+  assert.equal(typicalPortion(FOOD_BY_ID.eggs), 60);
+  assert.deepEqual(searchCatalog('zzz'), []);
 });

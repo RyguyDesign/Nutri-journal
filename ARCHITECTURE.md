@@ -81,6 +81,9 @@ All text lives in `js/i18n/en.js`. Adding German means adding `de.js` with the s
 - **Next meal**: from the time of day, the meals-per-day plan and what's already logged; that meal gets its share of the remaining allowance, capped at ~900 kcal (snacks ~400).
 - **Templates** (`templates.js`): plates, stir-fries, pasta, salads, wraps, oats, yogurt bowls, eggs on bread, snacks. Each slot is sized by role: protein to cover the protein gap, energy to fill the calories, fixed for vegetables, oil and toppings.
 - **Rules**: diet and allergy words in the profile map to flags (vegetarian excludes meat and fish, lactose excludes dairy, and so on); allergies and dislikes also exclude foods by name. These are never overridden. Liked foods come first; an occasional ordinary extra is marked *new*. Meals must land within ±10% of their calorie share (snacks ±35%).
+- **Carbohydrate limit**: a meal never has more carbohydrate than its share of what's left of the day's carb target (+15% or +4 g). Snacks stay under 30 g (10 g in low-carb style).
+- **Low-carb style** (Profile → Diet style, or "low carb"/"keto" as a diet preference): targets fix carbs at 50 g, protein at least 2 g/kg, fat fills the rest; foods with 15 g carbs per 100 g or more are left out; low-carb meal types (omelettes, protein plates, salads with cheese or avocado, protein snack plates).
+- **Everyday foods in the entry form**: typing a name also offers catalogue foods with typical values (eggs counted per piece), so simple foods need no label.
 - **Groups**: quick (≤15 min), regular, high protein, light snacks, from what I have (pantry only).
 - **At or over target**: a calm note and light, filling options around 150 kcal. Never a warning or a suggestion to compensate.
 

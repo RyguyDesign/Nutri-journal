@@ -8,6 +8,7 @@ import { lookupBarcode } from '../foods/off.js';
 import { parseLabelText } from '../foods/label-parse.js';
 import { recognizeLabel } from '../foods/ocr.js';
 import { scanBarcode } from './scanner.js';
+import { searchCatalog, typicalPortion } from '../suggest/catalog.js';
 import { getSelectedDate, goBack, takePendingFood } from './state.js';
 
 // The form keeps its own state; it must not be re-rendered by store changes.
@@ -245,6 +246,22 @@ export async function render(root, rerender, params = {}) {
     update();
   }
 
+  /** Fill the form from a built-in everyday food (typical values). */
+  function applyTypical(c) {
+    applyFood({ name: c.name, per: { amount: 100, unit: 'g', ...c.per }, prep: c.prep }, { source: 'typical' });
+    if (c.piece) {
+      refreshUnits('piece');
+      $.qty.value = '1';
+      $.usize.value = String(c.piece.g);
+      s.servingSize = c.piece.g;
+    } else {
+      $.qty.value = String(typicalPortion(c));
+    }
+    update();
+    $.qty.focus();
+    $.qty.select();
+  }
+
   /** Clear a previously loaded product (its data no longer matches the scan). */
   function clearLoadedFood() {
     if (!s.foodId && s.source !== 'database') return;
@@ -343,8 +360,40 @@ export async function render(root, rerender, params = {}) {
     const q = $.name.value;
     const foods = await store.searchFoods(q, 6);
     if (token !== suggestToken) return;
-    if (!foods.length) return hideSuggestions();
+    // Built-in typical values for everyday foods, unless already saved
+    const saved = new Set(foods.map((f) => f.name.trim().toLowerCase()));
+    const typical = q.trim().length >= 2 ? searchCatalog(q, 4).filter((c) => !saved.has(c.name.toLowerCase())) : [];
+    if (!foods.length && !typical.length) return hideSuggestions();
+    const typicalList = typical.length
+      ? [
+          h('div', { class: 'suggest-head muted small' }, t('entry.typicalHead')),
+          h(
+            'ul',
+            {},
+            typical.map((c) =>
+              h(
+                'li',
+                {},
+                h(
+                  'button',
+                  { type: 'button', class: 'suggest-pick', onclick: () => applyTypical(c) },
+                  h('span', {}, c.name, c.prep ? h('span', { class: 'tag' }, t(`prep.${c.prep}`)) : null),
+                  h('small', { class: 'muted' }, c.piece
+                    ? t('entry.typicalPiece', { kcal: fmtKcal((c.per.kcal * c.piece.g) / 100), unit: c.piece.unit, g: c.piece.g })
+                    : `${fmtKcal(c.per.kcal)} kcal / 100 g`),
+                ),
+              ),
+            ),
+          ),
+        ]
+      : [];
+    if (!foods.length) {
+      $.suggest.replaceChildren(...typicalList);
+      $.suggest.hidden = false;
+      return;
+    }
     $.suggest.replaceChildren(
+      ...typicalList,
       h('div', { class: 'suggest-head muted small' }, q.trim() ? t('entry.matches') : t('entry.recent')),
       h(
         'ul',

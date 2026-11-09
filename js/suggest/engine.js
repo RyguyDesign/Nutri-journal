@@ -68,6 +68,18 @@ export function exclusionsFrom(profile = {}) {
   return { flags, terms };
 }
 
+/** Low-carb style: set on the profile, or written as a diet preference. */
+export function isLowCarb(profile = {}) {
+  return profile.dietStyle === 'lowcarb' || (profile.diet || []).some((d) => /low.?carb|keto|lchf/i.test(d));
+}
+// Foods left out of a low-carb style: grains, potatoes, legumes, sweet snacks.
+export const LOW_CARB_MAX_PER_100G = 15;
+
+/** Carbohydrate allowed in one meal: its share of what's left, with a little slack. */
+export function carbLimit(carbsShare) {
+  return Math.max(carbsShare * 1.15, carbsShare + 4, 6);
+}
+
 export function isAllowed(food, ex) {
   if (food.flags.some((fl) => ex.flags.has(fl))) return false;
   const hay = `${norm(food.name)} ${food.id}`;
@@ -215,6 +227,7 @@ function score(totals, target, parts, template, ctx, focus) {
   s += Math.max(0, target.protein - totals.protein) * (focus === 'protein' ? 3 : 1);
   s += Math.max(0, totals.fat - Math.max(target.fat, 5) * 1.3) * 0.6;
   s += Math.max(0, totals.carbs - Math.max(target.carbs, 10) * 1.3) * 0.3;
+  s += Math.max(0, totals.carbs - target.carbs) * 0.5;
   for (const p of parts) {
     if (ctx.likes.size && !ctx.likes.has(p.food.id) && !ctx.pantry.has(p.food.id)) s += 6;
     if (ctx.likes.has(p.food.id)) s -= 2;
@@ -260,6 +273,8 @@ function build(templates, target, meal, ctx, focus, limit) {
       const totals = totalsOf(parts);
       const err = Math.abs(totals.kcal - target.kcal) / Math.max(target.kcal, 1);
       if (err > (target.kcal < 300 ? 0.35 : 0.2)) continue;
+      // Never suggest more carbohydrate than this meal's share of the day's carb target
+      if (target.carbsMax !== undefined && totals.carbs > target.carbsMax) continue;
       results.push(describe(tpl, parts, target, meal, ctx, score(totals, target, parts, tpl, ctx, focus)));
     }
   }
@@ -287,8 +302,9 @@ function build(templates, target, meal, ctx, focus, limit) {
  */
 export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', loggedMeals = [], seed = 'x', limit = 3 }) {
   const ex = exclusionsFrom(profile);
+  const lowCarb = isLowCarb(profile);
   const ctx = {
-    pool: FOODS.filter((f) => isAllowed(f, ex)),
+    pool: FOODS.filter((f) => isAllowed(f, ex) && !(lowCarb && f.per.carbs >= LOW_CARB_MAX_PER_100G)),
     likes: new Set(tastes.likes || []),
     pantry: new Set(tastes.pantry || []),
     cuisines: new Set(tastes.cuisines || []),
@@ -305,8 +321,10 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
   const lightTarget = mode === 'over'
     ? { kcal: 150, protein: 12, carbs: 15, fat: 5 }
     : { kcal: Math.min(250, Math.max(100, rem.kcal)), protein: Math.max(8, Math.min(20, rem.protein)), carbs: Math.max(10, rem.carbs * 0.5), fat: Math.max(5, rem.fat * 0.5) };
+  // Snacks once the target is reached, or with little carbohydrate left, stay low in carbs
+  lightTarget.carbsMax = lowCarb ? Math.max(6, Math.min(10, rem.carbs)) : Math.max(10, Math.min(rem.carbs, 30));
   const groups = { quick: [], regular: [], protein: [], light: build(snackTemplates, lightTarget, 'snacks', ctx, 'light', limit), pantry: [] };
-  if (mode !== 'normal') return { meal, mode, target: lightTarget, groups };
+  if (mode !== 'normal') return { meal, mode, target: lightTarget, groups, lowCarb };
 
   const target = {
     kcal: rem.kcal * share,
@@ -322,6 +340,7 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
     for (const k of NUTRIENTS) target[k] *= f;
   }
   if (meal !== 'snacks') target.protein = Math.max(target.protein, Math.min(25, rem.protein));
+  target.carbsMax = carbLimit(target.carbs);
   const mealTpls = TEMPLATES.filter((t) => t.meals.includes(meal) && t.minutes <= maxMinutes && (meal === 'snacks' || !t.snack));
 
   groups.quick = build(mealTpls.filter((t) => t.minutes <= 15), target, meal, ctx, 'quick', limit);
@@ -331,5 +350,5 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
   if (ctx.pantry.size) {
     groups.pantry = build(mealTpls, target, meal, { ...ctx, pantryOnly: true, rand: rng(`${seed}p`) }, 'pantry', limit);
   }
-  return { meal, mode, target, groups };
+  return { meal, mode, target, groups, lowCarb };
 }
