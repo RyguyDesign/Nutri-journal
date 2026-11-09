@@ -228,3 +228,25 @@ test('cooking style levels: "often" air fryer leads, "sometimes" stove and oven 
   const r = suggest({ remaining: { kcal: 1500, protein: 110, carbs: 150, fat: 50 }, now: '19:00', tastes: { plan: '3', styles: ['grill'] }, seed: 'z' });
   assert.ok(Object.values(r.groups).flat().some((s) => s.method === 'grill'));
 });
+
+test('closest everyday foods when no exact match', async () => {
+  const { searchEveryday } = await import('../js/foods/everyday.js');
+  assert.equal(searchEveryday('pumpkin soup')[0].name, 'Pumpkin soup');
+  assert.equal(searchEveryday('kürbissuppe')[0].name, 'Pumpkin soup');
+  const r = searchEveryday('carrot ginger soup');
+  assert.ok(r.length && r[0].closest && /soup/i.test(r[0].name), r.map((f) => f.name).join(','));
+});
+
+test('online search falls back to a country server', async () => {
+  const { searchProducts } = await import('../js/foods/off.js');
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(new URL(url).host);
+    if (url.startsWith('https://world.')) throw new TypeError('Failed to fetch');
+    return { ok: true, status: 200, json: async () => ({ products: [{ code: '1', product_name: 'Kürbissuppe', brands: 'X', nutriments: { 'energy-kcal_100g': 50, proteins_100g: 1, carbohydrates_100g: 6, fat_100g: 2 } }] }) };
+  };
+  const r = await searchProducts('kürbissuppe', { fetchImpl });
+  assert.deepEqual(calls, ['world.openfoodfacts.org', 'de.openfoodfacts.org']);
+  assert.equal(r[0].name, 'Kürbissuppe');
+  await assert.rejects(searchProducts('x y', { fetchImpl: async () => { throw new TypeError('Failed to fetch'); } }), /busy/);
+});

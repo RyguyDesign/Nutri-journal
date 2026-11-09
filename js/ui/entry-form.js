@@ -442,7 +442,7 @@ export async function render(root, rerender, params = {}) {
     }
     const typicalList = typical.length
       ? [
-          h('div', { class: 'suggest-head muted small' }, t('entry.typicalHead')),
+          h('div', { class: 'suggest-head muted small' }, typical[0].closest ? t('entry.typicalClosest') : t('entry.typicalHead')),
           h(
             'ul',
             {},

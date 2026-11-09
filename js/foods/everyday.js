@@ -39,7 +39,15 @@ export function searchEveryday(query, limit = 6) {
   const words = String(query || '').toLowerCase().trim().split(/\s+/).filter(Boolean).map(stem);
   if (!words.length) return [];
   const rank = (f) => (f.name.toLowerCase().startsWith(words[0]) ? 0 : f.hay.split(/\s+/).some((x) => x.startsWith(words[0])) ? 1 : 2);
-  return EVERYDAY.filter((f) => words.every((w) => f.hay.includes(w)))
-    .sort((a, b) => rank(a) - rank(b) || a.name.length - b.name.length)
-    .slice(0, limit);
+  const exact = EVERYDAY.filter((f) => words.every((w) => f.hay.includes(w)))
+    .sort((a, b) => rank(a) - rank(b) || a.name.length - b.name.length);
+  if (exact.length || words.length < 2) return exact.slice(0, limit);
+  // No food matches every word ("pumpkin soup"): offer the closest ones,
+  // those matching the most words, favouring the last word ("soup").
+  const last = words[words.length - 1];
+  return EVERYDAY.map((f) => ({ f, n: words.filter((w) => w.length > 2 && f.hay.includes(w)).length + (f.hay.includes(last) ? 0.5 : 0) }))
+    .filter((x) => x.n >= 1)
+    .sort((a, b) => b.n - a.n || Number(b.f.name.toLowerCase().includes(last)) - Number(a.f.name.toLowerCase().includes(last)) || a.f.name.length - b.f.name.length)
+    .slice(0, limit)
+    .map((x) => ({ ...x.f, closest: true }));
 }

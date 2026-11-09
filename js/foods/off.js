@@ -76,24 +76,31 @@ export async function lookupBarcode(code, { fetchImpl = globalThis.fetch, timeou
 export async function searchProducts(query, { fetchImpl = globalThis.fetch, timeoutMs = 12000, limit = 8 } = {}) {
   const q = String(query || '').trim();
   if (q.length < 2) return [];
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=24&sort_by=unique_scans_n&fields=${FIELDS}`;
-  try {
-    const res = await fetchImpl(url, { signal: ctrl.signal });
-    if (!res.ok) throw new Error(`http${res.status}`);
-    const json = await res.json();
-    return mapSearchResults(json, limit);
-  } catch (err) {
-    if (err.name === 'AbortError') throw new Error('timeout');
-    // When the search limit is hit, the reply is blocked by the browser and
-    // looks like a network error; only call it "offline" if the phone is.
-    if (err instanceof TypeError) throw new Error(globalThis.navigator?.onLine === false ? 'offline' : 'busy');
-    if (err.message === 'http429' || err.message === 'http503') throw new Error('busy');
-    throw err;
-  } finally {
-    clearTimeout(timer);
+  // The main server sometimes refuses search requests from a browser while
+  // the country servers answer the same search, so try them in turn.
+  const hosts = ['world', 'de', 'uk'];
+  let lastErr;
+  for (const host of hosts) {
+    const url = `https://${host}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetchImpl(url, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(res.status === 429 || res.status === 503 ? 'busy' : `http${res.status}`);
+      const found = mapSearchResults(await res.json(), limit);
+      if (found.length || host === hosts[hosts.length - 1]) return found;
+      lastErr = null; // empty here: a country server may still have matches
+    } catch (err) {
+      if (err.name === 'AbortError') lastErr = new Error('timeout');
+      else if (err instanceof TypeError) lastErr = new Error(globalThis.navigator?.onLine === false ? 'offline' : 'busy');
+      else lastErr = err;
+      if (lastErr.message === 'offline') break;
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  if (lastErr) throw lastErr;
+  return [];
 }
 
 /** Map a search response: keep named products with calories, drop duplicates. */

@@ -150,6 +150,7 @@ export default {
   'source.ai': 'AI estimate',
   'source.typical': 'Typical values (estimate)',
   'entry.typicalHead': 'Everyday foods (typical values)',
+  'entry.typicalClosest': 'Closest everyday foods (typical values)',
   'entry.typicalPiece': '{kcal} kcal per {label} (about {g} {unit})',
   'entry.typicalPicked': 'Typical values. 1 {label} is about {g} {unit}; change the amount if you had more or less.',
   'entry.online.button': 'Search online for “{q}”',
@@ -157,7 +158,7 @@ export default {
   'entry.online.searching': 'Searching Open Food Facts for “{q}”…',
   'entry.online.head': 'Online (Open Food Facts)',
   'entry.online.none': 'Nothing found online for “{q}”. Try a shorter or different name, or enter just the calories.',
-  'entry.online.busy': 'The online food database is busy (it allows about 10 searches a minute). Try again in a minute, or pick a similar everyday food.',
+  'entry.online.busy': 'The online food database didn’t answer. Try again in a minute, or pick a similar everyday food above.',
   'entry.online.error': 'The online search didn’t work. Try again in a minute.',
   'entry.online.missing': 'Missing online: {list}. Left blank, they count as 0.',
 
