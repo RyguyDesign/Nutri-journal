@@ -246,7 +246,15 @@ test('online search falls back to a country server', async () => {
     return { ok: true, status: 200, json: async () => ({ products: [{ code: '1', product_name: 'Kürbissuppe', brands: 'X', nutriments: { 'energy-kcal_100g': 50, proteins_100g: 1, carbohydrates_100g: 6, fat_100g: 2 } }] }) };
   };
   const r = await searchProducts('kürbissuppe', { fetchImpl });
-  assert.deepEqual(calls, ['world.openfoodfacts.org', 'de.openfoodfacts.org']);
+  assert.deepEqual(calls, ['world.openfoodfacts.org', 'uk.openfoodfacts.org']);
   assert.equal(r[0].name, 'Kürbissuppe');
   await assert.rejects(searchProducts('x y', { fetchImpl: async () => { throw new TypeError('Failed to fetch'); } }), /busy/);
+});
+
+test('online results use English names first', async () => {
+  const { mapSearchResults, mapOffProduct } = await import('../js/foods/off.js');
+  const n = { 'energy-kcal_100g': 40, proteins_100g: 1, carbohydrates_100g: 5, fat_100g: 2 };
+  assert.equal(mapOffProduct({ status: 1, product: { product_name: 'Kürbissuppe', product_name_en: 'Pumpkin soup', product_name_de: 'Kürbissuppe', nutriments: n } }).name, 'Pumpkin soup');
+  const r = mapSearchResults({ products: [{ product_name: 'Kürbiscremesuppe', nutriments: n }, { product_name: 'Pumpkin ginger soup', nutriments: n }] }, 8, { preferEnglish: true });
+  assert.equal(r[0].name, 'Pumpkin ginger soup');
 });

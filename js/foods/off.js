@@ -36,7 +36,8 @@ export function mapOffProduct(json, code) {
     carbs: num(n.carbohydrates_100g),
     fat: num(n.fat_100g),
   };
-  const name = (p.product_name_de || p.product_name || p.product_name_en || '').trim();
+  // English name first; the app is used in English
+  const name = (p.product_name_en || p.product_name || p.product_name_de || '').trim();
   const brand = String(p.brands || '').split(',')[0].trim();
   const serving = num(p.serving_quantity);
   return {
@@ -77,8 +78,9 @@ export async function searchProducts(query, { fetchImpl = globalThis.fetch, time
   const q = String(query || '').trim();
   if (q.length < 2) return [];
   // The main server sometimes refuses search requests from a browser while
-  // the country servers answer the same search, so try them in turn.
-  const hosts = ['world', 'de', 'uk'];
+  // the country servers answer the same search, so try them in turn:
+  // English-speaking ones first.
+  const hosts = ['world', 'uk', 'us', 'de'];
   let lastErr;
   for (const host of hosts) {
     const url = `https://${host}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}`;
@@ -87,7 +89,7 @@ export async function searchProducts(query, { fetchImpl = globalThis.fetch, time
     try {
       const res = await fetchImpl(url, { signal: ctrl.signal });
       if (!res.ok) throw new Error(res.status === 429 || res.status === 503 ? 'busy' : `http${res.status}`);
-      const found = mapSearchResults(await res.json(), limit);
+      const found = mapSearchResults(await res.json(), limit, { preferEnglish: true });
       if (found.length || host === hosts[hosts.length - 1]) return found;
       lastErr = null; // empty here: a country server may still have matches
     } catch (err) {
@@ -104,10 +106,16 @@ export async function searchProducts(query, { fetchImpl = globalThis.fetch, time
 }
 
 /** Map a search response: keep named products with calories, drop duplicates. */
-export function mapSearchResults(json, limit = 8) {
+export function mapSearchResults(json, limit = 8, { preferEnglish = false } = {}) {
   const out = [];
   const seen = new Set();
-  for (const p of json?.products || []) {
+  let products = json?.products || [];
+  if (preferEnglish) {
+    // Products with an English name first, keeping the server's order otherwise
+    const en = (p) => Boolean(p.product_name_en) || /^[\x00-\x7F]*$/.test(p.product_name || '');
+    products = [...products.filter(en), ...products.filter((p) => !en(p))];
+  }
+  for (const p of products) {
     const f = mapOffProduct({ status: 1, product: p }, p.code);
     if (!f || !f.name || f.per.kcal === undefined) continue;
     const key = `${f.name}|${f.brand}`.toLowerCase();
