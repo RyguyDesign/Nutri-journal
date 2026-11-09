@@ -8,7 +8,8 @@ import { lookupBarcode } from '../foods/off.js';
 import { parseLabelText } from '../foods/label-parse.js';
 import { recognizeLabel } from '../foods/ocr.js';
 import { scanBarcode } from './scanner.js';
-import { searchCatalog, typicalPortion } from '../suggest/catalog.js';
+import { searchEveryday } from '../foods/everyday.js';
+import { searchProducts } from '../foods/off.js';
 import { getSelectedDate, goBack, takePendingFood } from './state.js';
 
 // The form keeps its own state; it must not be re-rendered by store changes.
@@ -102,6 +103,9 @@ export async function render(root, rerender, params = {}) {
     const unit = $.unit.value;
     const usize = parseNumber($.usize.value);
     const vals = readValues();
+    // Only calories known (e.g. from a menu): blank protein/carbs/fat count as 0
+    s.macrosBlank = Number.isFinite(vals.kcal) && ['protein', 'carbs', 'fat'].some((k) => !Number.isFinite(vals[k]) && $.vals[k].value.trim() === '');
+    if (s.macrosBlank) for (const k of ['protein', 'carbs', 'fat']) if ($.vals[k].value.trim() === '') vals[k] = 0;
     const per = s.mode === 'per100' ? { amount: 100, unit: s.base, ...vals } : { amount: qty, unit, ...vals };
     return {
       name: $.name.value.trim(),
@@ -206,7 +210,13 @@ export async function render(root, rerender, params = {}) {
     $.result.replaceChildren(
       h('strong', {}, t('entry.result')),
       h('div', { class: 'num' }, line),
-      ...(v.valid ? v.warnings.map((w) => h('p', { class: 'warn small' }, t(`entry.warn.${w}`))) : []),
+      ...(v.valid
+        ? [
+            ...(s.macrosBlank ? ['macrosBlank'] : []),
+            // Typical values and calories-only entries are expected not to add up exactly
+            ...v.warnings.filter((w) => w !== 'energyMismatch' || (s.source !== 'typical' && !s.macrosBlank)),
+          ].map((w) => h('p', { class: 'warn small' }, t(`entry.warn.${w}`)))
+        : []),
     );
     const src = s.source === 'database' && s.valuesEdited ? 'manual' : s.source;
     $.sourceLine.textContent = t('entry.sourceLine', { source: t(`source.${src}`) });
@@ -248,18 +258,70 @@ export async function render(root, rerender, params = {}) {
 
   /** Fill the form from a built-in everyday food (typical values). */
   function applyTypical(c) {
-    applyFood({ name: c.name, per: { amount: 100, unit: 'g', ...c.per }, prep: c.prep }, { source: 'typical' });
-    if (c.piece) {
-      refreshUnits('piece');
-      $.qty.value = '1';
-      $.usize.value = String(c.piece.g);
-      s.servingSize = c.piece.g;
+    applyFood({ name: c.name, per: c.per, prep: c.prep }, { source: 'typical' });
+    const p = c.portion;
+    if (p.unit === 'g') {
+      refreshUnits(c.per.unit);
+      $.qty.value = String(p.g);
+      setStatus(null);
     } else {
-      $.qty.value = String(typicalPortion(c));
+      refreshUnits(p.unit);
+      $.qty.value = '1';
+      $.usize.value = String(p.g);
+      s.servingSize = p.g;
+      setStatus(t('entry.typicalPicked', { label: p.label, g: p.g, unit: c.per.unit }), 'ok');
     }
     update();
     $.qty.focus();
     $.qty.select();
+  }
+
+  /** Name search in Open Food Facts, only when asked (it is rate-limited). */
+  async function searchOnline(q) {
+    const token = ++suggestToken;
+    $.suggest.replaceChildren(h('p', { class: 'muted small' }, t('entry.online.searching', { q })));
+    $.suggest.hidden = false;
+    let results;
+    try {
+      results = await searchProducts(q);
+    } catch (err) {
+      if (token !== suggestToken) return;
+      $.suggest.replaceChildren(h('p', { class: 'warn small' }, t({ offline: 'scan.offline', timeout: 'scan.timeout' }[err.message] || 'entry.online.error')));
+      return;
+    }
+    if (token !== suggestToken) return;
+    if (!results.length) {
+      $.suggest.replaceChildren(h('p', { class: 'muted small' }, t('entry.online.none', { q })));
+      return;
+    }
+    $.suggest.replaceChildren(
+      h('div', { class: 'suggest-head muted small' }, t('entry.online.head')),
+      h(
+        'ul',
+        {},
+        results.map((f) =>
+          h(
+            'li',
+            {},
+            h(
+              'button',
+              {
+                type: 'button',
+                class: 'suggest-pick',
+                onclick: () => {
+                  applyFood({ ...f, id: undefined }, { source: 'database' });
+                  if (f.barcode) s.barcode = f.barcode;
+                  const missing = ['protein', 'carbs', 'fat'].filter((k) => f.per[k] === undefined);
+                  setStatus(missing.length ? t('entry.online.missing', { list: missing.map((k) => t(`nutrient.${k}`)).join(', ') }) : null, 'warn');
+                },
+              },
+              h('span', {}, f.name),
+              h('small', { class: 'muted' }, [f.brand, `${fmtKcal(f.per.kcal)} kcal / 100 ${f.per.unit}`].filter(Boolean).join(' · ')),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /** Clear a previously loaded product (its data no longer matches the scan). */
@@ -362,8 +424,21 @@ export async function render(root, rerender, params = {}) {
     if (token !== suggestToken) return;
     // Built-in typical values for everyday foods, unless already saved
     const saved = new Set(foods.map((f) => f.name.trim().toLowerCase()));
-    const typical = q.trim().length >= 2 ? searchCatalog(q, 4).filter((c) => !saved.has(c.name.toLowerCase())) : [];
-    if (!foods.length && !typical.length) return hideSuggestions();
+    const typical = q.trim().length >= 2 ? searchEveryday(q, 5).filter((c) => !saved.has(c.name.toLowerCase())) : [];
+    const online = q.trim().length >= 3
+      ? h(
+          'div',
+          { class: 'online-row' },
+          !foods.length && !typical.length ? h('p', { class: 'muted small' }, t('entry.online.notListed')) : null,
+          h('button', { type: 'button', class: 'btn small', onclick: () => searchOnline(q.trim()) }, t('entry.online.button', { q: q.trim() })),
+        )
+      : null;
+    if (!foods.length && !typical.length) {
+      if (!online) return hideSuggestions();
+      $.suggest.replaceChildren(online);
+      $.suggest.hidden = false;
+      return;
+    }
     const typicalList = typical.length
       ? [
           h('div', { class: 'suggest-head muted small' }, t('entry.typicalHead')),
@@ -378,9 +453,9 @@ export async function render(root, rerender, params = {}) {
                   'button',
                   { type: 'button', class: 'suggest-pick', onclick: () => applyTypical(c) },
                   h('span', {}, c.name, c.prep ? h('span', { class: 'tag' }, t(`prep.${c.prep}`)) : null),
-                  h('small', { class: 'muted' }, c.piece
-                    ? t('entry.typicalPiece', { kcal: fmtKcal((c.per.kcal * c.piece.g) / 100), unit: c.piece.unit, g: c.piece.g })
-                    : `${fmtKcal(c.per.kcal)} kcal / 100 g`),
+                  h('small', { class: 'muted' }, c.portion.unit !== 'g'
+                    ? t('entry.typicalPiece', { kcal: fmtKcal((c.per.kcal * c.portion.g) / 100), label: c.portion.label, g: c.portion.g, unit: c.per.unit })
+                    : `${fmtKcal(c.per.kcal)} kcal / 100 ${c.per.unit}`),
                 ),
               ),
             ),
@@ -388,7 +463,7 @@ export async function render(root, rerender, params = {}) {
         ]
       : [];
     if (!foods.length) {
-      $.suggest.replaceChildren(...typicalList);
+      $.suggest.replaceChildren(...typicalList, ...(online ? [online] : []));
       $.suggest.hidden = false;
       return;
     }
@@ -426,6 +501,7 @@ export async function render(root, rerender, params = {}) {
           ),
         ),
       ),
+      ...(online ? [online] : []),
     );
     $.suggest.hidden = false;
   }

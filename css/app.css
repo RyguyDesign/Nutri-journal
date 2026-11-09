@@ -254,7 +254,9 @@ details.how li { margin-bottom: 6px; }
 .toast.error { background: var(--error); color: var(--surface); }
 
 .toast { display: flex; align-items: center; gap: 14px; pointer-events: none; }
-.toast.show { pointer-events: auto; }
+.toast.show { pointer-events: none; }
+/* Taps go through the message to the button underneath; only Undo is tappable */
+.toast .toast-action { pointer-events: auto; }
 .toast-action { background: none; border: 0; color: var(--accent-soft); font: inherit; font-weight: 700; padding: 6px 2px; cursor: pointer; }
 
 /* Generic additions */
@@ -441,3 +443,15 @@ h2.gap { margin-top: 20px; }
 @media (prefers-reduced-motion: reduce) {
   .toast { transition: none; }
 }
+
+/* Entry form: online search row */
+.online-row { padding: 8px 4px 4px; display: grid; gap: 6px; }
+.online-row p { margin: 0; }
+.btn.small { min-height: 40px; padding: 6px 12px; font-size: 0.925rem; justify-self: start; }
+
+/* Foods I like: larger, easier tap targets */
+.chips:not(.filter) { gap: 10px; }
+.chips:not(.filter) .chip { min-height: 48px; padding: 10px 18px; font-size: 1.05rem; }
+
+.chip[data-level='sometimes'] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.chip .level { font-weight: 400; font-size: 0.85em; }

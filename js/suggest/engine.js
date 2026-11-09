@@ -12,7 +12,7 @@
 // Pure functions, covered by tests/engine.test.js.
 
 import { FOODS } from './catalog.js';
-import { TEMPLATES } from './templates.js';
+import { TEMPLATES, METHODS } from './templates.js';
 import { NUTRIENTS } from '../core/calc.js';
 import { defaultMeal } from '../core/entry.js';
 
@@ -195,7 +195,7 @@ function candidatesFor(slot, ctx) {
   const liked = shuffle(all.filter((f) => ctx.likes.has(f.id) || ctx.pantry.has(f.id)));
   const others = shuffle(all.filter((f) => !ctx.likes.has(f.id) && !ctx.pantry.has(f.id)));
   // Mostly the person's foods; a couple of ordinary extras so there's always an option
-  return [...liked.slice(0, 4), ...others.slice(0, liked.length ? 1 : 3)];
+  return [...liked.slice(0, 6), ...others.slice(0, liked.length ? 1 : 3)];
 }
 
 function combos(template, ctx) {
@@ -221,7 +221,7 @@ function combos(template, ctx) {
 
 // ---- Scoring -----------------------------------------------------------------
 
-function score(totals, target, parts, template, ctx, focus) {
+function score(totals, target, parts, template, ctx, focus, method) {
   const kcalErr = Math.abs(totals.kcal - target.kcal) / Math.max(target.kcal, 1);
   let s = kcalErr * 100 + (kcalErr > 0.1 ? 60 : 0);
   s += Math.max(0, target.protein - totals.protein) * (focus === 'protein' ? 3 : 1);
@@ -234,19 +234,54 @@ function score(totals, target, parts, template, ctx, focus) {
     if (ctx.pantry.has(p.food.id)) s -= 1;
   }
   if (template.cuisines.some((c) => ctx.cuisines.has(c))) s -= 3;
+  // Cooking styles the person ticked count strongly; others are pushed back
+  if (ctx.styles.size) {
+    const st = stylesOf(template, method);
+    if (st.some((x) => ctx.styles.get(x) === 'often')) s -= 16;
+    else if (st.some((x) => ctx.styles.get(x) === 'sometimes')) s -= 6;
+    else if (st.length) s += 12;
+  }
   if (focus === 'protein') s -= (totals.protein * 4) / Math.max(totals.kcal, 1) * 40;
-  return s + ctx.rand() * 2;
+  // Random spread so equally good meals (chicken vs. pork vs. beef) take turns
+  return s + ctx.rand() * 8;
 }
 
-function describe(template, parts, target, meal, ctx, s) {
+/**
+ * Cooking styles as a Map style -> 'often' | 'sometimes'. Older saves
+ * stored a plain list, which counts as 'often'.
+ */
+export function styleLevels(styles) {
+  if (Array.isArray(styles)) return new Map(styles.map((x) => [x, 'often']));
+  return new Map(Object.entries(styles || {}).filter(([, v]) => v === 'often' || v === 'sometimes'));
+}
+
+/** Cooking method for a template that can be made several ways. */
+function chooseMethod(template, ctx) {
+  if (!template.methods) return null;
+  const options = template.methods.filter((m) => METHODS[m].minutes <= ctx.maxMinutes && METHODS[m].minutes > (ctx.minMinutes || 0));
+  if (!options.length) return undefined; // no method fits this group's time
+  // "Often" methods are picked about three times as often as "sometimes"
+  const weight = (m) => (ctx.styles.get(m) === 'often' ? 3 : ctx.styles.get(m) === 'sometimes' ? 1 : ctx.styles.size ? 0 : 1);
+  const weighted = options.flatMap((m) => Array(weight(m)).fill(m));
+  const from = weighted.length ? weighted : options;
+  return from[Math.floor(ctx.rand() * from.length)];
+}
+
+const stylesOf = (template, method) => (method ? [method] : template.styles || []);
+
+function describe(template, parts, target, meal, ctx, s, method) {
   // Titles and steps use the short names ("Tuna", not "Tuna in water (drained)")
   const named = Object.fromEntries(parts.map((p) => [p.slot, { ...p.food, name: p.food.short }]));
   const totals = totalsOf(parts);
   return {
     id: `${template.id}:${parts.map((p) => `${p.food.id}${p.grams}`).join('+')}`,
     templateId: template.id,
-    title: template.title(named),
-    minutes: template.minutes,
+    // The protein food is what makes a meal feel "the same"; used for variety
+    main: (parts.find((p) => p.role === 'protein') || parts[0]).food.id,
+    title: template.title(named, method),
+    minutes: method ? METHODS[method].minutes : template.minutes,
+    method,
+    styles: stylesOf(template, method),
     meal,
     items: parts.map((p) => ({
       id: p.food.id,
@@ -258,7 +293,7 @@ function describe(template, parts, target, meal, ctx, s) {
       isNew: ctx.likes.size > 0 && !ctx.likes.has(p.food.id) && !ctx.pantry.has(p.food.id),
     })),
     totals,
-    steps: template.steps(named),
+    steps: template.steps(named, method),
     score: s,
     target,
   };
@@ -267,6 +302,7 @@ function describe(template, parts, target, meal, ctx, s) {
 function build(templates, target, meal, ctx, focus, limit) {
   const results = [];
   for (const tpl of templates) {
+    if (tpl.methods && !chooseMethod(tpl, ctx)) continue;
     for (const picks of combos(tpl, ctx)) {
       const parts = solvePortions(tpl, picks, target);
       if (!parts) continue;
@@ -275,27 +311,40 @@ function build(templates, target, meal, ctx, focus, limit) {
       if (err > (target.kcal < 300 ? 0.35 : 0.2)) continue;
       // Never suggest more carbohydrate than this meal's share of the day's carb target
       if (target.carbsMax !== undefined && totals.carbs > target.carbsMax) continue;
-      results.push(describe(tpl, parts, target, meal, ctx, score(totals, target, parts, tpl, ctx, focus)));
+      const method = chooseMethod(tpl, ctx);
+      results.push(describe(tpl, parts, target, meal, ctx, score(totals, target, parts, tpl, ctx, focus, method), method));
     }
   }
   results.sort((a, b) => a.score - b.score);
-  // One per template, and no repeated main ingredient, for variety
-  const picked = [];
-  const usedTpl = new Set();
-  for (const r of results) {
-    if (picked.length >= limit) break;
-    if (usedTpl.has(r.templateId)) continue;
-    if (picked.some((p) => p.items[0].id === r.items[0].id)) continue;
-    usedTpl.add(r.templateId);
-    picked.push(r);
-  }
+  // One per template, and no main protein repeated within a group or
+  // across the groups on screen (ctx.usedMains), so every liked meat and
+  // fish gets its turn. If that leaves a group empty, allow repeats.
+  const used = ctx.usedMains || new Set();
+  const pick = (allowUsed) => {
+    const out = [];
+    const usedTpl = new Map();
+    for (const r of results) {
+      if (out.length >= limit) break;
+      // Templates in a preferred cooking style may appear twice (e.g. two stews)
+      const maxPerTpl = r.styles.some((x) => ctx.styles?.has(x)) ? 2 : 1;
+      if ((usedTpl.get(r.templateId) || 0) >= maxPerTpl) continue;
+      if (out.some((p) => p.main === r.main)) continue;
+      if (!allowUsed && used.has(r.main)) continue;
+      usedTpl.set(r.templateId, (usedTpl.get(r.templateId) || 0) + 1);
+      out.push(r);
+    }
+    return out;
+  };
+  let picked = pick(false);
+  if (!picked.length) picked = pick(true);
+  for (const r of picked) used.add(r.main);
   return picked;
 }
 
 /**
  * Suggestions for the rest of the day.
  * remaining: { kcal, protein, carbs, fat } left today (may be negative)
- * tastes:    { likes: [ids], pantry: [ids], cuisines: [], cookTime, plan }
+ * tastes:    { likes: [ids], pantry: [ids], cuisines: [], styles: [], cookTime, plan }
  * profile:   { diet, allergies, dislikes }
  * Returns { meal, mode, target, groups: { quick, regular, protein, light, pantry } }
  * mode: 'normal' | 'light' (little left) | 'over' (target reached)
@@ -308,10 +357,13 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
     likes: new Set(tastes.likes || []),
     pantry: new Set(tastes.pantry || []),
     cuisines: new Set(tastes.cuisines || []),
+    styles: styleLevels(tastes.styles),
     rand: rng(seed),
     pantryOnly: false,
+    usedMains: new Set(),
   };
   const maxMinutes = COOK_LIMITS[tastes.cookTime] ?? Infinity;
+  ctx.maxMinutes = maxMinutes;
   const { meal, share } = nextMeal({ now, plan: tastes.plan, loggedMeals });
 
   const rem = Object.fromEntries(NUTRIENTS.map((k) => [k, Math.max(0, remaining?.[k] ?? 0)]));
@@ -323,7 +375,7 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
     : { kcal: Math.min(250, Math.max(100, rem.kcal)), protein: Math.max(8, Math.min(20, rem.protein)), carbs: Math.max(10, rem.carbs * 0.5), fat: Math.max(5, rem.fat * 0.5) };
   // Snacks once the target is reached, or with little carbohydrate left, stay low in carbs
   lightTarget.carbsMax = lowCarb ? Math.max(6, Math.min(10, rem.carbs)) : Math.max(10, Math.min(rem.carbs, 30));
-  const groups = { quick: [], regular: [], protein: [], light: build(snackTemplates, lightTarget, 'snacks', ctx, 'light', limit), pantry: [] };
+  const groups = { quick: [], regular: [], protein: [], light: build(snackTemplates, lightTarget, 'snacks', { ...ctx, usedMains: new Set() }, 'light', limit), pantry: [] };
   if (mode !== 'normal') return { meal, mode, target: lightTarget, groups, lowCarb };
 
   const target = {
@@ -341,14 +393,16 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
   }
   if (meal !== 'snacks') target.protein = Math.max(target.protein, Math.min(25, rem.protein));
   target.carbsMax = carbLimit(target.carbs);
-  const mealTpls = TEMPLATES.filter((t) => t.meals.includes(meal) && t.minutes <= maxMinutes && (meal === 'snacks' || !t.snack));
+  // Templates with several cooking methods take as long as the method chosen
+  const minutesRange = (t) => (t.methods ? t.methods.map((m) => METHODS[m].minutes) : [t.minutes]);
+  const mealTpls = TEMPLATES.filter((t) => t.meals.includes(meal) && Math.min(...minutesRange(t)) <= maxMinutes && (meal === 'snacks' || !t.snack));
 
-  groups.quick = build(mealTpls.filter((t) => t.minutes <= 15), target, meal, ctx, 'quick', limit);
-  groups.regular = build(mealTpls.filter((t) => t.minutes > 15), target, meal, ctx, 'regular', limit);
+  groups.quick = build(mealTpls.filter((t) => Math.min(...minutesRange(t)) <= 15), target, meal, { ...ctx, maxMinutes: Math.min(15, maxMinutes) }, 'quick', limit);
+  groups.regular = build(mealTpls.filter((t) => Math.max(...minutesRange(t)) > 15), target, meal, { ...ctx, minMinutes: 15 }, 'regular', limit);
   const proteinTarget = { ...target, protein: Math.min(target.protein * 1.4, (target.kcal * 0.55) / 4) };
   groups.protein = build(mealTpls, proteinTarget, meal, ctx, 'protein', limit);
   if (ctx.pantry.size) {
-    groups.pantry = build(mealTpls, target, meal, { ...ctx, pantryOnly: true, rand: rng(`${seed}p`) }, 'pantry', limit);
+    groups.pantry = build(mealTpls, target, meal, { ...ctx, pantryOnly: true, rand: rng(`${seed}p`), usedMains: new Set() }, 'pantry', limit);
   }
   return { meal, mode, target, groups, lowCarb };
 }

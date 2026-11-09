@@ -8,34 +8,82 @@
 // `pick` selects candidate foods: by category and/or tag.
 // `optional` slots may be dropped (e.g. not in the pantry).
 
+// Cooking methods for templates that can be made several ways. The engine
+// picks one (preferring the person's cooking styles) and passes it to
+// title() and steps().
+export const METHODS = {
+  pan: { minutes: 15, word: 'Pan-fried' },
+  grill: { minutes: 25, word: 'Grilled' },
+  airfryer: { minutes: 15, word: 'Air-fried' },
+  oven: { minutes: 30, word: 'Oven-baked' },
+};
+
+function cookProtein(m, name, oil) {
+  switch (m) {
+    case 'grill': return `Season the ${name} and grill it for a few minutes per side${oil ? `, brushed with the ${oil}` : ''}.`;
+    case 'oven': return `Season the ${name}${oil ? `, drizzle with the ${oil}` : ''} and bake at 200 °C for about 20 minutes.`;
+    case 'airfryer': return `Season the ${name}${oil ? `, brush lightly with the ${oil}` : ''} and air-fry at 200 °C for 12–15 minutes, turning once.`;
+    default: return `Cook the ${name} in a pan on the stove${oil ? ` with the ${oil}` : ''}, about 4–6 minutes per side.`;
+  }
+}
+function cookVeg(m, name) {
+  switch (m) {
+    case 'grill': return `Grill the ${name} alongside.`;
+    case 'oven': return `Roast the ${name} on the same tray.`;
+    case 'airfryer': return `Add the ${name} to the basket for the last 8 minutes.`;
+    default: return `Steam or pan-fry the ${name}.`;
+  }
+}
+
 export const TEMPLATES = [
   // ---- Main meals ----------------------------------------------------------
   {
     id: 'plate',
     meals: ['lunch', 'dinner'],
-    minutes: 25,
+    minutes: 20,
+    methods: ['pan', 'grill', 'oven', 'airfryer'],
     cuisines: ['german', 'mediterranean'],
-    title: (s) => `${s.protein.name} with ${lc(s.carbs.name)} and ${lc(s.veg.name)}`,
+    title: (s, m) => `${METHODS[m].word} ${lc(s.protein.name)} with ${lc(s.carbs.name)} and ${lc(s.veg.name)}`,
     slots: {
-      protein: { role: 'protein', pick: { cat: 'protein', tag: 'main' } },
+      protein: { role: 'protein', pick: { cat: 'protein', tag: 'main' }, exclude: ['lentils', 'chickpeas', 'eggs', 'beef-goulash', 'turkey-mince', 'beef-mince', 'mixed-mince'] },
       carbs: { role: 'energy', pick: { cat: 'carbs', tag: 'side' } },
       veg: { role: 'fixed', grams: 150, pick: { cat: 'veg', tag: 'cook' } },
       oil: { role: 'fixed', grams: 10, pick: { id: 'olive-oil' }, optional: true },
     },
+    steps: (s, m) => [
+      METHODS[m].minutes <= 15 && s.carbs.prep === 'cooked' ? `Cook the ${lc(s.carbs.name)} (or use a ready-cooked pouch to stay within 15 minutes).` : `Cook the ${lc(s.carbs.name)}.`,
+      cookProtein(m, lc(s.protein.name), s.oil && 'olive oil'),
+      `${cookVeg(m, lc(s.veg.name))} Serve together.`,
+    ],
+  },
+  {
+    id: 'stew',
+    meals: ['lunch', 'dinner'],
+    minutes: 30,
+    styles: ['stew'],
+    cuisines: ['german', 'middle-eastern', 'mediterranean'],
+    title: (s) => `${s.protein.name} stew with ${lc(s.veg.name)}${s.carbs ? ` and ${lc(s.carbs.name)}` : ''}`,
+    slots: {
+      protein: { role: 'protein', pick: { ids: ['beef-goulash', 'chicken-thigh', 'lamb', 'turkey-mince', 'beef-mince', 'lentils', 'chickpeas', 'pork-fillet', 'venison'] } },
+      veg: { role: 'fixed', grams: 200, pick: { ids: ['carrots', 'peppers', 'zucchini', 'spinach', 'cabbage', 'leek', 'tomatoes', 'aubergine', 'green-beans'] } },
+      carbs: { role: 'energy', pick: { ids: ['rice', 'potatoes', 'wholemeal-bread', 'rye-bread', 'bulgur', 'couscous'] }, optional: true },
+      oil: { role: 'fixed', grams: 10, pick: { id: 'olive-oil' }, optional: true },
+    },
     steps: (s) => [
-      `Cook the ${lc(s.carbs.name)}.`,
-      `Cook the ${lc(s.protein.name)} in a pan${s.oil ? ' with the olive oil' : ''}.`,
-      `Steam or pan-fry the ${lc(s.veg.name)} and serve together.`,
+      `Brown the ${lc(s.protein.name)} in a pot${s.oil ? ' with the olive oil' : ''}.`,
+      `Add the ${lc(s.veg.name)}, a cup of stock or chopped tomatoes, and spices; simmer for about 20 minutes (longer makes stewing beef tender).`,
+      s.carbs ? `Serve with the ${lc(s.carbs.name)}.` : 'Serve.',
     ],
   },
   {
     id: 'stirfry',
+    styles: ['stirfry'],
     meals: ['lunch', 'dinner'],
     minutes: 20,
     cuisines: ['asian'],
     title: (s) => `${s.protein.name} stir-fry with ${lc(s.veg.name)} and ${lc(s.carbs.name)}`,
     slots: {
-      protein: { role: 'protein', pick: { cat: 'protein', tag: 'main' }, exclude: ['eggs', 'lentils', 'chickpeas', 'tuna'] },
+      protein: { role: 'protein', pick: { cat: 'protein', tag: 'main' }, exclude: ['eggs', 'lentils', 'chickpeas', 'tuna', 'beef-goulash', 'mixed-mince', 'lamb-chops', 'pork-chop', 'turkey-mince', 'venison', 'lamb'] },
       carbs: { role: 'energy', pick: { ids: ['rice', 'brown-rice', 'quinoa'] } },
       veg: { role: 'fixed', grams: 200, pick: { cat: 'veg', tag: 'stirfry' } },
       oil: { role: 'fixed', grams: 10, pick: { id: 'olive-oil' }, optional: true },
@@ -48,13 +96,14 @@ export const TEMPLATES = [
   },
   {
     id: 'pasta',
+    styles: ['pan'],
     meals: ['lunch', 'dinner'],
     minutes: 20,
     cuisines: ['italian'],
     title: (s) => `${s.carbs.name} with ${lc(s.protein.name)} and ${lc(s.veg.name)}`,
     slots: {
       carbs: { role: 'energy', pick: { tag: 'pasta' } },
-      protein: { role: 'protein', pick: { cat: 'protein', tag: 'main' }, exclude: ['eggs', 'tofu'] },
+      protein: { role: 'protein', pick: { cat: 'protein', tag: 'main' }, exclude: ['eggs', 'tofu', 'tempeh', 'beef-goulash', 'lamb-chops', 'pork-chop', 'duck', 'venison', 'lamb', 'trout', 'cod', 'steak'] },
       veg: { role: 'fixed', grams: 150, pick: { cat: 'veg', tag: 'cook' } },
       oil: { role: 'fixed', grams: 10, pick: { id: 'olive-oil' }, optional: true },
     },
@@ -66,6 +115,7 @@ export const TEMPLATES = [
   },
   {
     id: 'salad',
+    styles: ['nocook'],
     meals: ['lunch', 'dinner'],
     minutes: 10,
     cuisines: ['mediterranean'],
@@ -84,6 +134,7 @@ export const TEMPLATES = [
   },
   {
     id: 'wrap',
+    styles: ['nocook'],
     meals: ['lunch', 'dinner'],
     minutes: 10,
     cuisines: ['mexican'],
@@ -98,6 +149,7 @@ export const TEMPLATES = [
   },
   {
     id: 'potato-quark',
+    styles: [],
     meals: ['lunch', 'dinner'],
     minutes: 25,
     cuisines: ['german'],
@@ -115,22 +167,24 @@ export const TEMPLATES = [
     id: 'lc-plate',
     meals: ['lunch', 'dinner'],
     minutes: 20,
+    methods: ['pan', 'grill', 'oven', 'airfryer'],
     cuisines: ['german', 'mediterranean'],
-    title: (s) => `${s.protein.name} with ${lc(s.veg.name)} and ${lc(s.extra.name)}`,
+    title: (s, m) => `${METHODS[m].word} ${lc(s.protein.name)} with ${lc(s.veg.name)} and ${lc(s.extra.name)}`,
     slots: {
-      protein: { role: 'protein', pick: { cat: 'protein', tag: 'main' }, exclude: ['lentils', 'chickpeas', 'eggs'] },
+      protein: { role: 'protein', pick: { cat: 'protein', tag: 'main' }, exclude: ['lentils', 'chickpeas', 'eggs', 'beef-goulash', 'turkey-mince', 'beef-mince', 'mixed-mince'] },
       veg: { role: 'fixed', grams: 200, pick: { cat: 'veg', tag: 'cook' } },
-      extra: { role: 'energy', pick: { ids: ['feta', 'mozzarella', 'gouda', 'avocado', 'almonds', 'walnuts'] } },
+      extra: { role: 'energy', pick: { ids: ['feta', 'mozzarella', 'gouda', 'halloumi', 'avocado', 'almonds', 'walnuts'] } },
       oil: { role: 'fixed', grams: 10, pick: { ids: ['olive-oil', 'butter'] }, optional: true },
     },
-    steps: (s) => [
-      `Cook the ${lc(s.protein.name)} in a pan${s.oil ? ` with the ${lc(s.oil.name)}` : ''}.`,
-      `Steam or pan-fry the ${lc(s.veg.name)}.`,
+    steps: (s, m) => [
+      cookProtein(m, lc(s.protein.name), s.oil && lc(s.oil.name)),
+      cookVeg(m, lc(s.veg.name)),
       `Serve with the ${lc(s.extra.name)}${s.extra.cat === 'dairy' ? ' melted or crumbled over the top' : ' on the side'}.`,
     ],
   },
   {
     id: 'omelette',
+    styles: ['pan'],
     meals: ['breakfast', 'lunch', 'dinner'],
     minutes: 10,
     cuisines: ['german', 'mediterranean'],
@@ -149,6 +203,7 @@ export const TEMPLATES = [
   },
   {
     id: 'lc-salad',
+    styles: ['nocook'],
     meals: ['lunch', 'dinner'],
     minutes: 10,
     cuisines: ['mediterranean'],
@@ -167,6 +222,7 @@ export const TEMPLATES = [
   },
   {
     id: 'eggs-cottage',
+    styles: ['pan'],
     meals: ['breakfast', 'lunch'],
     minutes: 10,
     cuisines: ['german'],
@@ -182,6 +238,7 @@ export const TEMPLATES = [
   // ---- Breakfast -----------------------------------------------------------
   {
     id: 'oats',
+    styles: ['nocook'],
     meals: ['breakfast', 'snacks'],
     minutes: 5,
     cuisines: [],
@@ -196,6 +253,7 @@ export const TEMPLATES = [
   },
   {
     id: 'bowl',
+    styles: ['nocook'],
     meals: ['breakfast', 'snacks'],
     minutes: 3,
     cuisines: [],
@@ -209,6 +267,7 @@ export const TEMPLATES = [
   },
   {
     id: 'eggs-bread',
+    styles: ['pan'],
     meals: ['breakfast', 'lunch', 'dinner'],
     minutes: 10,
     cuisines: ['german'],
@@ -222,6 +281,7 @@ export const TEMPLATES = [
   },
   {
     id: 'bread-topping',
+    styles: ['nocook'],
     meals: ['breakfast', 'lunch', 'dinner'],
     minutes: 5,
     cuisines: ['german'],
@@ -237,6 +297,7 @@ export const TEMPLATES = [
   // ---- Snacks --------------------------------------------------------------
   {
     id: 'fruit-dairy',
+    styles: ['nocook'],
     meals: ['snacks'],
     snack: true,
     minutes: 2,
@@ -250,6 +311,7 @@ export const TEMPLATES = [
   },
   {
     id: 'fruit-nuts',
+    styles: ['nocook'],
     meals: ['snacks'],
     snack: true,
     minutes: 1,
@@ -263,6 +325,7 @@ export const TEMPLATES = [
   },
   {
     id: 'rice-cakes',
+    styles: ['nocook'],
     meals: ['snacks'],
     snack: true,
     minutes: 2,
@@ -276,6 +339,7 @@ export const TEMPLATES = [
   },
   {
     id: 'protein-plate',
+    styles: ['nocook'],
     meals: ['snacks'],
     snack: true,
     minutes: 3,
@@ -290,6 +354,7 @@ export const TEMPLATES = [
   },
   {
     id: 'veg-dip',
+    styles: ['nocook'],
     meals: ['snacks'],
     snack: true,
     minutes: 5,
@@ -306,5 +371,5 @@ export const TEMPLATES = [
 function lc(s) {
   // Lower-case the first letter for use inside a sentence, but keep
   // proper names such as "Gouda" or "Skyr" readable.
-  return /^(Gouda|Skyr|Feta|Mozzarella)/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1);
+  return /^(Gouda|Skyr|Feta|Mozzarella|Halloumi|Parmesan)/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1);
 }

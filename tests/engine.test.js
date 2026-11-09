@@ -167,3 +167,64 @@ test('everyday foods can be found by name, plural or not', async () => {
   assert.equal(typicalPortion(FOOD_BY_ID.eggs), 60);
   assert.deepEqual(searchCatalog('zzz'), []);
 });
+
+test('main proteins rotate: no meat or fish repeats across the groups on screen', () => {
+  const likes = ['chicken', 'pork-chop', 'beef-goulash', 'lamb', 'steak', 'turkey', 'duck', 'salmon', 'rice', 'potatoes', 'broccoli', 'peppers'];
+  for (const seed of ['a', 'b', 'c']) {
+    const r = suggest({ remaining: { kcal: 1500, protein: 110, carbs: 150, fat: 50 }, now: '19:00', loggedMeals: ['breakfast', 'lunch', 'snacks'], tastes: { plan: '3+1', likes }, seed });
+    const mains = ['quick', 'regular', 'protein'].flatMap((g) => r.groups[g].map((s) => s.main));
+    assert.equal(new Set(mains).size, mains.length, `repeated: ${mains}`);
+    assert.ok(mains.filter((m) => m === 'chicken').length <= 1);
+  }
+});
+
+test('preferred cooking styles lead, and steps use the chosen method', () => {
+  for (const seed of ['a', 'b', 'c']) {
+    const r = suggest({ remaining: { kcal: 1500, protein: 110, carbs: 150, fat: 50 }, now: '19:00', loggedMeals: ['breakfast', 'lunch', 'snacks'], tastes: { plan: '3+1', styles: ['grill'] }, seed });
+    const regular = r.groups.regular;
+    assert.ok(regular.length && regular[0].styles.includes('grill'), `${regular.map((s) => s.title)}`);
+    assert.ok(regular[0].title.startsWith('Grilled') && regular[0].steps.some((x) => /grill/i.test(x)));
+    const stew = suggest({ remaining: { kcal: 1500, protein: 110, carbs: 150, fat: 50 }, now: '19:00', loggedMeals: ['breakfast', 'lunch', 'snacks'], tastes: { plan: '3+1', styles: ['stew'] }, seed });
+    assert.ok(stew.groups.regular.filter((s) => s.templateId === 'stew').length >= 1);
+  }
+  // quick cooking time never offers the 30-minute oven method
+  const q = suggest({ remaining: { kcal: 1500, protein: 110, carbs: 150, fat: 50 }, now: '19:00', tastes: { plan: '3', cookTime: 'quick', styles: ['oven'] }, seed: 'q' });
+  assert.ok(Object.values(q.groups).flat().every((s) => s.minutes <= 15));
+});
+
+test('everyday list: values add up, names unique, common foods found', async () => {
+  const { COMMON } = await import('../js/foods/common.js');
+  const { searchEveryday } = await import('../js/foods/everyday.js');
+  for (const f of COMMON) {
+    if (f.alc) continue;
+    const m = f.per.protein * 4 + f.per.carbs * 4 + f.per.fat * 9;
+    assert.ok(Math.abs(m - f.per.kcal) <= Math.max(25, f.per.kcal * 0.2), f.name);
+  }
+  const names = [...FOODS.map((f) => f.name), ...COMMON.map((f) => f.name)].map((n) => n.toLowerCase());
+  assert.equal(new Set(names).size, names.length);
+  assert.equal(searchEveryday('brownies')[0].name, 'Brownie');
+  assert.equal(searchEveryday('black coffee')[0].name, 'Black coffee');
+  assert.equal(searchEveryday('kaffee')[0].name, 'Black coffee');
+  assert.equal(searchEveryday('brezel')[0].name, 'Pretzel');
+  const coffee = searchEveryday('coffee').map((f) => f.name);
+  assert.ok(coffee.includes('Black coffee') && coffee.includes('Coffee with milk'));
+  assert.equal(searchEveryday('brownie')[0].portion.unit, 'piece');
+  assert.equal(searchEveryday('black coffee')[0].per.unit, 'ml');
+});
+
+test('cooking style levels: "often" air fryer leads, "sometimes" stove and oven still appear', () => {
+  let air = 0, stoveOven = 0, other = 0;
+  for (const seed of ['a', 'b', 'c', 'd', 'e', 'f']) {
+    const r = suggest({ remaining: { kcal: 1500, protein: 110, carbs: 150, fat: 50 }, now: '19:00', loggedMeals: ['breakfast', 'lunch', 'snacks'], tastes: { plan: '3+1', styles: { airfryer: 'often', pan: 'sometimes', oven: 'sometimes' } }, seed });
+    for (const s of Object.values(r.groups).flat()) {
+      if (s.method === 'airfryer') air++;
+      else if (s.method === 'pan' || s.method === 'oven') stoveOven++;
+      else if (s.method) other++;
+    }
+    assert.ok(r.groups.quick.some((s) => s.method === 'airfryer'), `quick: ${r.groups.quick.map((s) => s.title)}`);
+  }
+  assert.ok(air > stoveOven && stoveOven > 0 && other === 0, `air ${air}, stove/oven ${stoveOven}, other ${other}`);
+  // an old saved list still works
+  const r = suggest({ remaining: { kcal: 1500, protein: 110, carbs: 150, fat: 50 }, now: '19:00', tastes: { plan: '3', styles: ['grill'] }, seed: 'z' });
+  assert.ok(Object.values(r.groups).flat().some((s) => s.method === 'grill'));
+});

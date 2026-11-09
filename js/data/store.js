@@ -53,9 +53,9 @@ export function targetValues(targets) {
 }
 
 // ---- Food preferences ("Foods I like" questionnaire) ---------------------
-// { likes: [catalogue ids], pantry: [ids], cuisines: [], cookTime, plan, updatedAt }
+// { likes: [catalogue ids], pantry: [ids], cuisines: [], styles: [], cookTime, plan, updatedAt }
 
-export const DEFAULT_TASTES = { likes: [], pantry: [], cuisines: [], cookTime: 'medium', plan: '3+1' };
+export const DEFAULT_TASTES = { likes: [], pantry: [], cuisines: [], styles: [], cookTime: 'medium', plan: '3+1' };
 
 export async function getTastes() {
   const t = await db.get('kv', 'tastes');

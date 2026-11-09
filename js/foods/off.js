@@ -67,3 +67,44 @@ export async function lookupBarcode(code, { fetchImpl = globalThis.fetch, timeou
     clearTimeout(timer);
   }
 }
+
+/**
+ * Search Open Food Facts by name. Free, no key; limited to about 10
+ * searches a minute, so it runs only when the person taps "Search online".
+ * Resolves to foods with at least calories per 100 g/ml, best matches first.
+ */
+export async function searchProducts(query, { fetchImpl = globalThis.fetch, timeoutMs = 12000, limit = 8 } = {}) {
+  const q = String(query || '').trim();
+  if (q.length < 2) return [];
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=24&sort_by=unique_scans_n&fields=${FIELDS}`;
+  try {
+    const res = await fetchImpl(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`http${res.status}`);
+    const json = await res.json();
+    return mapSearchResults(json, limit);
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('timeout');
+    if (err instanceof TypeError) throw new Error('offline');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Map a search response: keep named products with calories, drop duplicates. */
+export function mapSearchResults(json, limit = 8) {
+  const out = [];
+  const seen = new Set();
+  for (const p of json?.products || []) {
+    const f = mapOffProduct({ status: 1, product: p }, p.code);
+    if (!f || !f.name || f.per.kcal === undefined) continue;
+    const key = `${f.name}|${f.brand}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(f);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
