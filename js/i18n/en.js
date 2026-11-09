@@ -297,6 +297,7 @@ export default {
   'entry.err.unitSize': 'Enter the weight of one {unit}.',
   'entry.warn.kcalTooHigh': 'More than 900 kcal per 100 g is unusual. Check for a typo.',
   'entry.warn.macrosOver100': 'Protein, carbs and fat add up to more than 100 g per 100 g. Check for a typo.',
+  'entry.warn.entryHuge': 'This entry is more than 3,000 kcal. Check the amount and the unit.',
   'entry.warn.macrosBlank': 'Only calories entered: protein, carbs and fat count as 0 for this entry.',
   'entry.warn.energyMismatch': 'The calories don’t match the macros (protein and carbs 4 kcal/g, fat 9 kcal/g). Check the values.',
   'entry.convertNeedsSize': 'Enter the size of one {unit} first, or type the per-100 values.',

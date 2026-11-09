@@ -213,6 +213,7 @@ export async function render(root, rerender, params = {}) {
       ...(v.valid
         ? [
             ...(s.macrosBlank ? ['macrosBlank'] : []),
+            ...(computeEntry(d).kcal > 3000 ? ['entryHuge'] : []),
             // Typical values and calories-only entries are expected not to add up exactly
             ...v.warnings.filter((w) => w !== 'energyMismatch' || (s.source !== 'typical' && !s.macrosBlank)),
           ].map((w) => h('p', { class: 'warn small' }, t(`entry.warn.${w}`)))
@@ -532,7 +533,23 @@ export async function render(root, rerender, params = {}) {
   });
   $.unit.addEventListener('change', () => {
     const prevUnit = s.lastUnit;
-    if (s.mode === 'total' && s.scaleBase) captureScaleBase();
+    if (s.mode === 'total' && prevUnit && prevUnit !== $.unit.value) {
+      // Same food, new unit: convert the amount (1 piece -> 60 g) so the
+      // totals stay the same. Without a known weight, don't rescale at all:
+      // otherwise "100 g" would be read as "100 pieces".
+      const fromMass = MASS_UNITS.includes(prevUnit);
+      const toMass = MASS_UNITS.includes($.unit.value);
+      const size = parseNumber($.usize.value) > 0 ? parseNumber($.usize.value) : s.servingSize;
+      const q = parseNumber($.qty.value);
+      if (fromMass !== toMass && size > 0 && q > 0) {
+        $.qty.value = fmtInput(fromMass ? q / size : q * size);
+        captureScaleBase();
+      } else if (fromMass !== toMass) {
+        s.scaleBase = null;
+      } else if (s.scaleBase) {
+        captureScaleBase();
+      }
+    }
     // Per-100 foods: "200 g" should become "1 portion", not "200 portions"
     if (s.mode === 'per100' && prevUnit) {
       const fromMass = MASS_UNITS.includes(prevUnit);
