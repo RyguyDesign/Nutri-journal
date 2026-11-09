@@ -1,4 +1,5 @@
-import { h } from './ui/dom.js';
+import { watchForUpdates } from './update.js';
+import { h, toast } from './ui/dom.js';
 import { today } from './core/dates.js';
 import { t, setLocale } from './i18n/i18n.js';
 import * as store from './data/store.js';
@@ -102,6 +103,10 @@ async function start() {
   });
   await render();
   window.__appStarted = true;
+  watchForUpdates({
+    isBusy: () => resolve().route.view.live === false,
+    onAvailable: () => toast(t('app.updateReady'), 'info', { label: t('app.updateReload'), fn: () => location.reload() }),
+  });
   store.requestPersistence();
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Service worker not registered', e));

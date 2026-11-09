@@ -92,3 +92,7 @@ All text lives in `js/i18n/en.js`. Adding German means adding `de.js` with the s
 ## 12. AI providers (planned, optional)
 
 Claude, Gemini, Grok and ChatGPT behind one adapter interface, chosen per request with a picker. API keys are entered in the app and stored only on the device, never in this repository. The rule-based engine works without any key or connection.
+
+## Updates on the phone
+
+Android resumes an installed web app from memory, so it would keep running an old version until fully closed. `js/update.js` compares `version.json` with the version the page loaded, on start and whenever the app returns to the foreground: it reloads on a new version, or offers an **Update** button when a form is open. **Change `version.json` with every deploy.**

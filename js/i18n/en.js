@@ -163,6 +163,8 @@ export default {
   'entry.online.missing': 'Missing online: {list}. Left blank, they count as 0.',
 
   'nav.ideas': 'Suggestions',
+  'app.updateReady': 'A new version of the app is ready.',
+  'app.updateReload': 'Update',
 
   'tastes.title': 'Foods I like',
   'tastes.intro': 'Tick the foods you like. Suggestions are built mainly from these, with an occasional ordinary extra, marked “new”.',
