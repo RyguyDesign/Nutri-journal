@@ -24,16 +24,19 @@ function append(el, children) {
 }
 
 let toastTimer;
-export function toast(message, kind = 'info') {
+/** Short message; optional action button, e.g. { label: 'Undo', fn }. */
+export function toast(message, kind = 'info', action) {
   let el = document.getElementById('toast');
   if (!el) {
     el = h('div', { id: 'toast', role: 'status', 'aria-live': 'polite' });
     document.body.append(el);
   }
-  el.textContent = message;
+  const hide = () => (el.className = 'toast');
+  el.replaceChildren(h('span', {}, message));
+  if (action) el.append(h('button', { type: 'button', class: 'toast-action', onclick: () => { hide(); action.fn(); } }, action.label));
   el.className = `toast show ${kind}`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (el.className = 'toast'), 3000);
+  toastTimer = setTimeout(hide, action ? 6000 : 3000);
 }
 
 export function bar(ratio, over, label) {

@@ -1,0 +1,10 @@
+Typical values Per 1009 Per pack
+Energy aaa 2092kJ
+cal 500kcal
+Fat 9.89 19.69
+ofwhich saturates 3.1g 6.2g
+Carbohydrate 30g 60g
+of which sugars 2.59 5.0g
+Fibre 2.19 4.29
+Protein 8.59 17g
+Salt 1.1g 2.2g

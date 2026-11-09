@@ -1,48 +1,17 @@
 import { h, bar } from './dom.js';
-import { t, fmtKcal, fmtGrams, fmtDate } from '../i18n/i18n.js';
+import { t, fmtKcal, fmtGrams } from '../i18n/i18n.js';
 import { sumNutrients, remainingNutrients, progress } from '../core/calc.js';
-import { addDays, parseISODate, today } from '../core/dates.js';
 import * as store from '../data/store.js';
 import { recommendationFor, estimatedTargetsOutdated } from './targets-compare.js';
-
-// Selected day survives switching tabs within a session.
-let selectedDate = today();
-
-function dayLabel(iso) {
-  const now = today();
-  if (iso === now) return t('dash.today');
-  if (iso === addDays(now, -1)) return t('dash.yesterday');
-  if (iso === addDays(now, 1)) return t('dash.tomorrow');
-  return fmtDate(parseISODate(iso));
-}
+import { dayNav } from './daynav.js';
+import { getSelectedDate } from './state.js';
+import { entryRow } from './journal.js';
 
 export async function render(root, rerender) {
-  const [targets, profile, entries] = await Promise.all([
-    store.getTargets(),
-    store.getProfile(),
-    store.getEntriesForDate(selectedDate),
-  ]);
+  const date = getSelectedDate();
+  const [targets, profile, entries] = await Promise.all([store.getTargets(), store.getProfile(), store.getEntriesForDate(date)]);
   const goal = store.targetValues(targets);
   const eaten = sumNutrients(entries);
-
-  const go = (n) => {
-    selectedDate = n === 0 ? today() : addDays(selectedDate, n);
-    rerender();
-  };
-
-  const isToday = selectedDate === today();
-  const nav = h(
-    'div',
-    { class: 'daynav' },
-    h('button', { class: 'icon-btn', 'aria-label': t('dash.prevDay'), onclick: () => go(-1) }, '‹'),
-    h(
-      'div',
-      { class: 'daynav-label' },
-      h('strong', {}, dayLabel(selectedDate)),
-      isToday ? null : h('button', { class: 'link-btn', onclick: () => go(0) }, t('dash.goToToday')),
-    ),
-    h('button', { class: 'icon-btn', 'aria-label': t('dash.nextDay'), onclick: () => go(1) }, '›'),
-  );
 
   let hero;
   let macros = null;
@@ -67,12 +36,7 @@ export async function render(root, rerender) {
         return h(
           'div',
           { class: 'macro' },
-          h(
-            'div',
-            { class: 'macro-head' },
-            h('span', {}, t(`nutrient.${k}`)),
-            h('span', { class: 'num' }, `${fmtGrams(eaten[k])} / ${fmtGrams(goal[k])} ${t('common.g')}`),
-          ),
+          h('div', { class: 'macro-head' }, h('span', {}, t(`nutrient.${k}`)), h('span', { class: 'num' }, `${fmtGrams(eaten[k])} / ${fmtGrams(goal[k])} ${t('common.g')}`)),
           bar(mp.ratio, mp.over, t(`nutrient.${k}`)),
         );
       }),
@@ -88,6 +52,8 @@ export async function render(root, rerender) {
     );
   }
 
+  const add = h('a', { class: 'btn primary wide add-btn', href: `#/add?date=${date}` }, `+ ${t('dash.add')}`);
+
   const notice = estimatedTargetsOutdated(targets, recommendationFor(profile))
     ? h('section', { class: 'notice' }, h('p', {}, t('dash.recChanged')), h('a', { class: 'link-btn', href: '#/profile' }, t('dash.recChangedAction')))
     : null;
@@ -96,22 +62,8 @@ export async function render(root, rerender) {
     'section',
     { class: 'card' },
     h('h2', {}, t('dash.log')),
-    entries.length
-      ? h(
-          'ul',
-          { class: 'log' },
-          entries.map((e) =>
-            h(
-              'li',
-              {},
-              h('span', { class: 'log-time num' }, e.time || ''),
-              h('span', { class: 'log-name' }, e.name, h('small', { class: 'muted' }, ` ${e.quantity ?? ''} ${e.unit ?? ''}`)),
-              h('span', { class: 'log-kcal num' }, `${fmtKcal(e.kcal)} ${t('common.kcal')}`),
-            ),
-          ),
-        )
-      : h('p', { class: 'muted' }, t('dash.logEmpty')),
+    entries.length ? h('ul', { class: 'log' }, entries.map((e) => entryRow(e, { showMacros: false }))) : h('p', { class: 'muted' }, t('dash.logEmpty')),
   );
 
-  root.replaceChildren(...[nav, notice, hero, macros, log].filter(Boolean));
+  root.replaceChildren(...[dayNav(rerender), notice, hero, add, macros, log].filter(Boolean));
 }

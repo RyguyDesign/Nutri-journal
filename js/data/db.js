@@ -2,7 +2,7 @@
 // MIGRATIONS so existing journals upgrade in place.
 
 export const DB_NAME = 'nutri-journal';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 // Each entry upgrades from version (index) to (index + 1).
 const MIGRATIONS = [
@@ -11,9 +11,14 @@ const MIGRATIONS = [
     const entries = db.createObjectStore('entries', { keyPath: 'id' });
     entries.createIndex('date', 'date');
   },
+  (db) => {
+    // Personal food library
+    const foods = db.createObjectStore('foods', { keyPath: 'id' });
+    foods.createIndex('barcode', 'barcode');
+  },
 ];
 
-export const STORES = ['kv', 'entries'];
+export const STORES = ['kv', 'entries', 'foods'];
 
 let dbPromise;
 
@@ -74,6 +79,15 @@ export async function put(store, value, key) {
   const db = await openDB();
   const tx = db.transaction(store, 'readwrite');
   tx.objectStore(store).put(value, key);
+  await done(tx);
+}
+
+/** Put several values into one keyPath store in a single transaction. */
+export async function putMany(store, values) {
+  const db = await openDB();
+  const tx = db.transaction(store, 'readwrite');
+  const os = tx.objectStore(store);
+  for (const v of values) os.put(v);
   await done(tx);
 }
 

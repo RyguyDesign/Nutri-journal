@@ -7,9 +7,9 @@ A personal nutrition journal and calorie tracker, built for daily use on a phone
 | Stage | Contents | State |
 | --- | --- | --- |
 | 1 | Profile, target calculation, dashboard, backup | Done |
-| 2 | Food journal: add, edit, delete, portion scaling | Next |
+| 2 | Food journal, barcode scanning, label photos, saved foods | Done |
 | 3 | Meal suggestions: rule-based plus Claude, Gemini, Grok, ChatGPT | Planned |
-| 4 | Food search (Open Food Facts), personal foods, meal builder | Planned |
+| 4 | Food search by name, food library screen, meal builder | Planned |
 | 5 | History, weight tracking, charts | Planned |
 | 6 | Testing, refinement, documentation | Planned |
 
@@ -21,6 +21,14 @@ Open the site on your phone and add it to the home screen:
 - **Android (Chrome):** menu → Install app.
 
 Installing keeps your data from being cleared by the browser. Data is stored on the device only; use **Profile → Export backup** regularly.
+
+## Adding food
+
+- **Scan barcode:** looks the product up in your saved foods, then Open Food Facts. Free.
+- **Read label photo:** reads the nutrition table on the phone. Free; the first use downloads the reader (about 15 MB), after which it works offline. Highlighted values need a check.
+- **Type it:** per 100 g/ml from the label, or totals for what you ate.
+
+Everything you log is saved to your foods, so next time start typing the name and pick it.
 
 ## Develop
 
