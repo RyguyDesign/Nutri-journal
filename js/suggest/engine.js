@@ -14,6 +14,7 @@
 import { FOODS } from './catalog.js';
 import { TEMPLATES, METHODS } from './templates.js';
 import { NUTRIENTS } from '../core/calc.js';
+import { DIETS } from '../core/diet.js';
 import { defaultMeal } from '../core/entry.js';
 
 export const MEAL_PLANS = {
@@ -68,12 +69,20 @@ export function exclusionsFrom(profile = {}) {
   return { flags, terms };
 }
 
-/** Low-carb style: set on the profile, or written as a diet preference. */
-export function isLowCarb(profile = {}) {
-  return profile.dietStyle === 'lowcarb' || (profile.diet || []).some((d) => /low.?carb|keto|lchf/i.test(d));
+/**
+ * The diet style that shapes suggestions: set on the profile, or written
+ * as a diet preference ("keto", "low carb").
+ */
+export function dietFor(profile = {}) {
+  if (DIETS[profile.dietStyle] && profile.dietStyle !== 'balanced') return profile.dietStyle;
+  const text = (profile.diet || []).join(' ');
+  if (/keto/i.test(text)) return 'keto';
+  if (/low.?carb|lchf/i.test(text)) return 'lowcarb';
+  return profile.dietStyle && DIETS[profile.dietStyle] ? profile.dietStyle : 'balanced';
 }
-// Foods left out of a low-carb style: grains, potatoes, legumes, sweet snacks.
-export const LOW_CARB_MAX_PER_100G = 15;
+export function isLowCarb(profile = {}) {
+  return DIETS[dietFor(profile)].maxCarbs100 != null;
+}
 
 /** Carbohydrate allowed in one meal: its share of what's left, with a little slack. */
 export function carbLimit(carbsShare) {
@@ -234,6 +243,14 @@ function score(totals, target, parts, template, ctx, focus, method) {
     if (ctx.pantry.has(p.food.id)) s -= 1;
   }
   if (template.cuisines.some((c) => ctx.cuisines.has(c))) s -= 3;
+  // Mediterranean: fish, legumes, olive oil and vegetables first
+  if (ctx.prefer?.length) {
+    for (const p of parts) {
+      const f = p.food;
+      if ((ctx.prefer.includes('fish') && f.flags.includes('fish')) || (ctx.prefer.includes('legumes') && ['lentils', 'chickpeas'].includes(f.id)) || (ctx.prefer.includes('olive-oil') && f.id === 'olive-oil') || (ctx.prefer.includes('veg') && f.cat === 'veg')) s -= 3;
+      if (f.flags.includes('meat') && !f.flags.includes('fish')) s += 2;
+    }
+  }
   // Cooking styles the person ticked count strongly; others are pushed back
   if (ctx.styles.size) {
     const st = stylesOf(template, method);
@@ -351,9 +368,12 @@ function build(templates, target, meal, ctx, focus, limit) {
  */
 export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', loggedMeals = [], seed = 'x', limit = 3 }) {
   const ex = exclusionsFrom(profile);
-  const lowCarb = isLowCarb(profile);
+  const diet = DIETS[dietFor(profile)];
+  for (const fl of diet.exclude || []) ex.flags.add(fl);
+  const lowCarb = diet.maxCarbs100 != null;
   const ctx = {
-    pool: FOODS.filter((f) => isAllowed(f, ex) && !(lowCarb && f.per.carbs >= LOW_CARB_MAX_PER_100G)),
+    pool: FOODS.filter((f) => isAllowed(f, ex) && !(lowCarb && f.per.carbs >= diet.maxCarbs100)),
+    prefer: diet.prefer || [],
     likes: new Set(tastes.likes || []),
     pantry: new Set(tastes.pantry || []),
     cuisines: new Set(tastes.cuisines || []),

@@ -506,3 +506,16 @@ h2.gap { margin-top: 20px; }
 .slider-ticks span::before { content: ''; position: absolute; left: 50%; top: -10px; width: 2px; height: 6px; background: var(--muted); opacity: 0.6; }
 .slider-box .slider-wrap { margin-top: 4px; margin-bottom: 12px; }
 .meal-item-amount .qty { width: 72px; flex: 0 0 72px; text-align: center; }
+
+/* Diet and fasting status */
+.diet-status h2 { margin-bottom: 6px; }
+.fast-time { font-size: 2rem; font-weight: 700; margin: 4px 0 8px; }
+.check { display: flex; gap: 8px; align-items: baseline; margin: 6px 0; }
+.check-mark { font-weight: 700; width: 1em; flex: 0 0 1em; }
+.check.ok .check-mark { color: var(--accent); }
+.check.off .check-mark { color: var(--over); }
+.fast-start-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.fast-start-row label { font-weight: 600; font-size: 0.9rem; }
+.fast-start-row input { width: auto; }
+.fast-list { list-style: none; padding: 0; margin: 8px 0 0; }
+.fast-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; border-top: 1px solid var(--line); }

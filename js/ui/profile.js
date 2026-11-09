@@ -3,6 +3,7 @@ import { t, fmtKcal, fmtNumber } from '../i18n/i18n.js';
 import { ACTIVITY_LEVELS, GOALS, RATES, DIET_STYLES, validateProfile } from '../core/calc.js';
 import * as store from '../data/store.js';
 import { recommendationFor } from './targets-compare.js';
+import { FASTING_IDS, eatingWindow } from '../core/diet.js';
 
 const RANGES = { age: [18, 100], heightCm: [120, 230], weightKg: [35, 300], targetWeightKg: [35, 300] };
 const TARGET_RANGES = { kcal: [1000, 6000], protein: [0, 400], carbs: [0, 1000], fat: [0, 400] };
@@ -39,6 +40,22 @@ function rateOptions(goal) {
 
 // ---------------------------------------------------------------------------
 
+/** Fasting plan and when the eating window opens. */
+function fastingFields(p) {
+  const plan = select('fasting', FASTING_IDS.map((f) => [f, t(`profile.fasting.${f}`)]), p.fasting || 'none');
+  const start = h('input', { id: 'eatingStart', name: 'eatingStart', type: 'time', value: p.eatingStart || '12:00' });
+  const startField = h('div', { class: 'field', id: 'f-eatingStart' }, h('label', { for: 'eatingStart' }, t('profile.eatingStart')), start, h('small', { class: 'muted', id: 'eating-window' }));
+  const refresh = () => {
+    startField.hidden = plan.value === 'none';
+    const win = eatingWindow({ fasting: plan.value, eatingStart: start.value });
+    startField.querySelector('#eating-window').textContent = win ? t('profile.eatingWindow', { start: win.start, end: win.end, hours: win.hours }) : '';
+  };
+  plan.addEventListener('change', refresh);
+  start.addEventListener('input', refresh);
+  refresh();
+  return h('div', {}, field('fasting', t('profile.fasting'), plan, t('profile.fasting.hint')), startField);
+}
+
 function profileForm(profile) {
   const p = profile || { sex: 'male', activity: 'moderate', goal: 'maintain', rateKgPerWeek: 0 };
   const rateSel = select('rateKgPerWeek', rateOptions(p.goal), p.rateKgPerWeek);
@@ -71,6 +88,7 @@ function profileForm(profile) {
     ),
     field('targetWeightKg', t('profile.targetWeight'), numInput('targetWeightKg', p.targetWeightKg, t('common.kg'))),
     field('dietStyle', t('profile.dietStyle'), select('dietStyle', DIET_STYLES.map((d) => [d, t(`profile.dietStyle.${d}`)]), p.dietStyle || 'balanced'), t('profile.dietStyle.hint')),
+    fastingFields(p),
     h('h2', {}, t('profile.foodSection')),
     h('p', { class: 'muted small' }, t('profile.foodHint'), ' ', h('a', { class: 'link-btn', href: '#/tastes' }, `${t('profile.likesLink')} →`)),
     field('diet', t('profile.diet'), h('input', { id: 'diet', type: 'text', value: (p.diet || []).join(', '), placeholder: t('profile.diet.ph') })),
@@ -93,6 +111,8 @@ function profileForm(profile) {
       goal: v('goal'),
       rateKgPerWeek: Number(v('rateKgPerWeek')),
       dietStyle: v('dietStyle'),
+      fasting: v('fasting'),
+      eatingStart: v('eatingStart') || '12:00',
       diet: splitList(v('diet')),
       allergies: splitList(v('allergies')),
       dislikes: splitList(v('dislikes')),
@@ -224,8 +244,8 @@ function targetsCard(targets, rec) {
           h('li', {}, t(`targets.how.adj.${adjKey}`, { n: fmtKcal(Math.abs(d.adjustment)), rate: fmtNumber(Math.abs(d.adjustment) * 7 / 7700, 2) })),
           d.flags.clampedToBmr ? h('li', { class: 'warn' }, t('targets.how.clamped')) : null,
           h('li', {}, t(adjKey === 'lose' ? 'targets.how.protein.lose' : 'targets.how.protein.other', { perKg: fmtNumber(d.basis.proteinPerKg, 1), kg: fmtNumber(d.basis.proteinRefWeight, 1) })),
-          ...(d.basis.dietStyle === 'lowcarb'
-            ? [h('li', {}, t('targets.how.lowcarb.carbs', { n: d.basis.lowCarbGrams })), h('li', {}, t('targets.how.lowcarb.fat'))]
+          ...(d.basis.fixedCarbs != null
+            ? [h('li', {}, t('targets.how.lowcarb.carbs', { n: d.basis.fixedCarbs })), h('li', {}, t('targets.how.lowcarb.fat'))]
             : [h('li', {}, t('targets.how.fat', { pct: Math.round(d.basis.fatShare * 100), min: fmtNumber(d.basis.fatMinPerKg, 1) })), h('li', {}, t('targets.how.carbs'))]),
         ),
       ),

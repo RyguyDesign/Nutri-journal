@@ -100,3 +100,7 @@ Android resumes an installed web app from memory, so it would keep running an ol
 ## Add food: one meal, several foods
 
 `#/add` (`js/ui/meal.js`, logic in `js/core/meal.js`) logs one or several foods for a meal on one screen: search (saved meals, your foods, everyday foods, online, or calories only), each food joins a list with its typical amount, adjust with amount, unit or ½ ¼ ×2, one Save. Combinations can be saved as a meal (`kv/meals`) and added again with one tap. The single-food form with label photos and per-100 values is `#/add/detail`, also used for editing entries.
+
+## Diet styles and fasting
+
+`js/core/diet.js`: diet styles (Balanced, High protein, Low carb, Keto, Mediterranean, Vegetarian, Vegan) set the macro split in `recommendTargets` and steer suggestions (carb ceilings per 100 g, excluded food flags, Mediterranean preferences). Fasting plans (12:12 to 20:4, one meal a day) with an eating-window start combine with any diet. Fasts are stored in `kv/fasts` (start, end, goal); logging food ends a running fast. `kv/dietHistory` records which diet and plan applied from which day, so the journal judges each day by its own plan. The dashboard shows the fasting timer or eating window, today's diet check and streaks; the journal shows each day's check and fasts (`js/ui/diet-status.js`).

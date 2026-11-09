@@ -8,6 +8,8 @@ import { getSelectedDate } from './state.js';
 import { entryRow } from './journal.js';
 import { todaysSuggestions, addToJournal } from './ideas.js';
 import { today } from '../core/dates.js';
+import { dashboardStatus } from './diet-status.js';
+import { activeFast } from '../core/diet.js';
 
 export async function render(root, rerender) {
   const date = getSelectedDate();
@@ -69,7 +71,7 @@ export async function render(root, rerender) {
 
   // One suggestion for the next meal, today only
   let idea = null;
-  if (goal && date === today()) {
+  if (goal && date === today() && !activeFast(await store.getFasts())) {
     const { result } = await todaysSuggestions(1);
     const s = result?.mode === 'normal' ? result.groups.quick[0] || result.groups.regular[0] : result?.groups.light[0];
     if (s) {
@@ -84,5 +86,6 @@ export async function render(root, rerender) {
     }
   }
 
-  root.replaceChildren(...[dayNav(rerender), notice, hero, add, macros, idea, log].filter(Boolean));
+  const status = date === today() ? await dashboardStatus(rerender) : null;
+  root.replaceChildren(...[dayNav(rerender), notice, hero, add, status, macros, idea, log].filter(Boolean));
 }

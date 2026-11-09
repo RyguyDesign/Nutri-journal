@@ -6,6 +6,7 @@ import { addDays } from '../core/dates.js';
 import * as store from '../data/store.js';
 import { dayNav, dayLabel } from './daynav.js';
 import { getSelectedDate } from './state.js';
+import { journalStatus } from './diet-status.js';
 
 export function amountText(e) {
   const q = fmtNumber(e.quantity, 1);
@@ -79,6 +80,7 @@ export async function render(root, rerender) {
       )
     : null;
 
+  const status = await journalStatus(date);
   root.replaceChildren(
     ...[
       dayNav(rerender),
@@ -87,6 +89,7 @@ export async function render(root, rerender) {
         { class: 'day-total muted num' },
         t('journal.dayTotal', { kcal: fmtKcal(total.kcal), p: fmtGrams(total.protein), c: fmtGrams(total.carbs), f: fmtGrams(total.fat) }),
       ),
+      status,
       ...sections,
       copy,
     ].filter(Boolean),

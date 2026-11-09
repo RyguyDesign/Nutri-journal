@@ -3,6 +3,7 @@
 // immediately.
 
 import * as db from './db.js';
+import { recordDiet, dietOf, fastingOf, activeFast, entryMoment, localDate } from '../core/diet.js';
 
 const listeners = new Set();
 
@@ -27,6 +28,10 @@ export const getProfile = () => db.get('kv', 'profile');
 
 export async function saveProfile(profile) {
   await db.put('kv', { ...profile, updatedAt: new Date().toISOString() }, 'profile');
+  // Diet history: which diet and fasting plan applied from which day
+  const history = (await db.get('kv', 'dietHistory')) || [];
+  const next = recordDiet(history, localDate(new Date()), dietOf(profile), fastingOf(profile));
+  if (next !== history) await db.put('kv', next, 'dietHistory');
   emit('profile');
 }
 
@@ -135,8 +140,46 @@ export async function saveEntry(entry) {
   const now = new Date().toISOString();
   const value = { ...entry, id: entry.id || newId(), createdAt: entry.createdAt || now, updatedAt: now };
   await db.put('entries', value);
+  // Eating ends a running fast (food with calories, logged after it began)
+  if (!entry.id && (value.kcal || 0) > 0) {
+    const fasts = (await db.get('kv', 'fasts')) || [];
+    const running = activeFast(fasts);
+    const at = entryMoment(value);
+    if (running && at > new Date(running.start) && at <= new Date(Date.now() + 5 * 60000)) {
+      await db.put('kv', fasts.map((f) => (f.id === running.id ? { ...f, end: at.toISOString() } : f)), 'fasts');
+      emit('fasts');
+    }
+  }
   emit('entries');
   return value;
+}
+
+// ---- Fasting and diet history ----------------------------------------------
+export const getFasts = async () => (await db.get('kv', 'fasts')) || [];
+export const getDietHistory = async () => (await db.get('kv', 'dietHistory')) || [];
+
+export async function startFast(start = new Date(), goalHours = 16) {
+  const fasts = await getFasts();
+  if (activeFast(fasts)) return null;
+  const f = { id: newId(), start: new Date(start).toISOString(), end: null, goalHours };
+  await db.put('kv', [...fasts, f].slice(-400), 'fasts');
+  emit('fasts');
+  return f;
+}
+
+export async function endFast(end = new Date()) {
+  const fasts = await getFasts();
+  const running = activeFast(fasts);
+  if (!running) return null;
+  const done = { ...running, end: new Date(Math.max(new Date(end), new Date(running.start))).toISOString() };
+  await db.put('kv', fasts.map((f) => (f.id === running.id ? done : f)), 'fasts');
+  emit('fasts');
+  return done;
+}
+
+export async function deleteFast(id) {
+  await db.put('kv', (await getFasts()).filter((f) => f.id !== id), 'fasts');
+  emit('fasts');
 }
 
 export async function deleteEntry(id) {

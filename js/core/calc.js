@@ -1,3 +1,5 @@
+import { DIETS, DIET_IDS } from './diet.js';
+
 // Pure nutrition calculations. No DOM, no storage — everything here is
 // deterministic and covered by tests/calc.test.js.
 
@@ -31,7 +33,7 @@ export const FAT_MIN_PER_KG = 0.6;
 // Diet styles. 'lowcarb' is a strict low-carb, high-protein split:
 // carbohydrates fixed at about 50 g a day, protein at least 2 g per kg,
 // and the remaining calories from fat.
-export const DIET_STYLES = ['balanced', 'lowcarb'];
+export const DIET_STYLES = DIET_IDS;
 export const LOW_CARB_GRAMS = 50;
 export const LOW_CARB_PROTEIN_PER_KG = 2.0;
 
@@ -110,23 +112,24 @@ export function recommendTargets(p) {
   // When losing, protein is based on the target weight so that a higher
   // current weight does not inflate the protein target.
   const proteinRefWeight = p.goal === 'lose' ? Math.min(p.targetWeightKg, p.weightKg) : p.weightKg;
-  const lowCarb = p.dietStyle === 'lowcarb';
-  const proteinPerKg = lowCarb ? Math.max(PROTEIN_PER_KG[p.goal], LOW_CARB_PROTEIN_PER_KG) : PROTEIN_PER_KG[p.goal];
+  const diet = DIETS[p.dietStyle] || DIETS.balanced;
+  const proteinPerKg = Math.max(PROTEIN_PER_KG[p.goal], diet.proteinPerKg || 0);
   const protein = Math.round(proteinRefWeight * proteinPerKg);
+  const fatShare = diet.fatShare ?? FAT_SHARE;
 
   let fat;
   let carbs;
-  if (lowCarb) {
-    carbs = LOW_CARB_GRAMS;
+  if (diet.carbs != null) {
+    // Fixed carbs (low carb, keto): fat fills the rest
+    carbs = diet.carbs;
     fat = Math.round(Math.max((calories - protein * KCAL_PER_GRAM.protein - carbs * KCAL_PER_GRAM.carbs) / KCAL_PER_GRAM.fat, p.weightKg * FAT_MIN_PER_KG));
   } else {
-    fat = Math.round(Math.max((calories * FAT_SHARE) / 9, p.weightKg * FAT_MIN_PER_KG));
+    fat = Math.round(Math.max((calories * fatShare) / 9, p.weightKg * FAT_MIN_PER_KG));
     carbs = Math.max(
       0,
       Math.round((calories - protein * KCAL_PER_GRAM.protein - fat * KCAL_PER_GRAM.fat) / KCAL_PER_GRAM.carbs),
     );
   }
-
   return {
     bmr: b,
     tdee: t,
@@ -136,7 +139,7 @@ export function recommendTargets(p) {
     carbs,
     fat,
     flags: { clampedToBmr },
-    basis: { proteinPerKg, proteinRefWeight, fatShare: FAT_SHARE, fatMinPerKg: FAT_MIN_PER_KG, dietStyle: lowCarb ? 'lowcarb' : 'balanced', lowCarbGrams: LOW_CARB_GRAMS },
+    basis: { proteinPerKg, proteinRefWeight, fatShare, fatMinPerKg: FAT_MIN_PER_KG, dietStyle: DIETS[p.dietStyle] ? p.dietStyle : 'balanced', fixedCarbs: diet.carbs ?? null },
   };
 }
 
