@@ -57,3 +57,19 @@ test('readings for a token where "g" became "9"', () => {
   assert.deepEqual(candidates({ text: '30', unit: 'g' }), [{ v: 30, p: 0 }]);
   assert.deepEqual(candidates({ text: '0,5', lessThan: true, unit: 'g' }), [{ v: 0, p: 0 }]);
 });
+
+test('German label read in block mode: "g" misread as 9', () => {
+  const text = 'Nährwerte pro 100 g\nBrennwert                              1046 kJ / 250 kcal\nFett                                          9,89g\ndavon gesättigte Fettsäuren          31g\nKohlenhydrate                             33g\ndavon Zucker                            429\nEiweiß                                      7,59\nSalz                             1,19\n';
+  const r = parseLabelText(text);
+  assert.equal(r.values.kcal, 250);
+  assert.equal(r.values.fat, 9.8);
+  assert.equal(r.values.carbs, 33);
+  assert.equal(r.values.protein, 7.5);
+  assert.deepEqual(r.missing, []);
+});
+
+test('"339g" is 33 g, not impossible 339 g', () => {
+  const r = parseLabelText('Nährwerte pro 100 g\nBrennwert 1046 kJ / 250 kcal\nFett 9,8 g\nKohlenhydrate 339g\nEiweiß 7,59g\n');
+  assert.equal(r.values.carbs, 33);
+  assert.equal(r.values.protein, 7.5);
+});

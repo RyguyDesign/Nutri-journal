@@ -3,6 +3,8 @@
 // (~15 MB for German + English) is downloaded on first use and cached by
 // the browser, after which it works offline.
 
+import { parseLabelText } from './label-parse.js';
+
 const TESSERACT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
 
 let loader;
@@ -81,8 +83,17 @@ export async function recognizeLabel(file, onProgress = () => {}) {
     throw new Error('download', { cause: err });
   }
   try {
-    const { data } = await worker.recognize(canvas);
-    return data.text || '';
+    // A nutrition table reads best as one block of text (page mode 6),
+    // keeping the gap between name and value. If that misses a value,
+    // read again with automatic layout and append it: the parser takes the
+    // first match for each nutrient, so the block reading wins where it
+    // found something and the second reading fills the gaps.
+    await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
+    const first = (await worker.recognize(canvas)).data.text || '';
+    if (!parseLabelText(first).missing.length) return first;
+    await worker.setParameters({ tessedit_pageseg_mode: '3' });
+    const second = (await worker.recognize(canvas)).data.text || '';
+    return `${first}\n${second}`;
   } finally {
     worker.terminate();
   }

@@ -56,7 +56,15 @@ export function candidates(tok) {
   if (!tok) return [];
   if (tok.lessThan) return [{ v: 0, p: 0 }];
   const raw = toNum(tok.text);
-  if (tok.unit === 'g') return raw <= 100 ? [{ v: raw, p: 0 }] : [];
+  if (tok.unit === 'g') {
+    // "9,89g" / "339g": the space before g was read as a 9 and the g kept
+    const decs = (tok.text.split(/[.,]/)[1] || '').length;
+    if (tok.text.length > 1 && tok.text.endsWith('9') && (decs >= 2 || raw > 100)) {
+      const s = toNum(tok.text.slice(0, -1).replace(/[.,]$/, ''));
+      return [{ v: s, p: 0 }, ...(raw <= 100 ? [{ v: raw, p: 10 }] : [])].filter((c) => c.v <= 100);
+    }
+    return raw <= 100 ? [{ v: raw, p: 0 }] : [];
+  }
   if (tok.unit === 'mg') return [{ v: raw / 1000, p: 0 }];
 
   const out = [];
