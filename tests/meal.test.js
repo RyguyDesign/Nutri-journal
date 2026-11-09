@@ -93,3 +93,13 @@ test('− / + step by half a unit or 10 g; quick-set replaces the amount', () =>
   assert.equal(half.quantity, Math.round(mush.baseGrams / 2));
   assert.equal(currentQuick(half), 0.5);
 });
+
+test('slider snaps to quarter amounts when close', async () => {
+  const { snapValue } = await import('../js/ui/slider.js');
+  assert.deepEqual(snapValue(0.52), { value: 0.5, snapped: true });
+  assert.deepEqual(snapValue(0.96), { value: 1, snapped: true });
+  assert.deepEqual(snapValue(0.8), { value: 0.75, snapped: true });
+  assert.equal(snapValue(0.62).snapped, false);
+  assert.equal(snapValue(0.62).value, 0.62);
+  assert.equal(snapValue(0.03).snapped, false); // never snaps to 0
+});

@@ -10,9 +10,10 @@ import * as store from '../data/store.js';
 import { searchEveryday } from '../foods/everyday.js';
 import { lookupBarcode, searchProducts } from '../foods/off.js';
 import { scanBarcode } from './scanner.js';
+import { amountSlider } from './slider.js';
 import { getSelectedDate, goBack } from './state.js';
 import {
-  unitChoices, setUnit, itemTotals, mealTotals, stepItem, setAmount, currentQuick, QUICK_AMOUNTS,
+  unitChoices, setUnit, itemTotals, mealTotals,
   itemFromFood, itemFromEveryday, itemFromProduct, itemCaloriesOnly,
   itemForSaving, itemsFromSavedMeal, entryFromItem,
 } from '../core/meal.js';
@@ -162,9 +163,8 @@ export async function render(root, rerender, params = {}) {
       else qty.value = fmtInputNum(it.quantity);
     });
     const choices = unitChoices(it);
-    const unit = h('select', { class: 'unit', 'aria-label': t('entry.unit') }, choices.map((c) => h('option', { value: c.unit, selected: c.unit === it.unit }, c.unit === 'portion' && it.portionLabel ? plural(it.portionLabel, it.quantity) : unitName(c.unit, it.quantity))));
+    const unit = h('select', { class: 'unit', 'aria-label': t('entry.unit') }, choices.map((c) => h('option', { value: c.unit, selected: c.unit === it.unit }, optionLabel(it, c.unit, it.quantity))));
     unit.addEventListener('change', () => update(it.key, (x) => setUnit(x, unit.value)));
-    const sizeNote = !MASS_UNITS.includes(it.unit) && it.unitSize > 0 ? h('span', { class: 'muted small' }, `≈ ${fmtNumber(it.unitSize * it.quantity, 0)} ${it.per.unit}`) : null;
 
     const kcalIn = it.caloriesOnly
       ? h('div', { class: 'with-unit kcal-only' }, h('input', { type: 'text', inputmode: 'decimal', value: Number.isFinite(it.per.kcal) ? String(it.per.kcal) : '', placeholder: t('meal.kcalPh'), 'aria-label': t('nutrient.kcal') }), h('span', { class: 'unit' }, 'kcal'))
@@ -175,9 +175,32 @@ export async function render(root, rerender, params = {}) {
         update(it.key, (x) => ({ ...x, per: { ...x.per, kcal: v >= 0 ? v : NaN } }));
       });
     }
-    const active = currentQuick(it);
-    const chip = (v) => h('button', { type: 'button', class: 'chip mini', 'aria-pressed': String(active === v), 'aria-label': t('meal.setAmount', { n: fracLabel(v) }), onclick: () => update(it.key, (x) => setAmount(x, v)) }, fracLabel(v));
-    const stepBtn = (dir) => h('button', { type: 'button', class: 'step-btn', 'aria-label': dir > 0 ? t('meal.more') : t('meal.less'), onclick: () => update(it.key, (x) => stepItem(x, dir)) }, dir > 0 ? '+' : '−');
+    // Slider: live updates of this row and the total while dragging,
+    // without redrawing the list (that would interrupt the drag)
+    const kcalEl = h('span', { class: 'num kcal' }, n ? `${fmtKcal(n.kcal)} kcal` : '–');
+    const sizeEl = h('span', { class: 'muted small' });
+    const live = (quantity) => {
+      items = items.map((x) => (x.key === it.key ? { ...x, quantity } : x));
+      const cur = items.find((x) => x.key === it.key);
+      qty.value = fmtInputNum(quantity);
+      const nn = itemTotals(cur);
+      kcalEl.textContent = nn ? `${fmtKcal(nn.kcal)} kcal` : '–';
+      sizeEl.textContent = !MASS_UNITS.includes(cur.unit) && cur.unitSize > 0 ? `≈ ${fmtNumber(cur.unitSize * quantity, 0)} ${cur.per.unit}` : '';
+      if (unit.tagName === 'SELECT') for (const o of unit.options) o.textContent = optionLabel(cur, o.value, quantity);
+      drawTotals();
+    };
+    const slider = kcalInPlaceholder(it) ? null : amountSlider({
+      quantity: it.quantity,
+      counted: !MASS_UNITS.includes(it.unit),
+      base: it.baseGrams > 0 ? it.baseGrams : 100,
+      label: t('meal.amountOf', { name: it.name }),
+      onInput: live,
+    });
+    qty.addEventListener('input', () => {
+      const v = parseNumber(qty.value);
+      if (v > 0) slider?.setQuantity(v);
+    });
+    live(it.quantity);
     return h(
       'li',
       { class: 'meal-item', dataset: { key: it.key } },
@@ -185,17 +208,17 @@ export async function render(root, rerender, params = {}) {
         'div',
         { class: 'meal-item-top' },
         h('div', { class: 'meal-item-name' }, h('strong', {}, it.name), it.brand ? h('span', { class: 'muted small' }, ` ${it.brand}`) : null),
-        h('span', { class: 'num kcal' }, n ? `${fmtKcal(n.kcal)} kcal` : '–'),
+        kcalEl,
         h('button', { type: 'button', class: 'icon-btn remove', 'aria-label': t('meal.remove', { name: it.name }), onclick: () => { items = items.filter((x) => x.key !== it.key); drawItems(); } }, '×'),
       ),
       kcalIn || h(
         'div',
         { class: 'meal-item-amount' },
-        h('div', { class: 'stepper' }, stepBtn(-1), qty, stepBtn(1)),
+        qty,
         choices.length > 1 ? unit : h('span', { class: 'unit-fixed' }, unitName(it.unit, it.quantity)),
+        sizeEl,
       ),
-      kcalIn ? null : h('div', { class: 'chips quick' }, QUICK_AMOUNTS.map(chip)),
-      sizeNote && !kcalIn ? h('div', { class: 'meal-item-size' }, sizeNote) : null,
+      kcalIn ? null : slider,
     );
   }
 
@@ -205,15 +228,19 @@ export async function render(root, rerender, params = {}) {
     } else {
       list.replaceChildren(h('ul', {}, items.map(itemRow)));
     }
+    drawTotals();
+    saveBtn.textContent = items.length > 1 ? t('meal.saveAll', { n: items.length }) : t('entry.save');
+    saveBtn.disabled = !items.length;
+    saveRow.hidden = items.length < 2 && !usedMealId;
+    if (focusKey) list.querySelector(`[data-key="${focusKey}"] .qty`)?.blur();
+  }
+
+  function drawTotals() {
     const tt = mealTotals(items);
     totalsEl.replaceChildren(
       items.length ? h('strong', {}, t('meal.total', { kcal: fmtKcal(tt.kcal) })) : null,
       items.length ? h('span', { class: 'muted small' }, ` · ${t('ideas.macros', { p: fmtGrams(tt.protein), c: fmtGrams(tt.carbs), f: fmtGrams(tt.fat) })}`) : null,
     );
-    saveBtn.textContent = items.length > 1 ? t('meal.saveAll', { n: items.length }) : t('entry.save');
-    saveBtn.disabled = !items.length;
-    saveRow.hidden = items.length < 2 && !usedMealId;
-    if (focusKey) list.querySelector(`[data-key="${focusKey}"] .qty`)?.blur();
   }
 
   // ---- Save -----------------------------------------------------------------
@@ -316,4 +343,13 @@ function plural(word, q) {
 
 function fracLabel(v) {
   return { 0.25: '¼', 0.5: '½', 1: '1', 1.5: '1½', 2: '2' }[v] || String(v);
+}
+
+function kcalInPlaceholder(it) {
+  return it.caloriesOnly;
+}
+
+function optionLabel(it, unit, q) {
+  if (unit === 'portion' && it.portionLabel) return plural(it.portionLabel, q);
+  return MASS_UNITS.includes(unit) || q === 1 ? t(`unit.${unit}`) : t(`unit.${unit}.n`);
 }

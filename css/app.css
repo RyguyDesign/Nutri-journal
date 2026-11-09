@@ -493,3 +493,16 @@ h2.gap { margin-top: 20px; }
 .portion-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 12px; }
 .portion-controls .chips.quick { margin-top: 0; }
 .empty { margin: 4px 0; }
+
+/* Amount slider: snaps to ¼ ½ ¾ 1 ... */
+.slider-wrap { position: relative; margin: 12px 0 4px; padding-bottom: 22px; }
+.amount-slider { width: 100%; height: 36px; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; touch-action: pan-y; }
+.amount-slider::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: var(--line); }
+.amount-slider::-moz-range-track { height: 8px; border-radius: 4px; background: var(--line); }
+.amount-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -10px; border-radius: 50%; background: var(--accent); border: 3px solid var(--surface); box-shadow: 0 1px 4px rgb(0 0 0 / 0.3); }
+.amount-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); border: 3px solid var(--surface); }
+.slider-ticks { position: absolute; left: 0; right: 0; bottom: 0; height: 20px; font-size: 0.85rem; color: var(--muted); }
+.slider-ticks span { position: absolute; transform: translateX(-50%); }
+.slider-ticks span::before { content: ''; position: absolute; left: 50%; top: -10px; width: 2px; height: 6px; background: var(--muted); opacity: 0.6; }
+.slider-box .slider-wrap { margin-top: 4px; margin-bottom: 12px; }
+.meal-item-amount .qty { width: 72px; flex: 0 0 72px; text-align: center; }

@@ -288,6 +288,7 @@ export default {
   'entry.unitSize.hint': 'A typical amount. Change it if yours is bigger or smaller.',
   'entry.unit': 'Unit',
   'meal.search': 'Food',
+  'meal.amountOf': 'Amount of {name}',
   'meal.more': 'More',
   'meal.less': 'Less',
   'meal.setAmount': 'Set amount to {n}',
