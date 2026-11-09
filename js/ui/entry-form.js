@@ -732,7 +732,7 @@ export async function render(root, rerender, params = {}) {
         'div',
         { class: 'grid2' },
         field('qty', t('entry.amount'), $.qty),
-        field('unit', ' ', $.unit),
+        field('unit', t('entry.unit'), $.unit),
       ),
       field('usize', '', h('div', { class: 'with-unit' }, $.usize, h('span', { class: 'unit', id: 'u-usize' }, 'g')), { hint: ' ', hidden: true }),
       $.result,

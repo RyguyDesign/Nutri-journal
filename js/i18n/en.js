@@ -286,6 +286,7 @@ export default {
   'entry.amount': 'Amount eaten',
   'entry.unitSize': '1 {unit} is about',
   'entry.unitSize.hint': 'A typical amount. Change it if yours is bigger or smaller.',
+  'entry.unit': 'Unit',
   'entry.more': 'More options (cooked or raw, notes)',
   'entry.valuesSummary': 'Nutrition values: {kcal} kcal per {amount}',
   'entry.valuesEmpty': 'Nutrition values: not known yet. Pick a food above, scan it, or tap to enter',
