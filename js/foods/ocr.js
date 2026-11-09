@@ -73,7 +73,8 @@ async function preprocess(file) {
  */
 export async function recognizeLabel(file, onProgress = () => {}) {
   onProgress({ stage: 'loading', progress: 0 });
-  const [T, canvas] = await Promise.all([loadTesseract(), preprocess(file)]);
+  const [T, prepared] = await Promise.all([loadTesseract(), preprocess(file)]);
+  let canvas = prepared;
   let worker;
   try {
     worker = await T.createWorker(['deu', 'eng'], 1, {
@@ -86,6 +87,12 @@ export async function recognizeLabel(file, onProgress = () => {}) {
     throw new Error('download', { cause: err });
   }
   try {
+    // 0. Straighten a tilted photo: Tesseract measures the skew, and the
+    //    rest is read from a straightened copy so value boxes line up.
+    await worker.setParameters({ tessedit_pageseg_mode: '3', tessedit_char_whitelist: '' });
+    const probe = await worker.recognize(canvas, { rotateAuto: true });
+    const angle = probe.data.rotateRadians || 0;
+    if (Math.abs(angle) > 0.005) canvas = rotateCanvas(canvas, angle);
     // 1. Read the table as one block (page mode 6), which keeps each
     //    nutrient's name and value on one line.
     await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1', tessedit_char_whitelist: '' });
@@ -112,7 +119,9 @@ export async function recognizeLabel(file, onProgress = () => {}) {
         };
         const name = words.slice(0, k).map((w) => w.text).join(' ');
         const value = ((await worker.recognize(canvas, { rectangle })).data.text || '').trim();
-        out.push(`${name} ${value}`);
+        // Only keep values that look like an amount; otherwise the plain
+        // reading below is used for this nutrient
+        if (/^<?\s*\d{1,4}([.,]\d{1,3})?\s*(g|mg|9|kj|kcal)?(\s*\/\s*\d{1,4}\s*(kcal)?)?\s*\S{0,2}$/i.test(value) || /kj|kcal/i.test(value)) out.push(`${name} ${value}`);
         onProgress({ stage: 'checking', progress: (i + 1) / lines.length });
       }
       // keep the heading lines ("pro 100 g") from the first reading
@@ -129,4 +138,20 @@ export async function recognizeLabel(file, onProgress = () => {}) {
   } finally {
     worker.terminate();
   }
+}
+
+/** A copy of the canvas rotated by `angle` (radians; Tesseract's correction), on white. */
+function rotateCanvas(src, angle) {
+  const c = document.createElement('canvas');
+  const sin = Math.abs(Math.sin(angle));
+  const cos = Math.abs(Math.cos(angle));
+  c.width = Math.round(src.width * cos + src.height * sin);
+  c.height = Math.round(src.width * sin + src.height * cos);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.translate(c.width / 2, c.height / 2);
+  ctx.rotate(angle);
+  ctx.drawImage(src, -src.width / 2, -src.height / 2);
+  return c;
 }
