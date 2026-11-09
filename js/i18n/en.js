@@ -361,6 +361,7 @@ export default {
   'scan.error': 'Lookup failed. Try again or photograph the label.',
 
   'ocr.loading': 'Preparing the label reader. The first time, this downloads about 15 MB.',
+  'ocr.checking': 'Checking the numbers…',
   'ocr.reading': 'Reading the label… {pct}%',
   'ocr.done': 'Filled in from the label. Check the values against the package, especially any highlighted ones.',
   'ocr.missing': 'Not found on the photo: {list}. Enter these yourself.',

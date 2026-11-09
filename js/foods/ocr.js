@@ -5,6 +5,9 @@
 
 import { parseLabelText } from './label-parse.js';
 
+// Lines that hold a nutrient value (German and English labels)
+const NUTRIENT_LINE = /energ|brennwert|kcal|kj|fett|fat|kohlen|carbo|eiwei|protein|zucker|sugar|salz|salt|ballast|fib/i;
+
 const TESSERACT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
 
 let loader;
@@ -83,17 +86,46 @@ export async function recognizeLabel(file, onProgress = () => {}) {
     throw new Error('download', { cause: err });
   }
   try {
-    // A nutrition table reads best as one block of text (page mode 6),
-    // keeping the gap between name and value. If that misses a value,
-    // read again with automatic layout and append it: the parser takes the
-    // first match for each nutrient, so the block reading wins where it
-    // found something and the second reading fills the gaps.
-    await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
-    const first = (await worker.recognize(canvas)).data.text || '';
-    if (!parseLabelText(first).missing.length) return first;
-    await worker.setParameters({ tessedit_pageseg_mode: '3' });
+    // 1. Read the table as one block (page mode 6), which keeps each
+    //    nutrient's name and value on one line.
+    await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1', tessedit_char_whitelist: '' });
+    const { data } = await worker.recognize(canvas);
+    const first = data.text || '';
+    // 2. Re-read just the value part of each nutrient line, limited to
+    //    digits and units: far fewer misread numbers ("7,5 g" was "79509").
+    const lines = (data.lines || []).filter((ln) => NUTRIENT_LINE.test(ln.text) && (ln.words || []).length >= 2);
+    let refined = '';
+    if (lines.length) {
+      onProgress({ stage: 'checking', progress: 0 });
+      await worker.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789,.<gmkJcal/ ' });
+      const out = [];
+      for (const [i, ln] of lines.entries()) {
+        const words = ln.words;
+        let k = words.findIndex((w, j) => j > 0 && /\d/.test(w.text));
+        if (k < 0) k = words.length - 1;
+        const x0 = Math.max(0, words[k].bbox.x0 - 10);
+        const rectangle = {
+          left: x0,
+          top: Math.max(0, ln.bbox.y0 - 6),
+          width: Math.min(canvas.width - x0, ln.bbox.x1 - x0 + 16),
+          height: Math.min(canvas.height, ln.bbox.y1 - ln.bbox.y0 + 12),
+        };
+        const name = words.slice(0, k).map((w) => w.text).join(' ');
+        const value = ((await worker.recognize(canvas, { rectangle })).data.text || '').trim();
+        out.push(`${name} ${value}`);
+        onProgress({ stage: 'checking', progress: (i + 1) / lines.length });
+      }
+      // keep the heading lines ("pro 100 g") from the first reading
+      refined = `${first.split('\n').filter((l) => !NUTRIENT_LINE.test(l)).join('\n')}\n${out.join('\n')}`;
+    }
+    // The parser takes the first match for each nutrient: refined values
+    // first, then the plain reading for anything the refinement missed.
+    const combined = refined ? `${refined}\n${first}` : first;
+    if (!parseLabelText(combined).missing.length) return combined;
+    // 3. Still missing something: read once more with automatic layout.
+    await worker.setParameters({ tessedit_pageseg_mode: '3', tessedit_char_whitelist: '' });
     const second = (await worker.recognize(canvas)).data.text || '';
-    return `${first}\n${second}`;
+    return `${combined}\n${second}`;
   } finally {
     worker.terminate();
   }

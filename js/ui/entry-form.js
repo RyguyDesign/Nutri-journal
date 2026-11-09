@@ -457,6 +457,7 @@ export async function render(root, rerender, params = {}) {
     try {
       const text = await recognizeLabel(file, ({ stage, progress }) => {
         if (stage === 'reading') setStatus(t('ocr.reading', { pct: Math.round(progress * 100) }));
+        else if (stage === 'checking') setStatus(t('ocr.checking'));
       });
       const r = parseLabelText(text);
       const found = NUTRIENTS.filter((k) => r.values[k] !== undefined);
