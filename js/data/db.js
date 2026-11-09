@@ -30,13 +30,33 @@ export function openDB() {
       return;
     }
     const req = indexedDB.open(DB_NAME, DB_VERSION);
+    // An older version of the app open in another tab can hold the database
+    // and stall an upgrade indefinitely (background tabs may never answer).
+    // Give up after a few seconds with an explanation instead of hanging.
+    const timer = setTimeout(() => {
+      dbPromise = null;
+      reject(new Error('The app is open in another tab with an older version. Close all other Nutri-journal tabs, then reload this one.'));
+    }, 5000);
     req.onupgradeneeded = (e) => {
       const db = req.result;
       for (let v = e.oldVersion; v < DB_VERSION; v++) MIGRATIONS[v](db, req.transaction);
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-    req.onblocked = () => reject(new Error('Database upgrade blocked. Close other tabs of this app and reload.'));
+    req.onsuccess = () => {
+      clearTimeout(timer);
+      const db = req.result;
+      // When a newer version of the app needs to upgrade the database,
+      // let go of it and reload into the new version.
+      db.onversionchange = () => {
+        db.close();
+        location.reload();
+      };
+      resolve(db);
+    };
+    req.onerror = () => {
+      clearTimeout(timer);
+      dbPromise = null;
+      reject(req.error);
+    };
   });
   return dbPromise;
 }
