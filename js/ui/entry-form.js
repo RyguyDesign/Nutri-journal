@@ -9,6 +9,7 @@ import { parseLabelText } from '../foods/label-parse.js';
 import { recognizeLabel } from '../foods/ocr.js';
 import { scanBarcode } from './scanner.js';
 import { searchEveryday } from '../foods/everyday.js';
+import { MEASURE_UNITS, measureSize } from '../core/measures.js';
 import { searchProducts } from '../foods/off.js';
 import { getSelectedDate, goBack, takePendingFood } from './state.js';
 
@@ -76,7 +77,9 @@ export async function render(root, rerender, params = {}) {
   $.file = h('input', { type: 'file', accept: 'image/*', capture: 'environment', hidden: true });
 
   // ---- Helpers -------------------------------------------------------------
-  const unitOptions = () => (s.mode === 'per100' ? [s.base, 'portion', 'piece'] : UNITS);
+  const unitOptions = () => (s.mode === 'per100' ? [s.base, ...MEASURE_UNITS, 'piece', 'portion'] : UNITS);
+  /** Typical weight of one of `unit` for the food in the form. */
+  const sizeOf = (unit) => (MEASURE_UNITS.includes(unit) ? measureSize(unit, $.name.value, s.measures) : s.servingSize);
 
   function refreshUnits(want) {
     const cur = want ?? $.unit.value;
@@ -125,7 +128,7 @@ export async function render(root, rerender, params = {}) {
     s.mode = mode;
     $.modePer100.checked = mode === 'per100';
     $.modeTotal.checked = mode === 'total';
-    root.querySelector('#f-base').hidden = mode !== 'per100';
+    root.querySelector('#f-base').hidden = true; // switched from the values heading instead
     refreshUnits();
   }
 
@@ -198,7 +201,25 @@ export async function render(root, rerender, params = {}) {
     root.querySelector('#h-usize').textContent = t('entry.unitSize.hint', { base: s.base });
     root.querySelector('#u-usize').textContent = s.base;
     const qtyTxt = Number.isFinite(d.quantity) ? fmtNumber(d.quantity, 2) : '…';
-    $.valuesHead.textContent = s.mode === 'per100' ? t('entry.values.per100', { unit: s.base }) : t('entry.values.total', { qty: qtyTxt, unit: unitLabel(d.unit, d.quantity) });
+    if (s.mode === 'per100') {
+      const other = s.base === 'g' ? 'ml' : 'g';
+      $.valuesHead.replaceChildren(
+        t('entry.values.per100', { unit: s.base }),
+        ' ',
+        h('button', {
+          type: 'button',
+          class: 'link-btn small',
+          onclick: () => {
+            s.base = other;
+            $.base.value = other;
+            refreshUnits(MASS_UNITS.includes($.unit.value) ? other : $.unit.value);
+            update();
+          },
+        }, t('entry.useBase', { unit: other })),
+      );
+    } else {
+      $.valuesHead.textContent = t('entry.values.total', { qty: qtyTxt, unit: unitLabel(d.unit, d.quantity) });
+    }
     for (const k of NUTRIENTS) root.querySelector(`#u-${k}`).textContent = k === 'kcal' ? 'kcal' : 'g';
 
     const v = validateEntry({ ...d, name: d.name || 'x', meal: d.meal, date: d.date, time: d.time });
@@ -230,6 +251,7 @@ export async function render(root, rerender, params = {}) {
     s.brand = f.brand || '';
     s.barcode = f.barcode || s.barcode;
     s.servingSize = f.servingSize;
+    s.measures = f.measures || null;
     s.source = source || f.source || 'manual';
     s.valuesEdited = false;
     $.prep.value = f.prep || '';
@@ -238,7 +260,12 @@ export async function render(root, rerender, params = {}) {
       $.base.value = s.base;
       setMode('per100');
       setValues(f.per);
-      if (f.servingSize > 0) {
+      if (MEASURE_UNITS.includes(f.lastUnit)) {
+        // Opens the way it was measured last time, e.g. "1 tablespoon"
+        refreshUnits(f.lastUnit);
+        $.qty.value = '1';
+        $.usize.value = fmtInput(sizeOf(f.lastUnit));
+      } else if (f.servingSize > 0) {
         refreshUnits('portion');
         $.qty.value = '1';
         $.usize.value = fmtInput(f.servingSize);
@@ -259,11 +286,17 @@ export async function render(root, rerender, params = {}) {
 
   /** Fill the form from a built-in everyday food (typical values). */
   function applyTypical(c) {
-    applyFood({ name: c.name, per: c.per, prep: c.prep }, { source: 'typical' });
+    applyFood({ name: c.name, per: c.per, prep: c.prep, measures: c.measures }, { source: 'typical' });
     const p = c.portion;
     if (p.unit === 'g') {
       refreshUnits(c.per.unit);
       $.qty.value = String(p.g);
+      setStatus(null);
+    } else if (MEASURE_UNITS.includes(p.unit)) {
+      s.measures = { ...(s.measures || {}), [p.unit]: p.g };
+      refreshUnits(p.unit);
+      $.qty.value = '1';
+      $.usize.value = String(p.g);
       setStatus(null);
     } else {
       refreshUnits(p.unit);
@@ -539,7 +572,8 @@ export async function render(root, rerender, params = {}) {
       // otherwise "100 g" would be read as "100 pieces".
       const fromMass = MASS_UNITS.includes(prevUnit);
       const toMass = MASS_UNITS.includes($.unit.value);
-      const size = parseNumber($.usize.value) > 0 ? parseNumber($.usize.value) : s.servingSize;
+      const countUnit = fromMass ? $.unit.value : prevUnit;
+      const size = MEASURE_UNITS.includes(countUnit) ? sizeOf(countUnit) : parseNumber($.usize.value) > 0 ? parseNumber($.usize.value) : s.servingSize;
       const q = parseNumber($.qty.value);
       if (fromMass !== toMass && size > 0 && q > 0) {
         $.qty.value = fmtInput(fromMass ? q / size : q * size);
@@ -554,9 +588,15 @@ export async function render(root, rerender, params = {}) {
     if (s.mode === 'per100' && prevUnit) {
       const fromMass = MASS_UNITS.includes(prevUnit);
       const toMass = MASS_UNITS.includes($.unit.value);
+      if (!toMass) {
+        // A spoon, cup or piece: fill in what one typically weighs
+        if (fromMass) $.qty.value = '1';
+        const size = sizeOf($.unit.value);
+        $.usize.value = size > 0 ? fmtInput(size) : '';
+        if (!(size > 0)) $.usize.focus();
+      }
       if (fromMass && !toMass) {
-        $.qty.value = '1';
-        if (!$.usize.value && s.servingSize) $.usize.value = fmtInput(s.servingSize);
+        // handled above
       } else if (!fromMass && toMass) {
         const grams = parseNumber($.qty.value) * parseNumber($.usize.value);
         $.qty.value = grams > 0 ? fmtInput(grams) : '100';
@@ -611,7 +651,9 @@ export async function render(root, rerender, params = {}) {
           brand: s.brand,
           barcode: s.barcode,
           per,
-          servingSize: d.unitSize || s.servingSize,
+          servingSize: ['piece', 'portion'].includes(d.unit) && d.unitSize ? d.unitSize : s.servingSize,
+          measures: MEASURE_UNITS.includes(d.unit) && d.unitSize ? { [d.unit]: d.unitSize } : undefined,
+          lastUnit: d.unit,
           prep: d.prep,
           source,
         }, { countUse: !editing });

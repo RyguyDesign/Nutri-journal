@@ -20,12 +20,15 @@ const fromCatalog = (f) => ({
   hay: `${f.name} ${f.short} ${f.id.replace(/-/g, ' ')}`.toLowerCase(),
 });
 
+// Portions described as a spoon, cup, handful or slice use that measure
+const MEASURE_OF = { teaspoon: 'tsp', tablespoon: 'tbsp', cup: 'cup', handful: 'handful', slice: 'slice' };
 const fromCommon = (f) => ({
   id: f.id,
   name: f.name,
   prep: '',
   per: { amount: 100, unit: f.ml ? 'ml' : 'g', ...f.per },
-  portion: { g: f.g, unit: f.u, label: f.label },
+  portion: MEASURE_OF[f.label] ? { g: f.g, unit: MEASURE_OF[f.label], label: f.label } : { g: f.g, unit: f.u, label: f.label },
+  measures: MEASURE_OF[f.label] ? { [MEASURE_OF[f.label]]: f.g } : null,
   alc: f.alc,
   hay: `${f.name} ${f.aka}`.toLowerCase(),
 });

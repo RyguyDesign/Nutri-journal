@@ -455,3 +455,5 @@ h2.gap { margin-top: 20px; }
 
 .chip[data-level='sometimes'] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
 .chip .level { font-weight: 400; font-size: 0.85em; }
+
+.values-head .link-btn.small { font-size: 0.85rem; font-weight: 500; margin-left: 6px; }

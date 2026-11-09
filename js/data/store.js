@@ -192,6 +192,10 @@ export async function rememberFood(f, { countUse = true } = {}) {
     barcode: f.barcode || existing?.barcode || '',
     per: f.per,
     servingSize: f.servingSize ?? existing?.servingSize,
+    // Household measures used for this food ({ tbsp: 16 }) and the last
+    // unit used, so next time it opens as "1 tablespoon"
+    measures: { ...(existing?.measures || {}), ...(f.measures || {}) },
+    lastUnit: f.lastUnit || existing?.lastUnit,
     prep: f.prep || '',
     source: f.source,
     id: existing?.id || newId(),

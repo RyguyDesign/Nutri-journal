@@ -90,3 +90,16 @@ test('barcode format', () => {
   assert.equal(isValidBarcode('12345'), false);
   assert.equal(isValidBarcode('40084004016a1'), false);
 });
+
+test('household measures: typical weights, food-specific where known', async () => {
+  const { measureSize } = await import('../js/core/measures.js');
+  assert.equal(measureSize('tbsp', 'Frischkäse Kräuter'), 16);
+  assert.equal(measureSize('tbsp', 'Cream cheese'), 16);
+  assert.equal(measureSize('tsp', 'Sugar'), 4);
+  assert.equal(measureSize('tbsp', 'Rolled oats'), 6);
+  assert.equal(measureSize('tbsp', 'Something unknown'), 15);
+  assert.equal(measureSize('tbsp', 'Cream cheese', { tbsp: 20 }), 20);
+  const { computeEntry } = await import('../js/core/entry.js');
+  const n = computeEntry({ per: { amount: 100, unit: 'g', kcal: 247, protein: 6.5, carbs: 3, fat: 23 }, quantity: 2, unit: 'tbsp', unitSize: 16 });
+  assert.ok(Math.abs(n.kcal - 79) < 1);
+});

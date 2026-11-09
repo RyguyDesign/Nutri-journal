@@ -11,7 +11,7 @@
 import { scaleNutrients, macroCalories, NUTRIENTS } from './calc.js';
 
 export const MEALS = ['breakfast', 'lunch', 'dinner', 'snacks', 'drinks'];
-export const UNITS = ['g', 'ml', 'piece', 'portion'];
+export const UNITS = ['g', 'ml', 'tsp', 'tbsp', 'cup', 'handful', 'slice', 'piece', 'portion'];
 export const MASS_UNITS = ['g', 'ml'];
 export const PREPARATIONS = ['', 'raw', 'cooked'];
 export const SOURCES = ['manual', 'label', 'database', 'typical', 'ai'];
