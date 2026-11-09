@@ -86,7 +86,10 @@ export async function searchProducts(query, { fetchImpl = globalThis.fetch, time
     return mapSearchResults(json, limit);
   } catch (err) {
     if (err.name === 'AbortError') throw new Error('timeout');
-    if (err instanceof TypeError) throw new Error('offline');
+    // When the search limit is hit, the reply is blocked by the browser and
+    // looks like a network error; only call it "offline" if the phone is.
+    if (err instanceof TypeError) throw new Error(globalThis.navigator?.onLine === false ? 'offline' : 'busy');
+    if (err.message === 'http429' || err.message === 'http503') throw new Error('busy');
     throw err;
   } finally {
     clearTimeout(timer);

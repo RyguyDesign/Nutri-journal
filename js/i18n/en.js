@@ -157,6 +157,7 @@ export default {
   'entry.online.searching': 'Searching Open Food Facts for “{q}”…',
   'entry.online.head': 'Online (Open Food Facts)',
   'entry.online.none': 'Nothing found online for “{q}”. Try a shorter or different name, or enter just the calories.',
+  'entry.online.busy': 'The online food database is busy (it allows about 10 searches a minute). Try again in a minute, or pick a similar everyday food.',
   'entry.online.error': 'The online search didn’t work. Try again in a minute.',
   'entry.online.missing': 'Missing online: {list}. Left blank, they count as 0.',
 

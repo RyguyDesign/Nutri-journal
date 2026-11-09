@@ -286,7 +286,7 @@ export async function render(root, rerender, params = {}) {
       results = await searchProducts(q);
     } catch (err) {
       if (token !== suggestToken) return;
-      $.suggest.replaceChildren(h('p', { class: 'warn small' }, t({ offline: 'scan.offline', timeout: 'scan.timeout' }[err.message] || 'entry.online.error')));
+      $.suggest.replaceChildren(h('p', { class: 'warn small' }, t({ offline: 'scan.offline', timeout: 'scan.timeout', busy: 'entry.online.busy' }[err.message] || 'entry.online.error')));
       return;
     }
     if (token !== suggestToken) return;
