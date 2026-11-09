@@ -1,0 +1,10 @@
+{
+  "name": "nutri-journal",
+  "private": true,
+  "type": "module",
+  "description": "Personal nutrition journal and smart calorie tracker. No build step, no runtime dependencies.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python3 -m http.server 8080"
+  }
+}
