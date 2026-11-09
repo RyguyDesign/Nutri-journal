@@ -1,0 +1,612 @@
+// Recipe library for meal suggestions. Real dishes with seasoning and
+// proper steps, written for one person. Portions are scaled to fit what is
+// left of the day (see engine.js); seasonings and anything with `fixed`
+// stay as written.
+//
+// Ingredient: [id, grams, opts]
+//   id     a food from catalog.js, or one of EXTRA below
+//   grams  amount for one serving as written
+//   opts   { show: 'text' }  shown instead of grams ("1 tbsp", "to taste")
+//          { fixed: true }   not scaled (oil, spices, a lemon wedge)
+//          { optional: true } shown as optional, not counted
+// Methods: airfryer, pan (stove top), oven, grill, stirfry, stew, nocook.
+
+// Small extras not in the main catalogue, typical values per 100 g/ml.
+const x = (name, kcal, protein, carbs, fat, flags = []) => ({ name, per: { kcal, protein, carbs, fat }, flags, extra: true });
+export const EXTRA = {
+  onion: x('Onion', 40, 1.1, 7.6, 0.1),
+  'red-onion': x('Red onion', 40, 1.1, 7.6, 0.1),
+  garlic: x('Garlic', 149, 6.4, 30, 0.5),
+  ginger: x('Fresh ginger', 80, 1.8, 15, 0.8),
+  lemon: x('Lemon juice', 22, 0.4, 7, 0.2),
+  'soy-sauce': x('Soy sauce', 53, 8, 4.9, 0.6, ['soy', 'gluten']),
+  passata: x('Tomato passata', 32, 1.4, 5, 0.2),
+  'chopped-tomatoes': x('Chopped tomatoes (tin)', 21, 1.2, 3.5, 0.2),
+  'tomato-paste': x('Tomato paste', 82, 4.3, 16, 0.5),
+  stock: x('Vegetable stock', 5, 0.5, 0.5, 0.2),
+  'coconut-milk': x('Light coconut milk', 75, 0.6, 2.7, 6.9),
+  'curry-paste': x('Curry paste', 120, 2, 10, 8),
+  honey: x('Honey', 304, 0.3, 76, 0, ['honey']),
+  mustard: x('Mustard', 66, 4, 5, 4),
+  balsamic: x('Balsamic vinegar', 88, 0.5, 17, 0),
+  'sesame-oil': x('Sesame oil', 884, 0, 0, 100, ['sesame']),
+  'kidney-beans': x('Kidney beans (tin, drained)', 110, 7.5, 15, 0.5),
+  'red-lentils': x('Red lentils (dry)', 330, 24, 50, 1.5),
+  'oat-drink': x('Oat drink', 46, 0.3, 6.7, 1.5),
+  'soy-yogurt': x('Soy yogurt', 46, 4, 2, 2.5, ['soy']),
+  whey: x('Whey protein powder', 380, 75, 8, 6, ['dairy']),
+  pesto: x('Pesto', 450, 5, 6, 45, ['dairy', 'nuts']),
+  'pickled-cucumber': x('Gherkins', 15, 0.5, 2.5, 0.2),
+  chives: x('Chives', 0, 0, 0, 0),
+  dill: x('Dill', 0, 0, 0, 0),
+  parsley: x('Parsley', 0, 0, 0, 0),
+  basil: x('Basil', 0, 0, 0, 0),
+  rosemary: x('Rosemary', 0, 0, 0, 0),
+  paprika: x('Smoked paprika', 0, 0, 0, 0),
+  cumin: x('Ground cumin', 0, 0, 0, 0),
+  'chili-flakes': x('Chili flakes', 0, 0, 0, 0),
+  cinnamon: x('Cinnamon', 0, 0, 0, 0),
+  oregano: x('Dried oregano', 0, 0, 0, 0),
+  'italian-herbs': x('Italian herbs', 0, 0, 0, 0),
+  'garlic-powder': x('Garlic powder', 0, 0, 0, 0),
+  turmeric: x('Turmeric', 0, 0, 0, 0),
+  'curry-powder': x('Curry powder', 0, 0, 0, 0),
+  'salt-pepper': x('Salt and pepper', 0, 0, 0, 0),
+};
+
+const T = (show) => ({ show, fixed: true });
+const SP = ['salt-pepper', 0, T('to taste')];
+const OIL = (g = 10, show = '1 tbsp') => ['olive-oil', g, T(show)];
+
+const r = (id, title, meta, ingredients, steps) => ({ id, title, ...meta, ingredients, steps });
+
+export const RECIPES = [
+  // ======================= BREAKFAST =======================
+  r('skyr-berry-bowl', 'Skyr bowl with berries, oats and almonds', { meals: ['breakfast', 'snacks'], minutes: 5, method: 'nocook', cuisine: 'german' }, [
+    ['skyr', 250], ['berries', 100], ['oats', 25], ['almonds', 15], ['honey', 7, T('1 tsp')], ['cinnamon', 0, T('a pinch')],
+  ], [
+    'Spoon the skyr into a bowl and stir in the cinnamon.',
+    'Toast the oats in a dry pan for 2 minutes until they smell nutty (optional, but it adds crunch).',
+    'Top the skyr with the berries, oats and roughly chopped almonds.',
+    'Drizzle over the honey.',
+  ]),
+  r('overnight-oats-apple', 'Overnight oats with apple, cinnamon and walnuts', { meals: ['breakfast'], minutes: 5, method: 'nocook', cuisine: '' }, [
+    ['oats', 50], ['milk', 150], ['yogurt', 60], ['apple', 90], ['walnuts', 10], ['cinnamon', 0, T('½ tsp')],
+  ], [
+    'The evening before: stir the oats, milk, yogurt and cinnamon together in a jar or bowl.',
+    'Grate in half of the apple, stir, cover and refrigerate overnight.',
+    'In the morning, stir; add a splash of milk if it is too thick.',
+    'Top with the rest of the apple, diced, and the chopped walnuts.',
+  ]),
+  r('scrambled-eggs-rye', 'Scrambled eggs on rye toast with tomatoes and chives', { meals: ['breakfast', 'lunch'], minutes: 10, method: 'pan', cuisine: 'german' }, [
+    ['eggs', 180], ['butter', 5, T('1 tsp')], ['rye-bread', 50], ['tomatoes', 120], ['chives', 0, T('a small bunch')], SP,
+  ], [
+    'Whisk the eggs with a pinch of salt and pepper.',
+    'Toast the rye bread.',
+    'Melt the butter in a non-stick pan over low–medium heat. Add the eggs and stir slowly with a spatula, pulling the set egg to the middle.',
+    'Take the pan off the heat while the eggs are still slightly glossy; they finish cooking in the pan.',
+    'Spoon the eggs onto the toast, scatter over chopped chives and serve with the sliced tomatoes.',
+  ]),
+  r('spinach-feta-omelette', 'Spinach and feta omelette', { meals: ['breakfast', 'lunch', 'dinner'], minutes: 10, method: 'pan', cuisine: 'mediterranean' }, [
+    ['eggs', 180], ['spinach', 60], ['feta', 30], ['butter', 5, T('1 tsp')], ['chili-flakes', 0, T('a pinch')], SP,
+  ], [
+    'Whisk the eggs with salt and pepper.',
+    'Melt the butter in a frying pan over medium heat and wilt the spinach for 1 minute.',
+    'Pour in the eggs and tilt the pan so they cover the base. Cook for 2 minutes, lifting the edges so raw egg runs underneath.',
+    'Crumble the feta over one half, sprinkle with chili flakes, fold the omelette over and cook for 1 more minute.',
+  ]),
+  r('airfryer-egg-muffins', 'Air-fryer egg muffins with peppers, spinach and cheese', { meals: ['breakfast', 'snacks'], minutes: 15, method: 'airfryer', cuisine: '' }, [
+    ['eggs', 180], ['peppers', 60], ['spinach', 30], ['gouda', 25], ['chives', 0, T('a few')], SP,
+  ], [
+    'Heat the air fryer to 160 °C.',
+    'Dice the pepper, chop the spinach and grate the cheese.',
+    'Whisk the eggs with salt and pepper, then stir in the vegetables, chives and half the cheese.',
+    'Pour into 4 silicone muffin cups and top with the rest of the cheese.',
+    'Air-fry for 10–12 minutes until puffed and set in the middle.',
+  ]),
+  r('peanut-banana-porridge', 'Porridge with banana and peanut butter', { meals: ['breakfast'], minutes: 8, method: 'pan', cuisine: '' }, [
+    ['oats', 50], ['milk', 250], ['banana', 60], ['peanut-butter', 15], ['cinnamon', 0, T('a pinch')],
+  ], [
+    'Put the oats and milk in a small pan with the cinnamon.',
+    'Bring to a simmer and cook for 4–5 minutes, stirring often, until creamy.',
+    'Slice the banana.',
+    'Pour into a bowl, top with the banana and spoon over the peanut butter.',
+  ]),
+  r('tofu-scramble', 'Tofu scramble with mushrooms and spinach on toast', { meals: ['breakfast', 'lunch'], minutes: 12, method: 'pan', cuisine: '' }, [
+    ['tofu', 150], ['mushrooms', 80], ['spinach', 50], OIL(5, '1 tsp'), ['turmeric', 0, T('¼ tsp')], ['soy-sauce', 5, T('1 tsp')], ['wholemeal-bread', 50], SP,
+  ], [
+    'Slice the mushrooms. Crumble the tofu into rough pieces with your fingers.',
+    'Heat the oil in a frying pan and fry the mushrooms for 3–4 minutes until golden.',
+    'Add the tofu, turmeric, soy sauce and pepper and fry for 3 minutes, stirring.',
+    'Stir in the spinach until wilted.',
+    'Toast the bread and pile the scramble on top.',
+  ]),
+  r('salmon-rye', 'Rye bread with cottage cheese, smoked salmon and cucumber', { meals: ['breakfast', 'lunch'], minutes: 5, method: 'nocook', cuisine: 'german' }, [
+    ['rye-bread', 50], ['cottage', 100], ['smoked-salmon', 50], ['cucumber', 60], ['dill', 0, T('a few sprigs')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Slice the cucumber thinly.',
+    'Spread the cottage cheese on the rye bread and season with pepper.',
+    'Layer the cucumber and smoked salmon on top.',
+    'Finish with chopped dill and a squeeze of lemon.',
+  ]),
+  r('greek-yogurt-pear', 'Greek yogurt with pear, walnuts and honey', { meals: ['breakfast', 'snacks'], minutes: 3, method: 'nocook', cuisine: 'mediterranean' }, [
+    ['greek-yogurt', 150], ['pear', 120], ['walnuts', 15], ['honey', 7, T('1 tsp')], ['cinnamon', 0, T('a pinch')],
+  ], [
+    'Dice the pear.',
+    'Spoon the yogurt into a bowl and top with the pear and broken walnuts.',
+    'Drizzle with honey and dust with cinnamon.',
+  ]),
+  r('avocado-egg-toast', 'Avocado toast with a poached egg', { meals: ['breakfast', 'lunch'], minutes: 10, method: 'pan', cuisine: '' }, [
+    ['wholemeal-bread', 50], ['avocado', 60], ['eggs', 60], ['lemon', 5, T('a squeeze')], ['chili-flakes', 0, T('a pinch')], SP,
+  ], [
+    'Bring a small pan of water to a gentle simmer.',
+    'Crack the egg into a cup and slide it into the water. Poach for 3 minutes, then lift out with a slotted spoon.',
+    'Meanwhile toast the bread and mash the avocado with lemon juice, salt and pepper.',
+    'Spread the avocado on the toast, top with the egg and sprinkle with chili flakes.',
+  ]),
+  r('ham-eggs-mushrooms', 'Fried eggs with ham and garlic mushrooms', { meals: ['breakfast', 'lunch'], minutes: 10, method: 'pan', cuisine: 'german' }, [
+    ['eggs', 120], ['ham', 50], ['mushrooms', 100], ['butter', 7, T('½ tbsp')], ['garlic', 3, T('1 clove')], ['parsley', 0, T('a little')], SP,
+  ], [
+    'Slice the mushrooms and finely chop the garlic.',
+    'Melt half the butter in a frying pan and fry the mushrooms over high heat for 4 minutes until browned. Add the garlic for the last minute, season and move to a plate.',
+    'Add the rest of the butter, lay in the ham to warm for 30 seconds each side, then push it aside.',
+    'Fry the eggs for 2–3 minutes until the whites are set.',
+    'Serve with the mushrooms and scatter over parsley.',
+  ]),
+  r('vegan-overnight-oats', 'Overnight oats with berries and almonds (vegan)', { meals: ['breakfast'], minutes: 5, method: 'nocook', cuisine: '' }, [
+    ['oats', 50], ['oat-drink', 150], ['soy-yogurt', 75], ['berries', 80], ['almonds', 15], ['cinnamon', 0, T('a pinch')],
+  ], [
+    'The evening before: mix the oats, oat drink, soy yogurt and cinnamon in a jar.',
+    'Stir in half the berries, cover and refrigerate overnight.',
+    'In the morning, stir and top with the rest of the berries and chopped almonds.',
+  ]),
+
+  // ======================= AIR FRYER =======================
+  r('af-paprika-chicken', 'Air-fryer paprika chicken thighs with peppers and garlic yogurt', { meals: ['lunch', 'dinner'], minutes: 25, method: 'airfryer', cuisine: 'mediterranean' }, [
+    ['chicken-thigh', 180], ['peppers', 200], OIL(), ['paprika', 0, T('1 tsp')], ['garlic-powder', 0, T('½ tsp')], ['greek-yogurt', 60], ['garlic', 2, T('½ clove')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Heat the air fryer to 200 °C.',
+    'Toss the chicken with half the oil, the paprika, garlic powder, salt and pepper.',
+    'Cut the peppers into strips and toss with the rest of the oil and a pinch of salt.',
+    'Air-fry the chicken for 18–20 minutes, turning halfway. Add the peppers to the basket for the last 10 minutes.',
+    'Stir the grated garlic and lemon juice into the yogurt with a pinch of salt.',
+    'Serve the chicken on the peppers with the garlic yogurt.',
+  ]),
+  r('af-salmon-potatoes', 'Air-fryer salmon with lemon-dill potatoes and green beans', { meals: ['lunch', 'dinner'], minutes: 25, method: 'airfryer', cuisine: 'german' }, [
+    ['salmon', 130], ['potatoes', 200], ['green-beans', 120], OIL(), ['lemon', 10, T('½ lemon')], ['dill', 0, T('a small bunch')], SP,
+  ], [
+    'Heat the air fryer to 200 °C. Cut the potatoes into 2 cm cubes.',
+    'Toss the potatoes with half the oil and salt and air-fry for 12 minutes, shaking once.',
+    'Rub the salmon with the rest of the oil, salt and pepper. Push the potatoes to one side and add the salmon, skin down, and the green beans.',
+    'Air-fry for another 8–10 minutes until the salmon flakes easily.',
+    'Toss the potatoes with lemon juice and chopped dill and serve with the salmon and beans.',
+  ]),
+  r('af-chicken-sweet-potato', 'Air-fryer chicken breast with sweet potato wedges and broccoli', { meals: ['lunch', 'dinner'], minutes: 25, method: 'airfryer', cuisine: '' }, [
+    ['chicken', 150], ['sweet-potato', 200], ['broccoli', 150], OIL(), ['paprika', 0, T('1 tsp')], ['oregano', 0, T('½ tsp')], SP,
+  ], [
+    'Heat the air fryer to 200 °C. Cut the sweet potato into wedges and toss with half the oil, paprika and salt.',
+    'Air-fry the wedges for 10 minutes.',
+    'Butterfly or flatten the chicken so it cooks evenly, and rub with the rest of the oil, oregano, salt and pepper.',
+    'Add the chicken to the basket and cook for 8 minutes; add the broccoli florets for the last 5 minutes. The chicken is done when the juices run clear.',
+    'Rest the chicken for 2 minutes, slice and serve with the wedges and broccoli.',
+  ]),
+  r('af-halloumi-chickpeas', 'Air-fryer halloumi with spiced chickpeas, tomatoes and spinach', { meals: ['lunch', 'dinner'], minutes: 20, method: 'airfryer', cuisine: 'middle-eastern' }, [
+    ['halloumi', 80], ['chickpeas', 150], ['tomatoes', 150], ['spinach', 60], OIL(), ['cumin', 0, T('1 tsp')], ['paprika', 0, T('½ tsp')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Heat the air fryer to 200 °C. Drain and pat dry the chickpeas.',
+    'Toss the chickpeas with half the oil, cumin, paprika and salt. Air-fry for 12 minutes until crisp, shaking once.',
+    'Slice the halloumi, brush with the rest of the oil and add to the basket with the halved tomatoes for the last 6 minutes.',
+    'Put the spinach on a plate, add the chickpeas, tomatoes and halloumi, and squeeze over the lemon.',
+  ]),
+  r('af-tofu-broccoli-rice', 'Crispy air-fryer tofu with sesame broccoli and rice', { meals: ['lunch', 'dinner'], minutes: 25, method: 'airfryer', cuisine: 'asian' }, [
+    ['tofu', 180], ['broccoli', 150], ['rice', 150], ['soy-sauce', 15, T('1 tbsp')], ['sesame-oil', 5, T('1 tsp')], ['garlic', 3, T('1 clove')], ['ginger', 5, T('1 cm')], ['chili-flakes', 0, T('a pinch')],
+  ], [
+    'Cook the rice (or warm a ready-cooked pouch).',
+    'Press the tofu between kitchen paper for 5 minutes, then cut into cubes. Heat the air fryer to 200 °C.',
+    'Toss the tofu with half the soy sauce and air-fry for 12–15 minutes until crisp, shaking twice.',
+    'Add the broccoli florets for the last 6 minutes.',
+    'Mix the rest of the soy sauce with the sesame oil, grated garlic, ginger and chili.',
+    'Toss the tofu and broccoli in the sauce and serve over the rice.',
+  ]),
+  r('af-pork-mustard', 'Air-fryer mustard pork chop with roast carrots and potatoes', { meals: ['lunch', 'dinner'], minutes: 25, method: 'airfryer', cuisine: 'german' }, [
+    ['pork-chop', 160], ['potatoes', 180], ['carrots', 150], OIL(), ['mustard', 10, T('2 tsp')], ['rosemary', 0, T('a sprig')], SP,
+  ], [
+    'Heat the air fryer to 200 °C. Cut the potatoes and carrots into similar-sized chunks and toss with the oil, chopped rosemary and salt.',
+    'Air-fry the vegetables for 12 minutes, shaking once.',
+    'Season the pork chop with salt and pepper and spread the mustard over both sides.',
+    'Add the chop to the basket and air-fry for 10–12 minutes, turning halfway, until just cooked through.',
+    'Rest for 3 minutes before serving with the vegetables.',
+  ]),
+  r('af-parmesan-cod', 'Air-fryer parmesan-crusted cod with courgette', { meals: ['lunch', 'dinner'], minutes: 20, method: 'airfryer', cuisine: 'italian' }, [
+    ['cod', 180], ['parmesan', 15], ['almonds', 10], ['zucchini', 200], OIL(), ['lemon', 5, T('lemon wedges')], ['italian-herbs', 0, T('1 tsp')], SP,
+  ], [
+    'Heat the air fryer to 200 °C.',
+    'Finely grate the parmesan and chop the almonds; mix with the herbs and pepper.',
+    'Cut the courgette into thick half-moons, toss with half the oil and salt, and air-fry for 6 minutes.',
+    'Brush the cod with the rest of the oil and press the parmesan mix on top.',
+    'Add the cod to the basket and air-fry for 8–10 minutes until the crust is golden and the fish flakes.',
+    'Serve with the courgette and lemon wedges.',
+  ]),
+  r('af-turkey-meatballs', 'Air-fryer turkey meatballs in tomato sauce with pasta', { meals: ['lunch', 'dinner'], minutes: 25, method: 'airfryer', cuisine: 'italian' }, [
+    ['turkey-mince', 150], ['parmesan', 10], ['passata', 200], ['pasta', 180], ['garlic', 3, T('1 clove')], ['basil', 0, T('a few leaves')], ['italian-herbs', 0, T('1 tsp')], SP,
+  ], [
+    'Heat the air fryer to 190 °C and put the pasta on to cook.',
+    'Mix the turkey mince with the grated parmesan, herbs, salt and pepper. Roll into 8 small balls.',
+    'Air-fry the meatballs for 10–12 minutes, shaking once, until browned and cooked through.',
+    'Meanwhile warm the passata with the crushed garlic in a small pan for 5 minutes and season.',
+    'Add the meatballs to the sauce, toss with the drained pasta and top with basil.',
+  ]),
+  r('af-lamb-chops-feta', 'Air-fryer rosemary lamb chops with cucumber and feta salad', { meals: ['lunch', 'dinner'], minutes: 20, method: 'airfryer', cuisine: 'mediterranean' }, [
+    ['lamb-chops', 160], ['cucumber', 150], ['tomatoes', 120], ['feta', 30], ['red-onion', 20], OIL(), ['rosemary', 0, T('1 sprig')], ['garlic', 3, T('1 clove')], ['lemon', 5, T('a squeeze')], ['oregano', 0, T('a pinch')], SP,
+  ], [
+    'Heat the air fryer to 200 °C.',
+    'Rub the lamb chops with half the oil, chopped rosemary, crushed garlic, salt and pepper.',
+    'Air-fry for 8–10 minutes, turning once, for pink in the middle. Rest for 3 minutes.',
+    'Meanwhile chop the cucumber and tomatoes, slice the onion thinly and crumble the feta.',
+    'Dress the salad with the rest of the oil, lemon and oregano and serve with the chops.',
+  ]),
+  r('af-chickpea-bowl', 'Air-fryer crispy chickpea bowl with couscous and hummus', { meals: ['lunch', 'dinner'], minutes: 20, method: 'airfryer', cuisine: 'middle-eastern' }, [
+    ['chickpeas', 150], ['couscous', 150], ['cucumber', 100], ['tomatoes', 100], ['hummus', 40], OIL(), ['cumin', 0, T('1 tsp')], ['paprika', 0, T('½ tsp')], ['parsley', 0, T('a handful')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Heat the air fryer to 200 °C. Drain and pat dry the chickpeas, toss with the oil, cumin, paprika and salt.',
+    'Air-fry for 12–15 minutes until crunchy, shaking twice.',
+    'Pour boiling water over the couscous (about 50 g dry), cover for 5 minutes, then fluff with a fork.',
+    'Chop the cucumber, tomatoes and parsley and mix into the couscous with lemon and salt.',
+    'Top with the chickpeas and a spoonful of hummus.',
+  ]),
+  r('af-steak-bites', 'Air-fryer garlic steak bites with mushrooms and salad', { meals: ['lunch', 'dinner'], minutes: 15, method: 'airfryer', cuisine: '' }, [
+    ['steak', 180], ['mushrooms', 150], ['salad-leaves', 80], ['butter', 10, T('2 tsp')], ['garlic', 6, T('2 cloves')], ['parsley', 0, T('a little')], ['balsamic', 5, T('1 tsp')], SP,
+  ], [
+    'Heat the air fryer to 200 °C.',
+    'Cut the steak into 2–3 cm cubes and halve the mushrooms. Toss both with salt and pepper.',
+    'Air-fry for 8–10 minutes, shaking halfway, until the steak is browned outside and pink inside.',
+    'Melt the butter with the crushed garlic and toss with the steak, mushrooms and parsley.',
+    'Serve on the salad leaves drizzled with balsamic.',
+  ]),
+  r('af-chicken-fajitas', 'Air-fryer chicken fajita wraps', { meals: ['lunch', 'dinner'], minutes: 20, method: 'airfryer', cuisine: 'mexican' }, [
+    ['chicken', 130], ['peppers', 150], ['onion', 60], ['wrap', 120], ['yogurt', 40], OIL(), ['paprika', 0, T('1 tsp')], ['cumin', 0, T('½ tsp')], ['lemon', 5, T('a squeeze of lime or lemon')], SP,
+  ], [
+    'Heat the air fryer to 200 °C.',
+    'Slice the chicken, peppers and onion into strips and toss with the oil, paprika, cumin and salt.',
+    'Air-fry for 12–14 minutes, shaking twice, until the chicken is cooked and the vegetables are charred at the edges.',
+    'Squeeze over the lime or lemon. Warm the wraps for 1 minute in the basket.',
+    'Fill the wraps with the chicken and vegetables and add a spoonful of yogurt.',
+  ]),
+
+  // ======================= STOVE TOP =======================
+  r('chicken-stirfry', 'Chicken and vegetable stir-fry with ginger, soy and rice', { meals: ['lunch', 'dinner'], minutes: 20, method: 'stirfry', cuisine: 'asian' }, [
+    ['chicken', 140], ['peppers', 100], ['broccoli', 100], ['carrots', 60], ['rice', 160], ['soy-sauce', 15, T('1 tbsp')], ['ginger', 5, T('1 cm')], ['garlic', 3, T('1 clove')], OIL(10, '1 tbsp'), ['chili-flakes', 0, T('a pinch')],
+  ], [
+    'Cook the rice (or warm a ready-cooked pouch).',
+    'Slice the chicken thinly. Cut the pepper into strips, the broccoli into small florets and the carrot into thin batons.',
+    'Heat the oil in a wok or large frying pan until very hot. Stir-fry the chicken for 4 minutes until browned and cooked through.',
+    'Add the vegetables and stir-fry for 3–4 minutes; they should stay crunchy.',
+    'Add the grated ginger and garlic for 30 seconds, then the soy sauce and a splash of water.',
+    'Toss everything together and serve over the rice with chili flakes.',
+  ]),
+  r('spaghetti-bolognese', 'Spaghetti bolognese with lean beef', { meals: ['lunch', 'dinner'], minutes: 30, method: 'pan', cuisine: 'italian' }, [
+    ['beef-mince', 120], ['onion', 60], ['carrots', 50], ['chopped-tomatoes', 200], ['tomato-paste', 15, T('1 tbsp')], ['pasta', 180], ['parmesan', 8], OIL(5, '1 tsp'), ['garlic', 3, T('1 clove')], ['italian-herbs', 0, T('1 tsp')], SP,
+  ], [
+    'Finely chop the onion, carrot and garlic.',
+    'Heat the oil in a pan and soften the onion and carrot for 5 minutes.',
+    'Add the mince and fry over high heat, breaking it up, until browned.',
+    'Stir in the garlic and tomato paste for 1 minute, then add the tomatoes, herbs, salt and pepper. Simmer for 15 minutes, adding a splash of water if it gets thick.',
+    'Meanwhile cook the spaghetti.',
+    'Serve the sauce over the pasta with grated parmesan.',
+  ]),
+  r('chicken-tomato-spinach', 'Chicken in tomato and spinach sauce with rice', { meals: ['lunch', 'dinner'], minutes: 25, method: 'pan', cuisine: 'mediterranean' }, [
+    ['chicken', 150], ['chopped-tomatoes', 200], ['spinach', 80], ['onion', 50], ['rice', 150], ['cream-cheese', 20], OIL(5, '1 tsp'), ['garlic', 3, T('1 clove')], ['paprika', 0, T('½ tsp')], SP,
+  ], [
+    'Cook the rice.',
+    'Cut the chicken into bite-sized pieces, season with salt, pepper and paprika.',
+    'Heat the oil in a frying pan and brown the chicken for 4–5 minutes. Set aside.',
+    'In the same pan soften the chopped onion for 3 minutes, add the garlic, then the tomatoes. Simmer for 5 minutes.',
+    'Stir in the cream cheese until smooth, return the chicken and simmer for 3 minutes until cooked through.',
+    'Stir in the spinach until wilted and serve with the rice.',
+  ]),
+  r('prawn-courgette-pasta', 'Garlic prawn and courgette pasta with lemon and chili', { meals: ['lunch', 'dinner'], minutes: 20, method: 'pan', cuisine: 'italian' }, [
+    ['shrimp', 120], ['zucchini', 150], ['pasta', 170], OIL(10, '1 tbsp'), ['garlic', 6, T('2 cloves')], ['lemon', 10, T('½ lemon')], ['chili-flakes', 0, T('a pinch')], ['parsley', 0, T('a handful')], SP,
+  ], [
+    'Cook the pasta, keeping a cup of the cooking water.',
+    'Cut the courgette into half-moons. Heat the oil in a large frying pan and fry it for 4 minutes until golden.',
+    'Add the sliced garlic and chili for 30 seconds, then the prawns. Cook for 2–3 minutes until pink.',
+    'Add the drained pasta, lemon juice and a splash of the cooking water and toss until glossy.',
+    'Season and finish with chopped parsley.',
+  ]),
+  r('red-lentil-dal', 'Red lentil and coconut dal with rice', { meals: ['lunch', 'dinner'], minutes: 30, method: 'stew', cuisine: 'asian' }, [
+    ['red-lentils', 70], ['coconut-milk', 100], ['chopped-tomatoes', 100], ['onion', 60], ['spinach', 50], ['rice', 120], OIL(5, '1 tsp'), ['garlic', 3, T('1 clove')], ['ginger', 5, T('1 cm')], ['curry-powder', 0, T('2 tsp')], ['turmeric', 0, T('½ tsp')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Rinse the lentils. Finely chop the onion, garlic and ginger.',
+    'Heat the oil in a pan and soften the onion for 4 minutes. Add the garlic, ginger, curry powder and turmeric for 1 minute.',
+    'Add the lentils, tomatoes, coconut milk and 200 ml water. Simmer for 18–20 minutes, stirring now and then, until the lentils are soft. Add water if it gets too thick.',
+    'Meanwhile cook the rice.',
+    'Stir the spinach into the dal, season with salt and lemon, and serve with the rice.',
+  ]),
+  r('chili-con-carne', 'Chili con carne with rice', { meals: ['lunch', 'dinner'], minutes: 35, method: 'stew', cuisine: 'mexican' }, [
+    ['beef-mince', 120], ['kidney-beans', 80], ['chopped-tomatoes', 200], ['onion', 60], ['peppers', 80], ['rice', 140], ['yogurt', 30], OIL(5, '1 tsp'), ['garlic', 3, T('1 clove')], ['cumin', 0, T('1 tsp')], ['paprika', 0, T('1 tsp')], ['chili-flakes', 0, T('to taste')], SP,
+  ], [
+    'Chop the onion, pepper and garlic.',
+    'Heat the oil in a pan and fry the onion and pepper for 5 minutes.',
+    'Add the mince and brown it over high heat. Stir in the garlic, cumin, paprika and chili for 1 minute.',
+    'Add the tomatoes and drained beans, season and simmer for 20 minutes.',
+    'Cook the rice and serve with the chili and a spoonful of yogurt.',
+  ]),
+  r('beef-goulash', 'Beef goulash with potatoes', { meals: ['lunch', 'dinner'], minutes: 100, method: 'stew', cuisine: 'german' }, [
+    ['beef-goulash', 160], ['onion', 100], ['peppers', 80], ['tomato-paste', 15, T('1 tbsp')], ['stock', 250], ['potatoes', 200], OIL(5, '1 tsp'), ['paprika', 0, T('1 tbsp sweet paprika')], ['cumin', 0, T('a pinch of caraway')], SP,
+  ], [
+    'Cut the beef into 3 cm cubes and slice the onions.',
+    'Brown the beef in the oil in a heavy pot over high heat. Remove.',
+    'Lower the heat, add the onions and cook for 10 minutes until soft and golden.',
+    'Stir in the tomato paste, paprika and caraway for 1 minute, then return the beef with the stock.',
+    'Cover and simmer gently for 1½ hours until the beef is tender, adding the sliced pepper for the last 20 minutes.',
+    'Boil the potatoes for the last 20 minutes and serve with the goulash.',
+  ]),
+  r('shakshuka', 'Shakshuka: eggs in spiced tomato and pepper sauce', { meals: ['breakfast', 'lunch', 'dinner'], minutes: 25, method: 'pan', cuisine: 'middle-eastern' }, [
+    ['eggs', 120], ['chopped-tomatoes', 200], ['peppers', 100], ['onion', 50], ['feta', 25], ['wholemeal-bread', 50], OIL(5, '1 tsp'), ['garlic', 3, T('1 clove')], ['cumin', 0, T('1 tsp')], ['paprika', 0, T('1 tsp')], ['parsley', 0, T('a little')], SP,
+  ], [
+    'Slice the onion and pepper and chop the garlic.',
+    'Heat the oil in a small frying pan and soften the onion and pepper for 6 minutes.',
+    'Add the garlic, cumin and paprika for 1 minute, then the tomatoes. Season and simmer for 8 minutes until thick.',
+    'Make two hollows in the sauce, crack in the eggs, cover and cook on low for 5–6 minutes until the whites are set.',
+    'Crumble over the feta, scatter with parsley and serve with the bread for dipping.',
+  ]),
+  r('egg-fried-rice', 'Egg fried rice with peas and spring vegetables', { meals: ['lunch', 'dinner'], minutes: 15, method: 'stirfry', cuisine: 'asian' }, [
+    ['rice', 180], ['eggs', 120], ['peas', 80], ['carrots', 60], ['soy-sauce', 15, T('1 tbsp')], OIL(10, '1 tbsp'), ['garlic', 3, T('1 clove')], ['chives', 0, T('a few, or spring onion')],
+  ], [
+    'Use cold, cooked rice if you can (yesterday’s rice works best).',
+    'Heat the oil in a wok until very hot. Add the diced carrot and peas and stir-fry for 2 minutes.',
+    'Push the vegetables aside, crack in the eggs and scramble them for 1 minute.',
+    'Add the rice and garlic and stir-fry for 3–4 minutes until piping hot, breaking up any clumps.',
+    'Season with the soy sauce and finish with chopped chives.',
+  ]),
+  r('gnocchi-tomato-mozzarella', 'Gnocchi with tomato, mozzarella and basil', { meals: ['lunch', 'dinner'], minutes: 15, method: 'pan', cuisine: 'italian' }, [
+    ['gnocchi', 250], ['passata', 150], ['mozzarella', 60], ['spinach', 50], OIL(5, '1 tsp'), ['garlic', 3, T('1 clove')], ['basil', 0, T('a few leaves')], SP,
+  ], [
+    'Heat the oil in a frying pan and fry the gnocchi for 5–6 minutes until golden on both sides.',
+    'Add the crushed garlic for 30 seconds, then the passata. Season and simmer for 3 minutes.',
+    'Stir in the spinach, then tear the mozzarella over the top.',
+    'Cover for 2 minutes until the mozzarella melts. Finish with basil.',
+  ]),
+  r('turkey-lettuce-cups', 'Ginger turkey lettuce cups', { meals: ['lunch', 'dinner'], minutes: 15, method: 'stirfry', cuisine: 'asian' }, [
+    ['turkey-mince', 160], ['peppers', 80], ['carrots', 50], ['salad-leaves', 80], ['soy-sauce', 15, T('1 tbsp')], ['ginger', 5, T('1 cm')], ['garlic', 3, T('1 clove')], ['sesame-oil', 5, T('1 tsp')], ['chili-flakes', 0, T('a pinch')],
+  ], [
+    'Finely dice the pepper and grate the carrot, ginger and garlic.',
+    'Heat the sesame oil in a frying pan and fry the mince over high heat for 5 minutes, breaking it up, until browned.',
+    'Add the pepper, carrot, ginger and garlic and cook for 3 minutes.',
+    'Stir in the soy sauce and chili.',
+    'Spoon into crisp lettuce leaves (little gem or iceberg) and eat with your hands.',
+  ]),
+  r('trout-almond-beans', 'Pan-fried trout with almond butter and green beans', { meals: ['lunch', 'dinner'], minutes: 15, method: 'pan', cuisine: 'german' }, [
+    ['trout', 160], ['green-beans', 150], ['almonds', 15], ['butter', 10, T('2 tsp')], ['lemon', 5, T('a squeeze')], ['parsley', 0, T('a little')], SP,
+  ], [
+    'Boil the green beans for 5 minutes, then drain.',
+    'Season the trout. Heat half the butter in a frying pan and fry the fillets skin side down for 3 minutes, then turn for 1 minute.',
+    'Move the fish to a plate. Add the rest of the butter and the flaked almonds to the pan and cook until golden.',
+    'Add the lemon juice and parsley, and spoon the almond butter over the fish and beans.',
+  ]),
+  r('tofu-coconut-curry', 'Tofu and vegetable coconut curry with rice', { meals: ['lunch', 'dinner'], minutes: 25, method: 'stew', cuisine: 'asian' }, [
+    ['tofu', 150], ['coconut-milk', 150], ['curry-paste', 20, T('1 tbsp')], ['peppers', 80], ['broccoli', 80], ['spinach', 40], ['rice', 140], OIL(5, '1 tsp'), ['lemon', 5, T('a squeeze of lime')], ['soy-sauce', 5, T('1 tsp')],
+  ], [
+    'Cook the rice. Press the tofu dry and cut into cubes.',
+    'Fry the tofu in the oil for 5 minutes until golden. Remove.',
+    'Fry the curry paste in the same pan for 1 minute, then add the coconut milk and 50 ml water.',
+    'Add the pepper and broccoli and simmer for 5 minutes.',
+    'Return the tofu, stir in the spinach, season with soy sauce and lime, and serve with the rice.',
+  ]),
+  r('steak-tomato-salad', 'Pan-fried steak with tomato and red onion salad', { meals: ['lunch', 'dinner'], minutes: 15, method: 'pan', cuisine: '' }, [
+    ['steak', 180], ['tomatoes', 200], ['red-onion', 30], ['salad-leaves', 50], OIL(10, '1 tbsp'), ['balsamic', 5, T('1 tsp')], ['garlic', 3, T('1 clove')], SP,
+  ], [
+    'Take the steak out of the fridge 15 minutes ahead and season well.',
+    'Heat a heavy frying pan until smoking hot with a little of the oil. Cook the steak for 2–3 minutes each side for medium-rare, adding the crushed garlic for the last minute.',
+    'Rest the steak for 5 minutes.',
+    'Slice the tomatoes and onion thinly and dress with the rest of the oil, balsamic, salt and pepper.',
+    'Slice the steak and serve on the salad leaves with the tomato salad.',
+  ]),
+
+  r('chickpea-spinach-curry', 'Chickpea and spinach curry with rice', { meals: ['lunch', 'dinner'], minutes: 25, method: 'pan', cuisine: 'asian' }, [
+    ['chickpeas', 150], ['chopped-tomatoes', 200], ['spinach', 80], ['onion', 60], ['coconut-milk', 60], ['rice', 140], OIL(5, '1 tsp'), ['garlic', 3, T('1 clove')], ['ginger', 5, T('1 cm')], ['curry-powder', 0, T('2 tsp')], ['cumin', 0, T('½ tsp')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Cook the rice. Finely chop the onion, garlic and ginger.',
+    'Heat the oil in a pan and soften the onion for 5 minutes. Add the garlic, ginger, curry powder and cumin and stir for 1 minute.',
+    'Add the tomatoes and drained chickpeas and simmer for 10 minutes.',
+    'Stir in the coconut milk and spinach until the spinach wilts.',
+    'Season with salt and lemon and serve with the rice.',
+  ]),
+  r('af-tofu-veg-noodles', 'Air-fryer teriyaki-style tofu with vegetables and noodles', { meals: ['lunch', 'dinner'], minutes: 20, method: 'airfryer', cuisine: 'asian' }, [
+    ['tofu', 160], ['peppers', 100], ['broccoli', 100], ['noodles', 150], ['soy-sauce', 20, T('1½ tbsp')], ['honey', 0, { optional: true }], ['sesame-oil', 5, T('1 tsp')], ['garlic', 3, T('1 clove')], ['ginger', 5, T('1 cm')], ['lemon', 5, T('a squeeze of lime')],
+  ], [
+    'Press the tofu dry and cut into cubes. Heat the air fryer to 200 °C.',
+    'Toss the tofu with 1 tsp of the soy sauce and air-fry for 12 minutes, shaking twice. Add the pepper strips and broccoli for the last 6 minutes.',
+    'Meanwhile cook the noodles (use rice noodles to keep it egg-free).',
+    'Mix the rest of the soy sauce with the sesame oil, grated garlic, ginger and lime.',
+    'Toss the noodles, tofu and vegetables in the sauce.',
+  ]),
+
+  // ======================= OVEN =======================
+  r('salmon-traybake', 'Salmon traybake with broccoli and new potatoes', { meals: ['lunch', 'dinner'], minutes: 35, method: 'oven', cuisine: '' }, [
+    ['salmon', 130], ['potatoes', 200], ['broccoli', 150], OIL(), ['lemon', 10, T('½ lemon')], ['garlic', 3, T('1 clove')], ['dill', 0, T('a little')], SP,
+  ], [
+    'Heat the oven to 200 °C (fan 180 °C).',
+    'Halve the potatoes, toss with half the oil and salt on a tray and roast for 15 minutes.',
+    'Add the broccoli, tossed in the rest of the oil and crushed garlic, and the salmon, skin down, seasoned with salt and pepper.',
+    'Roast for 12–15 minutes until the salmon flakes.',
+    'Squeeze over the lemon and scatter with dill.',
+  ]),
+  r('mediterranean-chicken-traybake', 'Mediterranean chicken traybake with feta and olives', { meals: ['lunch', 'dinner'], minutes: 40, method: 'oven', cuisine: 'mediterranean' }, [
+    ['chicken-thigh', 160], ['zucchini', 120], ['peppers', 100], ['red-onion', 50], ['tomatoes', 100], ['feta', 30], ['olives', 20], OIL(), ['oregano', 0, T('1 tsp')], ['garlic', 6, T('2 cloves')], SP,
+  ], [
+    'Heat the oven to 200 °C (fan 180 °C).',
+    'Cut the vegetables into chunks and spread on a tray with the whole garlic cloves. Toss with the oil, oregano and salt.',
+    'Nestle the seasoned chicken thighs among the vegetables.',
+    'Roast for 30–35 minutes until the chicken is golden and cooked through.',
+    'Scatter over the olives and crumbled feta for the last 5 minutes.',
+  ]),
+  r('baked-cod-tomatoes', 'Baked cod with tomatoes, olives and couscous', { meals: ['lunch', 'dinner'], minutes: 25, method: 'oven', cuisine: 'mediterranean' }, [
+    ['cod', 170], ['tomatoes', 150], ['olives', 20], ['couscous', 150], ['lemon', 10, T('½ lemon')], OIL(), ['garlic', 3, T('1 clove')], ['parsley', 0, T('a handful')], SP,
+  ], [
+    'Heat the oven to 200 °C (fan 180 °C).',
+    'Halve the tomatoes and put them in a small baking dish with the olives, sliced garlic, half the oil and salt. Bake for 10 minutes.',
+    'Lay the seasoned cod on top, drizzle with the rest of the oil and bake for 10–12 minutes until it flakes.',
+    'Meanwhile pour boiling water over the couscous, cover for 5 minutes and fluff up with lemon juice and parsley.',
+    'Serve the fish and tomatoes on the couscous with the pan juices.',
+  ]),
+  r('stuffed-sweet-potato', 'Baked sweet potato with spiced chickpeas and yogurt', { meals: ['lunch', 'dinner'], minutes: 45, method: 'oven', cuisine: 'middle-eastern' }, [
+    ['sweet-potato', 250], ['chickpeas', 120], ['greek-yogurt', 60], ['spinach', 50], OIL(5, '1 tsp'), ['cumin', 0, T('1 tsp')], ['paprika', 0, T('½ tsp')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Heat the oven to 200 °C (fan 180 °C). Prick the sweet potato and bake for 40–45 minutes until soft (or microwave for 8–10 minutes, then bake 10 to crisp).',
+    'Toss the chickpeas with the oil, cumin, paprika and salt and roast on a tray for the last 20 minutes.',
+    'Wilt the spinach in a pan with a splash of water.',
+    'Split the potato, fill with the spinach and chickpeas, and top with yogurt and a squeeze of lemon.',
+  ]),
+  r('cauliflower-ham-bake', 'Cauliflower and broccoli cheese bake with ham', { meals: ['lunch', 'dinner'], minutes: 35, method: 'oven', cuisine: 'german' }, [
+    ['cauliflower', 200], ['broccoli', 100], ['ham', 70], ['cream-cheese', 40], ['milk', 60], ['gouda', 40], ['mustard', 5, T('1 tsp')], SP,
+  ], [
+    'Heat the oven to 200 °C (fan 180 °C).',
+    'Boil the cauliflower and broccoli florets for 5 minutes, drain well and put in a baking dish with the chopped ham.',
+    'Warm the cream cheese, milk and mustard in a small pan, whisking until smooth, and season.',
+    'Pour over the vegetables, top with grated gouda and bake for 20 minutes until bubbling and golden.',
+  ]),
+  r('chicken-potato-traybake', 'Lemon-herb chicken, potato and green bean traybake', { meals: ['lunch', 'dinner'], minutes: 40, method: 'oven', cuisine: 'german' }, [
+    ['chicken', 150], ['potatoes', 220], ['green-beans', 120], OIL(), ['lemon', 10, T('½ lemon')], ['rosemary', 0, T('2 sprigs')], ['garlic', 6, T('2 cloves')], SP,
+  ], [
+    'Heat the oven to 200 °C (fan 180 °C).',
+    'Cut the potatoes into wedges, toss with half the oil, rosemary, garlic and salt and roast for 15 minutes.',
+    'Rub the chicken with the rest of the oil, lemon zest, salt and pepper and add to the tray with the green beans.',
+    'Roast for 20 minutes until the chicken is cooked through.',
+    'Squeeze over the lemon juice before serving.',
+  ]),
+  r('duck-red-cabbage', 'Roast duck breast with red cabbage and potatoes', { meals: ['dinner'], minutes: 35, method: 'oven', cuisine: 'german' }, [
+    ['duck', 160], ['cabbage', 150], ['potatoes', 180], ['apple', 60], ['balsamic', 10, T('2 tsp')], ['cinnamon', 0, T('a pinch')], SP,
+  ], [
+    'Heat the oven to 200 °C (fan 180 °C) and boil the potatoes.',
+    'Score the duck fat, season, and fry fat side down in a cold oven-proof pan over medium heat for 8 minutes. Pour off the fat.',
+    'Turn the duck and roast in the oven for 8–10 minutes. Rest for 5 minutes.',
+    'Meanwhile shred the cabbage and cook it in a pan with the grated apple, balsamic, cinnamon, salt and a splash of water for 15 minutes.',
+    'Slice the duck and serve with the cabbage and potatoes.',
+  ]),
+
+  // ======================= GRILL =======================
+  r('chicken-souvlaki', 'Grilled chicken skewers with tzatziki and bulgur salad', { meals: ['lunch', 'dinner'], minutes: 25, method: 'grill', cuisine: 'mediterranean' }, [
+    ['chicken', 150], ['bulgur', 150], ['cucumber', 100], ['tomatoes', 100], ['greek-yogurt', 60], OIL(), ['lemon', 10, T('½ lemon')], ['garlic', 3, T('1 clove')], ['oregano', 0, T('1 tsp')], ['dill', 0, T('a little')], SP,
+  ], [
+    'Cut the chicken into cubes and toss with half the oil, half the lemon juice, oregano, salt and pepper. Thread onto skewers.',
+    'Pour boiling water over the bulgur (about 50 g dry), cover for 10 minutes and fluff up.',
+    'Grill the skewers on a hot grill or griddle pan for 10–12 minutes, turning, until cooked through.',
+    'For the tzatziki, grate half the cucumber, squeeze it dry and mix with the yogurt, garlic, dill and salt.',
+    'Mix the bulgur with the rest of the cucumber, the tomatoes, oil and lemon. Serve with the skewers and tzatziki.',
+  ]),
+  r('halloumi-skewers', 'Grilled halloumi and vegetable skewers with herb couscous', { meals: ['lunch', 'dinner'], minutes: 20, method: 'grill', cuisine: 'mediterranean' }, [
+    ['halloumi', 80], ['zucchini', 120], ['peppers', 100], ['red-onion', 50], ['couscous', 150], OIL(), ['lemon', 5, T('a squeeze')], ['parsley', 0, T('a handful')], ['oregano', 0, T('a pinch')], SP,
+  ], [
+    'Cut the halloumi, courgette, pepper and onion into chunks and thread onto skewers. Brush with the oil and sprinkle with oregano.',
+    'Grill on a hot grill or griddle pan for 8–10 minutes, turning, until charred.',
+    'Meanwhile pour boiling water over the couscous, cover for 5 minutes and fluff with lemon, parsley and salt.',
+    'Serve the skewers on the couscous.',
+  ]),
+
+  // ======================= NO-COOK / SALADS =======================
+  r('greek-salad-chickpeas', 'Greek salad with chickpeas and feta', { meals: ['lunch', 'dinner'], minutes: 10, method: 'nocook', cuisine: 'mediterranean' }, [
+    ['cucumber', 150], ['tomatoes', 150], ['chickpeas', 120], ['feta', 50], ['olives', 20], ['red-onion', 30], OIL(), ['oregano', 0, T('½ tsp')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Cut the cucumber and tomatoes into chunks and slice the onion thinly.',
+    'Drain and rinse the chickpeas.',
+    'Toss everything with the olives, oil, lemon, oregano, salt and pepper.',
+    'Top with the feta in one piece or crumbled.',
+  ]),
+  r('nicoise-salad', 'Tuna Niçoise-style salad with egg, potatoes and beans', { meals: ['lunch', 'dinner'], minutes: 20, method: 'nocook', cuisine: 'mediterranean' }, [
+    ['tuna', 100], ['eggs', 60], ['potatoes', 120], ['green-beans', 80], ['tomatoes', 80], ['olives', 15], ['salad-leaves', 50], OIL(), ['mustard', 5, T('1 tsp')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Boil the potatoes for 12 minutes. Add the egg for the last 9 minutes and the beans for the last 4.',
+    'Drain, cool the egg in cold water and peel. Halve the potatoes and quarter the egg.',
+    'Whisk the oil, mustard, lemon, salt and pepper into a dressing.',
+    'Arrange the leaves, potatoes, beans, tomatoes, olives, tuna and egg on a plate and spoon over the dressing.',
+  ]),
+  r('chicken-caesar', 'Chicken Caesar-style salad with yogurt dressing', { meals: ['lunch', 'dinner'], minutes: 15, method: 'pan', cuisine: '' }, [
+    ['chicken', 140], ['salad-leaves', 120], ['wholemeal-bread', 30], ['parmesan', 15], ['greek-yogurt', 40], OIL(5, '1 tsp'), ['mustard', 5, T('1 tsp')], ['garlic', 2, T('½ clove')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Season the chicken and cook in a hot pan with the oil for 5–6 minutes each side until cooked through. Rest and slice.',
+    'Cut the bread into cubes and toast in the same pan until crisp.',
+    'Mix the yogurt, mustard, grated garlic, lemon, half the parmesan, salt and pepper into a dressing.',
+    'Toss the leaves with the dressing and top with the chicken, croutons and the rest of the parmesan.',
+  ]),
+  r('quinoa-salad', 'Quinoa salad with chickpeas, cucumber and lemon', { meals: ['lunch', 'dinner'], minutes: 10, method: 'nocook', cuisine: 'middle-eastern' }, [
+    ['quinoa', 150], ['chickpeas', 100], ['cucumber', 100], ['tomatoes', 100], ['peppers', 60], OIL(), ['lemon', 10, T('½ lemon')], ['parsley', 0, T('a big handful')], ['cumin', 0, T('a pinch')], SP,
+  ], [
+    'Use cooked quinoa (a ready-cooked pouch or quinoa cooked earlier).',
+    'Dice the cucumber, tomatoes and pepper; chop the parsley.',
+    'Drain and rinse the chickpeas.',
+    'Mix everything with the oil, lemon, cumin, salt and pepper. It keeps well for lunch the next day.',
+  ]),
+  r('mackerel-potato-salad', 'Smoked mackerel, potato and apple salad', { meals: ['lunch', 'dinner'], minutes: 20, method: 'nocook', cuisine: 'german' }, [
+    ['mackerel', 80], ['potatoes', 150], ['apple', 80], ['salad-leaves', 50], ['yogurt', 40], ['mustard', 5, T('1 tsp')], ['dill', 0, T('a little')], ['lemon', 5, T('a squeeze')], SP,
+  ], [
+    'Boil the potatoes for 15 minutes, drain and let them cool a little; slice.',
+    'Cut the apple into thin slices and flake the mackerel.',
+    'Mix the yogurt with mustard, lemon, dill, salt and pepper.',
+    'Toss the potatoes and apple with the dressing, then fold in the mackerel and serve on the leaves.',
+  ]),
+  r('caprese-avocado', 'Tomato, mozzarella and avocado salad', { meals: ['lunch', 'dinner', 'snacks'], minutes: 5, method: 'nocook', cuisine: 'italian' }, [
+    ['tomatoes', 150], ['mozzarella', 80], ['avocado', 60], ['balsamic', 5, T('1 tsp')], OIL(5, '1 tsp'), ['basil', 0, T('a few leaves')], SP,
+  ], [
+    'Slice the tomatoes, mozzarella and avocado.',
+    'Layer them on a plate with the basil leaves.',
+    'Drizzle with the oil and balsamic and season with salt and pepper.',
+  ]),
+  r('turkey-hummus-wrap', 'Turkey, hummus and crunchy vegetable wrap', { meals: ['lunch'], minutes: 5, method: 'nocook', cuisine: 'middle-eastern' }, [
+    ['wrap', 60], ['turkey', 80], ['hummus', 40], ['carrots', 50], ['cucumber', 50], ['salad-leaves', 30], SP,
+  ], [
+    'Spread the hummus over the wrap.',
+    'Grate the carrot and cut the cucumber into sticks.',
+    'Layer the turkey, vegetables and leaves down the middle, season and roll up tightly.',
+    'Cut in half diagonally.',
+  ]),
+  r('egg-rye-open', 'Open rye sandwiches with egg, cress and gherkins', { meals: ['breakfast', 'lunch'], minutes: 12, method: 'nocook', cuisine: 'german' }, [
+    ['rye-bread', 100], ['eggs', 120], ['cream-cheese', 20], ['pickled-cucumber', 30], ['tomatoes', 80], ['chives', 0, T('a few')], SP,
+  ], [
+    'Boil the eggs for 9 minutes, cool in cold water and peel.',
+    'Spread the rye bread thinly with cream cheese.',
+    'Top with sliced egg, sliced gherkins and tomato.',
+    'Season with salt, pepper and chopped chives.',
+  ]),
+
+  // ======================= SNACKS =======================
+  r('apple-peanut-butter', 'Apple slices with peanut butter', { meals: ['snacks'], minutes: 2, method: 'nocook', cuisine: '' }, [
+    ['apple', 180], ['peanut-butter', 15], ['cinnamon', 0, T('a pinch')],
+  ], ['Core and slice the apple.', 'Dip the slices in the peanut butter, dusted with cinnamon.']),
+  r('hummus-veg-sticks', 'Hummus with carrot, cucumber and pepper sticks', { meals: ['snacks'], minutes: 5, method: 'nocook', cuisine: 'middle-eastern' }, [
+    ['hummus', 60], ['carrots', 80], ['cucumber', 80], ['peppers', 60], ['paprika', 0, T('a pinch')],
+  ], ['Cut the vegetables into sticks.', 'Spoon the hummus into a small bowl, sprinkle with paprika and dip.']),
+  r('skyr-berries-snack', 'Skyr with berries and a few almonds', { meals: ['snacks'], minutes: 2, method: 'nocook', cuisine: '' }, [
+    ['skyr', 150], ['berries', 80], ['almonds', 10],
+  ], ['Spoon the skyr into a bowl.', 'Top with the berries and chopped almonds.']),
+  r('boiled-eggs-snack', 'Boiled eggs with cucumber and everything seasoning', { meals: ['snacks', 'breakfast'], minutes: 12, method: 'pan', cuisine: '' }, [
+    ['eggs', 120], ['cucumber', 100], ['chili-flakes', 0, T('a pinch')], SP,
+  ], ['Boil the eggs for 9 minutes (8 for a slightly soft yolk).', 'Cool in cold water and peel.', 'Halve them, season with salt, pepper and chili, and eat with cucumber slices.']),
+  r('cottage-tomato-snack', 'Cottage cheese with cherry tomatoes and black pepper', { meals: ['snacks'], minutes: 3, method: 'nocook', cuisine: '' }, [
+    ['cottage', 150], ['tomatoes', 100], ['chives', 0, T('a few')], SP,
+  ], ['Halve the tomatoes.', 'Spoon the cottage cheese into a bowl, top with the tomatoes and chives, and grind over plenty of black pepper.']),
+  r('orange-almonds', 'An orange and a small handful of almonds', { meals: ['snacks'], minutes: 1, method: 'nocook', cuisine: '' }, [
+    ['orange', 150], ['almonds', 20],
+  ], ['Peel the orange.', 'Eat with the almonds — the fat and protein make the fruit more filling.']),
+  r('rice-cakes-cream-cheese', 'Rice cakes with cream cheese, cucumber and chives', { meals: ['snacks'], minutes: 3, method: 'nocook', cuisine: '' }, [
+    ['rice-cakes', 16], ['cream-cheese', 30], ['cucumber', 60], ['chives', 0, T('a few')], SP,
+  ], ['Spread the cream cheese on the rice cakes.', 'Top with thin cucumber slices, chives and black pepper.']),
+  r('turkey-cheese-rollups', 'Turkey and cheese roll-ups with pepper strips', { meals: ['snacks'], minutes: 5, method: 'nocook', cuisine: '' }, [
+    ['turkey', 80], ['gouda', 25], ['peppers', 80], ['mustard', 5, T('1 tsp')],
+  ], ['Cut the cheese and pepper into strips.', 'Spread each turkey slice with a little mustard, add a strip of cheese and pepper, and roll up.']),
+  r('banana-chocolate', 'Banana with two squares of dark chocolate', { meals: ['snacks'], minutes: 1, method: 'nocook', cuisine: '' }, [
+    ['banana', 120], ['dark-chocolate', 10],
+  ], ['Slice the banana.', 'Eat with the chocolate, or melt the chocolate for 20 seconds in the microwave and drizzle it over.']),
+  r('af-roasted-chickpeas', 'Air-fryer crunchy roasted chickpeas', { meals: ['snacks'], minutes: 20, method: 'airfryer', cuisine: 'middle-eastern' }, [
+    ['chickpeas', 120], OIL(5, '1 tsp'), ['paprika', 0, T('1 tsp')], ['cumin', 0, T('½ tsp')], SP,
+  ], ['Heat the air fryer to 200 °C.', 'Drain the chickpeas and pat them very dry with kitchen paper.', 'Toss with the oil, paprika, cumin and salt.', 'Air-fry for 15–18 minutes, shaking every 5 minutes, until crunchy. They crisp up more as they cool.']),
+  r('feta-olive-cucumber', 'Feta, olives and cucumber with oregano', { meals: ['snacks'], minutes: 3, method: 'nocook', cuisine: 'mediterranean' }, [
+    ['feta', 40], ['olives', 30], ['cucumber', 120], ['oregano', 0, T('a pinch')], OIL(3, 'a drizzle'),
+  ], ['Cut the cucumber and feta into cubes.', 'Toss with the olives, a drizzle of oil and oregano.']),
+  r('protein-shake', 'Banana protein shake', { meals: ['snacks', 'breakfast'], minutes: 3, method: 'nocook', cuisine: '' }, [
+    ['whey', 30, { show: '1 scoop (30 g)' }], ['milk', 250], ['banana', 60], ['cinnamon', 0, T('a pinch')],
+  ], ['Blend the milk, protein powder, banana and cinnamon until smooth.', 'Add ice for a colder, thicker shake.']),
+  r('quark-cinnamon-apple', 'Cinnamon quark with grated apple', { meals: ['snacks', 'breakfast'], minutes: 3, method: 'nocook', cuisine: 'german' }, [
+    ['quark', 150], ['apple', 90], ['walnuts', 10], ['cinnamon', 0, T('½ tsp')], ['milk', 20, T('a splash')],
+  ], ['Stir the quark with a splash of milk until creamy.', 'Grate in the apple and add the cinnamon.', 'Top with chopped walnuts.']),
+];

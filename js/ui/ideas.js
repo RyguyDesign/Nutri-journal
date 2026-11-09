@@ -25,7 +25,7 @@ export async function todaysSuggestions(limit = 3) {
 }
 
 export function itemLabel(it) {
-  const amount = it.pieces ? `${t('ideas.pieces', { n: it.pieces, unit: it.pieceUnit + (it.pieces > 1 ? 's' : '') })} (${it.grams} g)` : `${it.grams} g`;
+  const amount = it.show ? it.show : it.pieces ? `${t('ideas.pieces', { n: it.pieces, unit: it.pieceUnit + (it.pieces > 1 ? 's' : '') })} (${it.grams} g)` : `${it.grams} g`;
   return `${it.name}${it.prep === 'cooked' ? ' (cooked weight)' : ''}: ${amount}`;
 }
 

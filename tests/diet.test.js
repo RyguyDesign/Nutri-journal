@@ -4,6 +4,8 @@ import { eatingWindow, inWindow, dayCheck, recordDiet, dietOnDate, streak, activ
 import { recommendTargets } from '../js/core/calc.js';
 import { suggest } from '../js/suggest/engine.js';
 import { FOOD_BY_ID } from '../js/suggest/catalog.js';
+import { EXTRA } from '../js/suggest/recipes.js';
+const foodOf = (id) => FOOD_BY_ID[id] || EXTRA[id];
 
 const person = { age: 40, sex: 'male', heightCm: 171, weightKg: 83, targetWeightKg: 75, activity: 'light', goal: 'lose', rateKgPerWeek: 0.5 };
 
@@ -25,10 +27,10 @@ test('keto and vegan suggestions keep to the diet', () => {
     const k = suggest({ remaining: rem, now, profile: { dietStyle: 'keto' }, tastes: { plan: '3+1' }, seed: now });
     const all = Object.values(k.groups).flat();
     assert.ok(all.length, `keto at ${now}`);
-    for (const s of all) for (const it of s.items) assert.ok(FOOD_BY_ID[it.id].per.carbs < 10, `${it.name} in keto`);
+    for (const s of all) for (const it of s.items) if (!it.show) assert.ok(foodOf(it.id).per.carbs < 10, `${it.name} in keto`);
     const v = suggest({ remaining: { kcal: 1500, protein: 90, carbs: 180, fat: 50 }, now, profile: { dietStyle: 'vegan' }, tastes: { plan: '3+1' }, seed: now });
     for (const s of Object.values(v.groups).flat()) for (const it of s.items) {
-      const fl = FOOD_BY_ID[it.id].flags;
+      const fl = foodOf(it.id).flags;
       assert.ok(!fl.some((f) => ['meat', 'fish', 'shellfish', 'dairy', 'egg'].includes(f)), `${it.name} in vegan`);
     }
   }

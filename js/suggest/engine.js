@@ -1,18 +1,18 @@
-// Rule-based meal suggestions. Free, offline, no AI.
+// Meal suggestions from the recipe library (recipes.js). Free, offline.
 //
 // 1. Work out which meal comes next and how much of the remaining daily
 //    allowance it should use (by meals per day and what's already logged).
-// 2. Build candidate meals from templates, using foods the person likes
-//    (plus the occasional ordinary extra, marked as new) and never foods
-//    excluded by their diet, allergies or dislikes.
-// 3. Size the portions so the meal lands within ±10% of its calorie share
-//    while covering the protein gap.
+// 2. Keep recipes that suit the meal, diet, allergies, dislikes, cooking
+//    time; prefer the person's cooking styles, cuisines and liked foods.
+// 3. Scale each recipe's portion to the meal's calorie share (seasonings
+//    stay as written) and never exceed its share of the carb target.
 // 4. Rank and group: quick, regular, high protein, light snacks, and
 //    meals from foods they always have.
 // Pure functions, covered by tests/engine.test.js.
 
 import { FOODS } from './catalog.js';
-import { TEMPLATES, METHODS } from './templates.js';
+import { RECIPES, EXTRA } from './recipes.js';
+import { FOOD_BY_ID } from './catalog.js';
 import { NUTRIENTS } from '../core/calc.js';
 import { DIETS } from '../core/diet.js';
 import { defaultMeal } from '../core/entry.js';
@@ -130,139 +130,6 @@ function rng(seedText) {
   };
 }
 
-// ---- Portions ----------------------------------------------------------------
-
-const per1g = (food, k) => food.per[k] / 100;
-
-function roundPortion(food, g) {
-  const step = food.piece ? food.piece.g : food.step;
-  const r = Math.round(g / step) * step;
-  return Math.min(food.max, Math.max(food.min, r));
-}
-
-function totalsOf(parts) {
-  const t = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
-  for (const { food, grams } of parts) for (const k of NUTRIENTS) t[k] += per1g(food, k) * grams;
-  return t;
-}
-
-/** Size each slot's portion for a meal target. Returns parts or null. */
-export function solvePortions(template, picks, target) {
-  const parts = [];
-  const bySlot = {};
-  for (const [name, slot] of Object.entries(template.slots)) {
-    const food = picks[name];
-    if (!food) continue;
-    const p = { slot: name, role: slot.role, food, grams: slot.role === 'fixed' ? roundPortion(food, slot.grams) : food.min, optional: !!slot.optional };
-    parts.push(p);
-    bySlot[name] = p;
-  }
-  const others = (except) => totalsOf(parts.filter((p) => !except.includes(p)));
-
-  // Protein slots: cover the protein target
-  for (const p of parts.filter((x) => x.role === 'protein')) {
-    const need = target.protein - others([p]).protein;
-    const perG = per1g(p.food, 'protein');
-    p.grams = perG > 0.02 ? roundPortion(p.food, need / perG) : p.food.min;
-  }
-  // Energy slots: fill the remaining calories
-  const energy = parts.filter((x) => x.role === 'energy');
-  for (const p of energy) {
-    const need = (target.kcal - others(energy).kcal) / energy.length;
-    p.grams = roundPortion(p.food, need / per1g(p.food, 'kcal'));
-  }
-  // Too much? Trim energy, then protein, then optional extras.
-  const tooMuch = () => totalsOf(parts).kcal > target.kcal * 1.1;
-  for (const role of ['energy', 'protein']) {
-    for (const p of parts.filter((x) => x.role === role)) {
-      while (tooMuch() && p.grams > p.food.min) p.grams = roundPortion(p.food, p.grams - (p.food.piece ? p.food.piece.g : p.food.step));
-    }
-  }
-  while (tooMuch()) {
-    const idx = parts.findIndex((p) => p.optional);
-    if (idx < 0) break;
-    parts.splice(idx, 1);
-  }
-  return parts;
-}
-
-// ---- Candidates --------------------------------------------------------------
-
-function matches(food, pick) {
-  if (pick.id && food.id !== pick.id) return false;
-  if (pick.ids && !pick.ids.includes(food.id)) return false;
-  if (pick.cat && food.cat !== pick.cat) return false;
-  if (pick.tag && !food.tags.includes(pick.tag)) return false;
-  return true;
-}
-
-function candidatesFor(slot, ctx) {
-  const all = ctx.pool.filter((f) => matches(f, slot.pick) && !(slot.exclude || []).includes(f.id));
-  if (ctx.pantryOnly) return all.filter((f) => ctx.pantry.has(f.id)).slice(0, 4);
-  const shuffle = (arr) => arr.map((f) => [ctx.rand(), f]).sort((a, b) => a[0] - b[0]).map((x) => x[1]);
-  if (!ctx.likes.size) return shuffle(all).slice(0, 4);
-  const liked = shuffle(all.filter((f) => ctx.likes.has(f.id) || ctx.pantry.has(f.id)));
-  const others = shuffle(all.filter((f) => !ctx.likes.has(f.id) && !ctx.pantry.has(f.id)));
-  // Mostly the person's foods; a couple of ordinary extras so there's always an option
-  return [...liked.slice(0, 6), ...others.slice(0, liked.length ? 1 : 3)];
-}
-
-function combos(template, ctx) {
-  const names = Object.keys(template.slots);
-  const lists = names.map((n) => {
-    const slot = template.slots[n];
-    const c = candidatesFor(slot, ctx);
-    return slot.optional ? [...c.slice(0, 2), null] : c;
-  });
-  if (lists.some((l, i) => !l.length && !template.slots[names[i]].optional)) return [];
-  const out = [];
-  const walk = (i, acc) => {
-    if (out.length > 200) return;
-    if (i === names.length) return out.push({ ...acc });
-    for (const f of lists[i]) {
-      if (f && Object.values(acc).some((x) => x && x.id === f.id)) continue;
-      walk(i + 1, { ...acc, [names[i]]: f });
-    }
-  };
-  walk(0, {});
-  return out;
-}
-
-// ---- Scoring -----------------------------------------------------------------
-
-function score(totals, target, parts, template, ctx, focus, method) {
-  const kcalErr = Math.abs(totals.kcal - target.kcal) / Math.max(target.kcal, 1);
-  let s = kcalErr * 100 + (kcalErr > 0.1 ? 60 : 0);
-  s += Math.max(0, target.protein - totals.protein) * (focus === 'protein' ? 3 : 1);
-  s += Math.max(0, totals.fat - Math.max(target.fat, 5) * 1.3) * 0.6;
-  s += Math.max(0, totals.carbs - Math.max(target.carbs, 10) * 1.3) * 0.3;
-  s += Math.max(0, totals.carbs - target.carbs) * 0.5;
-  for (const p of parts) {
-    if (ctx.likes.size && !ctx.likes.has(p.food.id) && !ctx.pantry.has(p.food.id)) s += 6;
-    if (ctx.likes.has(p.food.id)) s -= 2;
-    if (ctx.pantry.has(p.food.id)) s -= 1;
-  }
-  if (template.cuisines.some((c) => ctx.cuisines.has(c))) s -= 3;
-  // Mediterranean: fish, legumes, olive oil and vegetables first
-  if (ctx.prefer?.length) {
-    for (const p of parts) {
-      const f = p.food;
-      if ((ctx.prefer.includes('fish') && f.flags.includes('fish')) || (ctx.prefer.includes('legumes') && ['lentils', 'chickpeas'].includes(f.id)) || (ctx.prefer.includes('olive-oil') && f.id === 'olive-oil') || (ctx.prefer.includes('veg') && f.cat === 'veg')) s -= 3;
-      if (f.flags.includes('meat') && !f.flags.includes('fish')) s += 2;
-    }
-  }
-  // Cooking styles the person ticked count strongly; others are pushed back
-  if (ctx.styles.size) {
-    const st = stylesOf(template, method);
-    if (st.some((x) => ctx.styles.get(x) === 'often')) s -= 16;
-    else if (st.some((x) => ctx.styles.get(x) === 'sometimes')) s -= 6;
-    else if (st.length) s += 12;
-  }
-  if (focus === 'protein') s -= (totals.protein * 4) / Math.max(totals.kcal, 1) * 40;
-  // Random spread so equally good meals (chicken vs. pork vs. beef) take turns
-  return s + ctx.rand() * 8;
-}
-
 /**
  * Cooking styles as a Map style -> 'often' | 'sometimes'. Older saves
  * stored a plain list, which counts as 'often'.
@@ -272,89 +139,155 @@ export function styleLevels(styles) {
   return new Map(Object.entries(styles || {}).filter(([, v]) => v === 'often' || v === 'sometimes'));
 }
 
-/** Cooking method for a template that can be made several ways. */
-function chooseMethod(template, ctx) {
-  if (!template.methods) return null;
-  const options = template.methods.filter((m) => METHODS[m].minutes <= ctx.maxMinutes && METHODS[m].minutes > (ctx.minMinutes || 0));
-  if (!options.length) return undefined; // no method fits this group's time
-  // "Often" methods are picked about three times as often as "sometimes"
-  const weight = (m) => (ctx.styles.get(m) === 'often' ? 3 : ctx.styles.get(m) === 'sometimes' ? 1 : ctx.styles.size ? 0 : 1);
-  const weighted = options.flatMap((m) => Array(weight(m)).fill(m));
-  const from = weighted.length ? weighted : options;
-  return from[Math.floor(ctx.rand() * from.length)];
+// ---- Recipes ----------------------------------------------------------------
+
+const foodOf = (id) => FOOD_BY_ID[id] || EXTRA[id];
+const isSmall = (ing) => ing[2]?.fixed && ing[1] <= 15;
+
+/** Can this recipe be suggested for this person? */
+function recipeAllowed(recipe, ctx) {
+  for (const ing of recipe.ingredients) {
+    const f = foodOf(ing[0]);
+    if (!f || ing[2]?.optional) continue;
+    if (f.flags.some((fl) => ctx.ex.flags.has(fl))) return false;
+    const hay = `${norm(f.name)} ${ing[0]}`;
+    if (ctx.ex.terms.some((t) => hay.includes(t))) return false;
+    // Low carb / keto: no starchy or sugary ingredients (a spoon of vinegar is fine)
+    if (ctx.maxCarbs100 != null && !isSmall(ing) && f.per.carbs >= ctx.maxCarbs100) return false;
+  }
+  return true;
 }
 
-const stylesOf = (template, method) => (method ? [method] : template.styles || []);
+function roundGrams(food, g) {
+  if (food.piece) return Math.max(1, Math.round(g / food.piece.g)) * food.piece.g;
+  if (g >= 15) return Math.round(g / 5) * 5;
+  return Math.max(1, Math.round(g));
+}
 
-function describe(template, parts, target, meal, ctx, s, method) {
-  // Titles and steps use the short names ("Tuna", not "Tuna in water (drained)")
-  const named = Object.fromEntries(parts.map((p) => [p.slot, { ...p.food, name: p.food.short }]));
-  const totals = totalsOf(parts);
+function totalsOfIngredients(list) {
+  const t = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+  for (const { food, grams } of list) for (const k of NUTRIENTS) t[k] += (food.per[k] * grams) / 100;
+  return t;
+}
+
+/** The recipe at a portion size: ingredients with grams and the totals. */
+export function scaleRecipe(recipe, factor) {
+  const list = recipe.ingredients
+    .filter((ing) => !ing[2]?.optional)
+    .map(([id, g, opts = {}]) => {
+      const food = foodOf(id);
+      const grams = opts.fixed ? g : roundGrams(food, g * factor);
+      return { id, food, grams, opts };
+    });
+  return { list, totals: totalsOfIngredients(list) };
+}
+
+/** A recipe's own totals as written (one serving). */
+export function recipeBase(recipe) {
+  return scaleRecipe(recipe, 1).totals;
+}
+
+const MAIN_CATS = ['protein', 'dairy'];
+function mainOf(list) {
+  const m = list.find((x) => !x.opts.fixed && !x.food.extra && MAIN_CATS.includes(x.food.cat)) || list.find((x) => !x.opts.fixed) || list[0];
+  return m.id;
+}
+
+function scoreRecipe(recipe, totals, list, target, ctx, focus) {
+  const kcalErr = Math.abs(totals.kcal - target.kcal) / Math.max(target.kcal, 1);
+  let s = kcalErr * 80;
+  s += Math.max(0, target.protein - totals.protein) * (focus === 'protein' ? 2.5 : 0.6);
+  if (focus === 'protein') s -= ((totals.protein * 4) / Math.max(totals.kcal, 1)) * 60;
+  s += Math.max(0, totals.carbs - target.carbs) * 0.3;
+  const mains = list.filter((x) => !x.opts.fixed && !x.food.extra);
+  if (ctx.likes.size) {
+    for (const x of mains) {
+      if (ctx.likes.has(x.id) || ctx.pantry.has(x.id)) s -= 2;
+      else if (MAIN_CATS.includes(x.food.cat)) s += 3; // main protein they didn't tick
+    }
+  }
+  if (ctx.cuisines.has(recipe.cuisine)) s -= 4;
+  if (ctx.styles.size) {
+    const lv = ctx.styles.get(recipe.method);
+    s += lv === 'often' ? -16 : lv === 'sometimes' ? -6 : 12;
+  }
+  if (ctx.prefer?.length) {
+    for (const x of mains) {
+      const fl = x.food.flags || [];
+      if ((ctx.prefer.includes('fish') && fl.includes('fish')) || (ctx.prefer.includes('legumes') && ['lentils', 'chickpeas'].includes(x.id))) s -= 6;
+      if (ctx.prefer.includes('veg') && x.food.cat === 'veg') s -= 1;
+      if (fl.includes('meat') && !fl.includes('fish')) s += ['steak', 'duck', 'lamb-chops', 'pork-chop', 'beef-mince', 'ham'].includes(x.id) ? 10 : 4;
+    }
+    if (recipe.cuisine === 'mediterranean') s -= 6;
+  }
+  return s + ctx.rand() * 10;
+}
+
+function describeRecipe(recipe, list, totals, target, meal, ctx, s) {
   return {
-    id: `${template.id}:${parts.map((p) => `${p.food.id}${p.grams}`).join('+')}`,
-    templateId: template.id,
-    // The protein food is what makes a meal feel "the same"; used for variety
-    main: (parts.find((p) => p.role === 'protein') || parts[0]).food.id,
-    title: template.title(named, method),
-    minutes: method ? METHODS[method].minutes : template.minutes,
-    method,
-    styles: stylesOf(template, method),
+    id: `${recipe.id}:${list.map((x) => x.grams).join('+')}`,
+    templateId: recipe.id,
+    recipeId: recipe.id,
+    title: recipe.title,
+    minutes: recipe.minutes,
+    method: recipe.method,
+    styles: [recipe.method],
+    cuisine: recipe.cuisine,
     meal,
-    items: parts.map((p) => ({
-      id: p.food.id,
-      name: p.food.name,
-      grams: p.grams,
-      pieces: p.food.piece ? Math.round(p.grams / p.food.piece.g) : null,
-      pieceUnit: p.food.piece?.unit || null,
-      prep: p.food.prep,
-      isNew: ctx.likes.size > 0 && !ctx.likes.has(p.food.id) && !ctx.pantry.has(p.food.id),
+    main: mainOf(list),
+    items: list.map((x) => ({
+      id: x.id,
+      name: x.food.name,
+      grams: x.grams,
+      pieces: x.food.piece && !x.opts.fixed ? Math.round(x.grams / x.food.piece.g) : null,
+      pieceUnit: x.food.piece?.unit || null,
+      prep: x.food.prep || '',
+      show: x.opts.show || null,
+      isNew: ctx.likes.size > 0 && !x.food.extra && !x.opts.fixed && MAIN_CATS.includes(x.food.cat) && !ctx.likes.has(x.id) && !ctx.pantry.has(x.id),
     })),
     totals,
-    steps: template.steps(named, method),
+    steps: recipe.steps,
     score: s,
     target,
   };
 }
 
-function build(templates, target, meal, ctx, focus, limit) {
+/** Suggestions from a set of recipes for one target. */
+function build(recipes, target, meal, ctx, focus, limit) {
   const results = [];
-  for (const tpl of templates) {
-    if (tpl.methods && !chooseMethod(tpl, ctx)) continue;
-    for (const picks of combos(tpl, ctx)) {
-      const parts = solvePortions(tpl, picks, target);
-      if (!parts) continue;
-      const totals = totalsOf(parts);
-      const err = Math.abs(totals.kcal - target.kcal) / Math.max(target.kcal, 1);
-      if (err > (target.kcal < 300 ? 0.35 : 0.2)) continue;
-      // Never suggest more carbohydrate than this meal's share of the day's carb target
-      if (target.carbsMax !== undefined && totals.carbs > target.carbsMax) continue;
-      const method = chooseMethod(tpl, ctx);
-      results.push(describe(tpl, parts, target, meal, ctx, score(totals, target, parts, tpl, ctx, focus, method), method));
-    }
+  for (const recipe of recipes) {
+    if (!recipeAllowed(recipe, ctx)) continue;
+    const base = recipeBase(recipe);
+    const factor = Math.min(1.7, Math.max(0.6, target.kcal / Math.max(base.kcal, 1)));
+    const { list, totals } = scaleRecipe(recipe, factor);
+    if (ctx.pantryOnly && !list.filter((x) => !x.opts.fixed && !x.food.extra).every((x) => ctx.pantry.has(x.id))) continue;
+    const err = Math.abs(totals.kcal - target.kcal) / Math.max(target.kcal, 1);
+    if (err > (target.kcal < 300 ? 0.4 : 0.25)) continue;
+    // Never more carbohydrate than this meal's share of the day's carb target
+    if (target.carbsMax !== undefined && totals.carbs > target.carbsMax) continue;
+    results.push(describeRecipe(recipe, list, totals, target, meal, ctx, scoreRecipe(recipe, totals, list, target, ctx, focus)));
   }
   results.sort((a, b) => a.score - b.score);
-  // One per template, and no main protein repeated within a group or
-  // across the groups on screen (ctx.usedMains), so every liked meat and
-  // fish gets its turn. If that leaves a group empty, allow repeats.
+  // No main protein repeated within a group or across the groups on screen
+  // (ctx.usedMains), and no recipe twice, so the screen shows variety.
   const used = ctx.usedMains || new Set();
+  const usedRecipes = ctx.usedRecipes || new Set();
   const pick = (allowUsed) => {
     const out = [];
-    const usedTpl = new Map();
     for (const r of results) {
       if (out.length >= limit) break;
-      // Templates in a preferred cooking style may appear twice (e.g. two stews)
-      const maxPerTpl = r.styles.some((x) => ctx.styles?.has(x)) ? 2 : 1;
-      if ((usedTpl.get(r.templateId) || 0) >= maxPerTpl) continue;
-      if (out.some((p) => p.main === r.main)) continue;
+      if (usedRecipes.has(r.recipeId) || out.some((p) => p.recipeId === r.recipeId || p.main === r.main)) continue;
       if (!allowUsed && used.has(r.main)) continue;
-      usedTpl.set(r.templateId, (usedTpl.get(r.templateId) || 0) + 1);
       out.push(r);
     }
     return out;
   };
   let picked = pick(false);
   if (!picked.length) picked = pick(true);
-  for (const r of picked) used.add(r.main);
+  for (const r of picked) {
+    used.add(r.main);
+    usedRecipes.add(r.recipeId);
+  }
   return picked;
 }
 
@@ -372,7 +305,8 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
   for (const fl of diet.exclude || []) ex.flags.add(fl);
   const lowCarb = diet.maxCarbs100 != null;
   const ctx = {
-    pool: FOODS.filter((f) => isAllowed(f, ex) && !(lowCarb && f.per.carbs >= diet.maxCarbs100)),
+    ex,
+    maxCarbs100: diet.maxCarbs100 ?? null,
     prefer: diet.prefer || [],
     likes: new Set(tastes.likes || []),
     pantry: new Set(tastes.pantry || []),
@@ -381,21 +315,21 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
     rand: rng(seed),
     pantryOnly: false,
     usedMains: new Set(),
+    usedRecipes: new Set(),
   };
   const maxMinutes = COOK_LIMITS[tastes.cookTime] ?? Infinity;
-  ctx.maxMinutes = maxMinutes;
   const { meal, share } = nextMeal({ now, plan: tastes.plan, loggedMeals });
 
   const rem = Object.fromEntries(NUTRIENTS.map((k) => [k, Math.max(0, remaining?.[k] ?? 0)]));
   const mode = (remaining?.kcal ?? 0) <= 0 ? 'over' : rem.kcal < 250 ? 'light' : 'normal';
 
-  const snackTemplates = TEMPLATES.filter((t) => t.snack);
+  const snackRecipes = RECIPES.filter((r) => r.meals.includes('snacks') && r.minutes <= 20);
   const lightTarget = mode === 'over'
     ? { kcal: 150, protein: 12, carbs: 15, fat: 5 }
     : { kcal: Math.min(250, Math.max(100, rem.kcal)), protein: Math.max(8, Math.min(20, rem.protein)), carbs: Math.max(10, rem.carbs * 0.5), fat: Math.max(5, rem.fat * 0.5) };
   // Snacks once the target is reached, or with little carbohydrate left, stay low in carbs
   lightTarget.carbsMax = lowCarb ? Math.max(6, Math.min(10, rem.carbs)) : Math.max(10, Math.min(rem.carbs, 30));
-  const groups = { quick: [], regular: [], protein: [], light: build(snackTemplates, lightTarget, 'snacks', { ...ctx, usedMains: new Set() }, 'light', limit), pantry: [] };
+  const groups = { quick: [], regular: [], protein: [], light: build(snackRecipes, lightTarget, 'snacks', { ...ctx, usedMains: new Set(), usedRecipes: new Set() }, 'light', limit), pantry: [] };
   if (mode !== 'normal') return { meal, mode, target: lightTarget, groups, lowCarb };
 
   const target = {
@@ -413,16 +347,14 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
   }
   if (meal !== 'snacks') target.protein = Math.max(target.protein, Math.min(25, rem.protein));
   target.carbsMax = carbLimit(target.carbs);
-  // Templates with several cooking methods take as long as the method chosen
-  const minutesRange = (t) => (t.methods ? t.methods.map((m) => METHODS[m].minutes) : [t.minutes]);
-  const mealTpls = TEMPLATES.filter((t) => t.meals.includes(meal) && Math.min(...minutesRange(t)) <= maxMinutes && (meal === 'snacks' || !t.snack));
+  const forMeal = RECIPES.filter((r) => r.meals.includes(meal) && r.minutes <= maxMinutes);
 
-  groups.quick = build(mealTpls.filter((t) => Math.min(...minutesRange(t)) <= 15), target, meal, { ...ctx, maxMinutes: Math.min(15, maxMinutes) }, 'quick', limit);
-  groups.regular = build(mealTpls.filter((t) => Math.max(...minutesRange(t)) > 15), target, meal, { ...ctx, minMinutes: 15 }, 'regular', limit);
+  groups.quick = build(forMeal.filter((r) => r.minutes <= 15), target, meal, ctx, 'quick', limit);
+  groups.regular = build(forMeal.filter((r) => r.minutes > 15), target, meal, ctx, 'regular', limit);
   const proteinTarget = { ...target, protein: Math.min(target.protein * 1.4, (target.kcal * 0.55) / 4) };
-  groups.protein = build(mealTpls, proteinTarget, meal, ctx, 'protein', limit);
+  groups.protein = build(forMeal, proteinTarget, meal, ctx, 'protein', limit);
   if (ctx.pantry.size) {
-    groups.pantry = build(mealTpls, target, meal, { ...ctx, pantryOnly: true, rand: rng(`${seed}p`), usedMains: new Set() }, 'pantry', limit);
+    groups.pantry = build(forMeal, target, meal, { ...ctx, pantryOnly: true, rand: rng(`${seed}p`), usedMains: new Set(), usedRecipes: new Set() }, 'pantry', limit);
   }
   return { meal, mode, target, groups, lowCarb };
 }

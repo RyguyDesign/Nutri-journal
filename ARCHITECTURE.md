@@ -74,22 +74,11 @@ All text lives in `js/i18n/en.js`. Adding German means adding `de.js` with the s
 
 ## 11. Suggestions (built in, free)
 
-`js/suggest/` is a rule-based engine; no AI, no network.
+`js/suggest/recipes.js` holds a library of real recipes (about 70): named dishes with seasoning and proper steps, each tagged with meals, minutes, cooking method (air fryer, stove top, oven, grill, stir-fry, stew, no-cook) and cuisine. Ingredients reference the catalogue (`catalog.js`) or small extras (onion, garlic, spices, sauces) with typical values.
 
-- **Catalogue** (`catalog.js`): ~55 ordinary supermarket foods with typical values per 100 g (USDA FoodData Central, German BLS and common labels; carbohydrates exclude fibre as on EU labels), sensible portion ranges, and flags for diets and allergens. Anything added from a suggestion is labelled *Typical values (estimate)* and stays editable.
-- **"Foods I like" questionnaire**: tick lists per category, cuisines, cooking time, meals per day, and foods always at home. Stored in `kv/tastes`.
-- **Next meal**: from the time of day, the meals-per-day plan and what's already logged; that meal gets its share of the remaining allowance, capped at ~900 kcal (snacks ~400).
-- **Templates** (`templates.js`): plates, stir-fries, pasta, salads, wraps, oats, yogurt bowls, eggs on bread, snacks. Each slot is sized by role: protein to cover the protein gap, energy to fill the calories, fixed for vegetables, oil and toppings.
-- **Rules**: diet and allergy words in the profile map to flags (vegetarian excludes meat and fish, lactose excludes dairy, and so on); allergies and dislikes also exclude foods by name. These are never overridden. Liked foods come first; an occasional ordinary extra is marked *new*. Meals must land within ±10% of their calorie share (snacks ±35%).
-- **Carbohydrate limit**: a meal never has more carbohydrate than its share of what's left of the day's carb target (+15% or +4 g). Snacks stay under 30 g (10 g in low-carb style).
-- **Low-carb style** (Profile → Diet style, or "low carb"/"keto" as a diet preference): targets fix carbs at 50 g, protein at least 2 g/kg, fat fills the rest; foods with 15 g carbs per 100 g or more are left out; low-carb meal types (omelettes, protein plates, salads with cheese or avocado, protein snack plates).
-- **Everyday foods in the entry form**: typing a name searches the suggestion catalogue plus `js/foods/common.js` (~100 everyday foods and drinks: coffee drinks, alcohol, bakery, takeaway, sweets; German names as aliases) with typical values and a typical portion (a brownie, a cup). Anything else: **Search online** queries Open Food Facts by name (only on tap; their search is rate-limited). Calories alone are enough to save; blank protein, carbs and fat count as 0, with a note.
-- **Variety**: no main protein repeats across the groups on screen, and a random spread lets equally good meats take turns.
-- **Cooking styles** (questionnaire): grill, oven, stove top, air fryer, stir-fry, stews, no-cook, each "often" or "sometimes". Plates are cooked by a method chosen with that weighting (often ≈ 3× sometimes; unticked methods not used when any are ticked); titles and steps follow the method, and the method's time decides Quick (air fryer and stove top 15 min) or Regular.
-- **Groups**: quick (≤15 min), regular, high protein, light snacks, from what I have (pantry only).
-- **At or over target**: a calm note and light, filling options around 150 kcal. Never a warning or a suggestion to compensate.
+`engine.js` picks the next meal and its share of what's left today, keeps recipes that suit the meal, diet style, allergies, dislikes and cooking time, scales each recipe to the meal's calorie share (seasonings stay as written; eggs in whole eggs; amounts to 5 g) and never exceeds the meal's share of the carb target. Ranking favours the person's cooking styles (often / sometimes), cuisines, liked foods and, for Mediterranean, fish and legumes. Groups: quick (≤15 min), regular, high protein, light snacks, from what I have. No recipe or main protein twice on screen.
 
-## 12. AI providers (planned, optional)
+## 12. AI providers (planned, optional: an extra 'more ideas' button with the person's own key)
 
 Claude, Gemini, Grok and ChatGPT behind one adapter interface, chosen per request with a picker. API keys are entered in the app and stored only on the device, never in this repository. The rule-based engine works without any key or connection.
 

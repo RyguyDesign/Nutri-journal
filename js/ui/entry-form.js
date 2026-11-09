@@ -198,7 +198,7 @@ export async function render(root, rerender, params = {}) {
       base,
       label: t('entry.amount'),
       onInput: (v) => {
-        $.qty.value = fmtInput(v);
+        $.qty.value = String(Math.round(v * 100) / 100); // keep quarters: 1.25, not 1.3
         $.qty.dispatchEvent(new Event('input'));
       },
     });
