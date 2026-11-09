@@ -14,7 +14,7 @@ export const MEALS = ['breakfast', 'lunch', 'dinner', 'snacks', 'drinks'];
 export const UNITS = ['g', 'ml', 'piece', 'portion'];
 export const MASS_UNITS = ['g', 'ml'];
 export const PREPARATIONS = ['', 'raw', 'cooked'];
-export const SOURCES = ['manual', 'label', 'database', 'ai'];
+export const SOURCES = ['manual', 'label', 'database', 'typical', 'ai'];
 
 /** Accept "72,5" as well as "72.5". Empty or invalid input returns NaN. */
 export function parseNumber(s) {

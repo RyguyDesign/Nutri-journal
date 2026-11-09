@@ -8,7 +8,7 @@ import { lookupBarcode } from '../foods/off.js';
 import { parseLabelText } from '../foods/label-parse.js';
 import { recognizeLabel } from '../foods/ocr.js';
 import { scanBarcode } from './scanner.js';
-import { getSelectedDate, goBack } from './state.js';
+import { getSelectedDate, goBack, takePendingFood } from './state.js';
 
 // The form keeps its own state; it must not be re-rendered by store changes.
 export const live = false;
@@ -626,7 +626,16 @@ export async function render(root, rerender, params = {}) {
     $.meal.value = MEALS.includes(params.query?.meal) ? params.query.meal : defaultMeal(time);
     setMode('per100');
     refreshUnits('g');
-    showSuggestions();
+    const pending = takePendingFood();
+    if (pending) {
+      // From a suggestion: one entry for the whole meal, editable before saving
+      applyFood({ name: pending.name, per: pending.per, prep: '' }, { source: pending.source });
+      if (MEALS.includes(pending.meal)) $.meal.value = pending.meal;
+      $.notes.value = pending.notes || '';
+      $.saveFood.checked = false;
+    } else {
+      showSuggestions();
+    }
   }
   update();
 }

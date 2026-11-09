@@ -72,6 +72,18 @@ Saved foods are matched by id, then barcode, then name + brand + unit, so the li
 
 All text lives in `js/i18n/en.js`. Adding German means adding `de.js` with the same keys and registering it in `i18n.js`. Number inputs accept both `72.5` and `72,5`.
 
-## 11. AI providers (Stage 3, planned)
+## 11. Suggestions (built in, free)
+
+`js/suggest/` is a rule-based engine; no AI, no network.
+
+- **Catalogue** (`catalog.js`): ~55 ordinary supermarket foods with typical values per 100 g (USDA FoodData Central, German BLS and common labels; carbohydrates exclude fibre as on EU labels), sensible portion ranges, and flags for diets and allergens. Anything added from a suggestion is labelled *Typical values (estimate)* and stays editable.
+- **"Foods I like" questionnaire**: tick lists per category, cuisines, cooking time, meals per day, and foods always at home. Stored in `kv/tastes`.
+- **Next meal**: from the time of day, the meals-per-day plan and what's already logged; that meal gets its share of the remaining allowance, capped at ~900 kcal (snacks ~400).
+- **Templates** (`templates.js`): plates, stir-fries, pasta, salads, wraps, oats, yogurt bowls, eggs on bread, snacks. Each slot is sized by role: protein to cover the protein gap, energy to fill the calories, fixed for vegetables, oil and toppings.
+- **Rules**: diet and allergy words in the profile map to flags (vegetarian excludes meat and fish, lactose excludes dairy, and so on); allergies and dislikes also exclude foods by name. These are never overridden. Liked foods come first; an occasional ordinary extra is marked *new*. Meals must land within ±10% of their calorie share (snacks ±35%).
+- **Groups**: quick (≤15 min), regular, high protein, light snacks, from what I have (pantry only).
+- **At or over target**: a calm note and light, filling options around 150 kcal. Never a warning or a suggestion to compensate.
+
+## 12. AI providers (planned, optional)
 
 Claude, Gemini, Grok and ChatGPT behind one adapter interface, chosen per request with a picker. API keys are entered in the app and stored only on the device, never in this repository. The rule-based engine works without any key or connection.

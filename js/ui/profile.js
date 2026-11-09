@@ -71,7 +71,7 @@ function profileForm(profile) {
     ),
     field('targetWeightKg', t('profile.targetWeight'), numInput('targetWeightKg', p.targetWeightKg, t('common.kg'))),
     h('h2', {}, t('profile.foodSection')),
-    h('p', { class: 'muted small' }, t('profile.foodHint')),
+    h('p', { class: 'muted small' }, t('profile.foodHint'), ' ', h('a', { class: 'link-btn', href: '#/tastes' }, `${t('profile.likesLink')} →`)),
     field('diet', t('profile.diet'), h('input', { id: 'diet', type: 'text', value: (p.diet || []).join(', '), placeholder: t('profile.diet.ph') })),
     field('allergies', t('profile.allergies'), h('input', { id: 'allergies', type: 'text', value: (p.allergies || []).join(', '), placeholder: t('profile.allergies.ph') })),
     field('dislikes', t('profile.dislikes'), h('input', { id: 'dislikes', type: 'text', value: (p.dislikes || []).join(', '), placeholder: t('profile.dislikes.ph') })),

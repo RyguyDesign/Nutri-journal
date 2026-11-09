@@ -52,6 +52,22 @@ export function targetValues(targets) {
   return out;
 }
 
+// ---- Food preferences ("Foods I like" questionnaire) ---------------------
+// { likes: [catalogue ids], pantry: [ids], cuisines: [], cookTime, plan, updatedAt }
+
+export const DEFAULT_TASTES = { likes: [], pantry: [], cuisines: [], cookTime: 'medium', plan: '3+1' };
+
+export async function getTastes() {
+  const t = await db.get('kv', 'tastes');
+  return t ? { ...DEFAULT_TASTES, ...t, saved: true } : { ...DEFAULT_TASTES, saved: false };
+}
+
+export async function saveTastes(tastes) {
+  const { saved, ...rest } = tastes;
+  await db.put('kv', { ...rest, updatedAt: new Date().toISOString() }, 'tastes');
+  emit('tastes');
+}
+
 // ---- Settings ------------------------------------------------------------
 
 const DEFAULT_SETTINGS = { locale: 'en' };

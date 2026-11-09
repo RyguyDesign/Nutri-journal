@@ -6,6 +6,8 @@ import * as dashboard from './ui/dashboard.js';
 import * as journal from './ui/journal.js';
 import * as profile from './ui/profile.js';
 import * as entryForm from './ui/entry-form.js';
+import * as ideas from './ui/ideas.js';
+import * as tastes from './ui/tastes.js';
 import { getSelectedDate, setSelectedDate, noteNavigation } from './ui/state.js';
 
 // 24×24 stroke icons
@@ -13,6 +15,7 @@ const ICONS = {
   dashboard: 'M12 3a9 9 0 1 0 9 9M12 3v9h9M12 3a9 9 0 0 1 9 9',
   journal: 'M6 3h11a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1zM5 17a2 2 0 0 1 2-2h12M9 7h6M9 11h6',
   profile: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  ideas: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z',
 };
 
 // Only screens that work are listed. Later stages add Foods, Meal builder,
@@ -20,7 +23,9 @@ const ICONS = {
 const ROUTES = [
   { pattern: /^\/$/, view: dashboard, tab: '/', label: 'nav.dashboard', icon: ICONS.dashboard },
   { pattern: /^\/journal$/, view: journal, tab: '/journal', label: 'nav.journal', icon: ICONS.journal },
+  { pattern: /^\/ideas$/, view: ideas, tab: '/ideas', label: 'nav.ideas', icon: ICONS.ideas },
   { pattern: /^\/profile$/, view: profile, tab: '/profile', label: 'nav.profile', icon: ICONS.profile },
+  { pattern: /^\/tastes$/, view: tastes },
   { pattern: /^\/add$/, view: entryForm },
   { pattern: /^\/edit\/([\w-]+)$/, view: entryForm, params: (m) => ({ id: m[1] }) },
 ];

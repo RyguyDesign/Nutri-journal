@@ -6,6 +6,8 @@ import { recommendationFor, estimatedTargetsOutdated } from './targets-compare.j
 import { dayNav } from './daynav.js';
 import { getSelectedDate } from './state.js';
 import { entryRow } from './journal.js';
+import { todaysSuggestions, addToJournal } from './ideas.js';
+import { today } from '../core/dates.js';
 
 export async function render(root, rerender) {
   const date = getSelectedDate();
@@ -65,5 +67,22 @@ export async function render(root, rerender) {
     entries.length ? h('ul', { class: 'log' }, entries.map((e) => entryRow(e, { showMacros: false }))) : h('p', { class: 'muted' }, t('dash.logEmpty')),
   );
 
-  root.replaceChildren(...[dayNav(rerender), notice, hero, add, macros, log].filter(Boolean));
+  // One suggestion for the next meal, today only
+  let idea = null;
+  if (goal && date === today()) {
+    const { result } = await todaysSuggestions(1);
+    const s = result?.mode === 'normal' ? result.groups.quick[0] || result.groups.regular[0] : result?.groups.light[0];
+    if (s) {
+      idea = h(
+        'section',
+        { class: 'card idea-teaser' },
+        h('h2', {}, t('ideas.dashTitle', { meal: t(`meal.${s.meal}`) })),
+        h('p', {}, h('strong', {}, s.title)),
+        h('p', { class: 'muted small num' }, t('ideas.meta', { min: s.minutes, kcal: fmtKcal(s.totals.kcal) })),
+        h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn', onclick: () => addToJournal(s) }, t('ideas.add')), h('a', { class: 'link-btn', href: '#/ideas' }, t('ideas.dashMore'))),
+      );
+    }
+  }
+
+  root.replaceChildren(...[dayNav(rerender), notice, hero, add, macros, idea, log].filter(Boolean));
 }

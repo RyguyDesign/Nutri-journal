@@ -8,6 +8,22 @@ export const setSelectedDate = (d) => {
   selectedDate = d;
 };
 
+// A food handed to the entry form (e.g. "Add to journal" on a suggestion).
+let pendingFood = null;
+export const setPendingFood = (f) => {
+  pendingFood = f;
+};
+export function takePendingFood() {
+  const f = pendingFood;
+  pendingFood = null;
+  return f;
+}
+
+// Shuffle counter for "Show other ideas"
+let ideasRound = 0;
+export const getIdeasRound = () => ideasRound;
+export const nextIdeasRound = () => ++ideasRound;
+
 // Number of in-app navigations, so "back" never leaves the app.
 let depth = 0;
 export const noteNavigation = () => depth++;

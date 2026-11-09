@@ -8,7 +8,8 @@ A personal nutrition journal and calorie tracker, built for daily use on a phone
 | --- | --- | --- |
 | 1 | Profile, target calculation, dashboard, backup | Done |
 | 2 | Food journal, barcode scanning, label photos, saved foods | Done |
-| 3 | Meal suggestions: rule-based plus Claude, Gemini, Grok, ChatGPT | Planned |
+| 3 | Foods-I-like questionnaire and free meal suggestions | Done |
+| 3b | Optional AI suggestions (Claude, Gemini, Grok, ChatGPT) | Later, optional |
 | 4 | Food search by name, food library screen, meal builder | Planned |
 | 5 | History, weight tracking, charts | Planned |
 | 6 | Testing, refinement, documentation | Planned |
