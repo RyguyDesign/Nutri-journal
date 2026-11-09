@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { unitChoices, setUnit, itemTotals, mealTotals, scaleItem, itemFromFood, itemFromEveryday, itemFromProduct, itemCaloriesOnly, entryFromItem, itemForSaving, itemsFromSavedMeal } from '../js/core/meal.js';
+import { unitChoices, setUnit, itemTotals, mealTotals, scaleItem, stepItem, setAmount, currentQuick, itemFromFood, itemFromEveryday, itemFromProduct, itemCaloriesOnly, entryFromItem, itemForSaving, itemsFromSavedMeal } from '../js/core/meal.js';
 import { searchEveryday } from '../js/foods/everyday.js';
 
 const soup = () => itemFromEveryday(searchEveryday('pumpkin soup')[0]);
@@ -72,4 +72,24 @@ test('entries and saved meals', () => {
   const again = itemsFromSavedMeal(saved);
   assert.equal(again.length, 2);
   assert.ok(again[0].key && again[0].key !== again[1].key);
+});
+
+test('− / + step by half a unit or 10 g; quick-set replaces the amount', () => {
+  const b = frischkase(); // 1 tbsp
+  assert.equal(stepItem(b, 1).quantity, 1.5);
+  assert.equal(stepItem(stepItem(b, 1), 1).quantity, 2);
+  assert.equal(stepItem(b, -1).quantity, 0.5);
+  assert.equal(stepItem(stepItem(b, -1), -1).quantity, 0.25); // floor
+  assert.equal(stepItem({ ...b, quantity: 0.25 }, 1).quantity, 0.5); // snaps to halves
+  assert.equal(setAmount(b, 0.5).quantity, 0.5);
+  assert.equal(setAmount(setAmount(b, 0.5), 0.5).quantity, 0.5); // not compounding
+  assert.equal(setAmount(b, 2).quantity, 2);
+  assert.equal(currentQuick(b), 1);
+  const mush = itemFromEveryday(searchEveryday('mushrooms')[0]);
+  assert.equal(mush.unit, 'g');
+  assert.equal(stepItem({ ...mush, quantity: 100 }, 1).quantity, 110);
+  assert.equal(stepItem({ ...mush, quantity: 100 }, -1).quantity, 90);
+  const half = setAmount(mush, 0.5);
+  assert.equal(half.quantity, Math.round(mush.baseGrams / 2));
+  assert.equal(currentQuick(half), 0.5);
 });

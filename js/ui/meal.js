@@ -12,7 +12,7 @@ import { lookupBarcode, searchProducts } from '../foods/off.js';
 import { scanBarcode } from './scanner.js';
 import { getSelectedDate, goBack } from './state.js';
 import {
-  unitChoices, setUnit, itemTotals, mealTotals, scaleItem,
+  unitChoices, setUnit, itemTotals, mealTotals, stepItem, setAmount, currentQuick, QUICK_AMOUNTS,
   itemFromFood, itemFromEveryday, itemFromProduct, itemCaloriesOnly,
   itemForSaving, itemsFromSavedMeal, entryFromItem,
 } from '../core/meal.js';
@@ -175,7 +175,9 @@ export async function render(root, rerender, params = {}) {
         update(it.key, (x) => ({ ...x, per: { ...x.per, kcal: v >= 0 ? v : NaN } }));
       });
     }
-    const chip = (label, f) => h('button', { type: 'button', class: 'chip mini', onclick: () => update(it.key, (x) => scaleItem(x, f)) }, label);
+    const active = currentQuick(it);
+    const chip = (v) => h('button', { type: 'button', class: 'chip mini', 'aria-pressed': String(active === v), 'aria-label': t('meal.setAmount', { n: fracLabel(v) }), onclick: () => update(it.key, (x) => setAmount(x, v)) }, fracLabel(v));
+    const stepBtn = (dir) => h('button', { type: 'button', class: 'step-btn', 'aria-label': dir > 0 ? t('meal.more') : t('meal.less'), onclick: () => update(it.key, (x) => stepItem(x, dir)) }, dir > 0 ? '+' : '−');
     return h(
       'li',
       { class: 'meal-item', dataset: { key: it.key } },
@@ -189,10 +191,10 @@ export async function render(root, rerender, params = {}) {
       kcalIn || h(
         'div',
         { class: 'meal-item-amount' },
-        qty,
+        h('div', { class: 'stepper' }, stepBtn(-1), qty, stepBtn(1)),
         choices.length > 1 ? unit : h('span', { class: 'unit-fixed' }, unitName(it.unit, it.quantity)),
-        h('div', { class: 'chips' }, chip('½', 0.5), chip('¼', 0.25), chip('×2', 2)),
       ),
+      kcalIn ? null : h('div', { class: 'chips quick' }, QUICK_AMOUNTS.map(chip)),
       sizeNote && !kcalIn ? h('div', { class: 'meal-item-size' }, sizeNote) : null,
     );
   }
@@ -310,4 +312,8 @@ function pick(name, info, onPick) {
 function plural(word, q) {
   if (q === 1 || /s$/.test(word)) return word;
   return /(ch|sh|x)$/.test(word) ? `${word}es` : `${word}s`;
+}
+
+function fracLabel(v) {
+  return { 0.25: '¼', 0.5: '½', 1: '1', 1.5: '1½', 2: '2' }[v] || String(v);
 }

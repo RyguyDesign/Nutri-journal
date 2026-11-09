@@ -34,6 +34,7 @@ export function setUnit(item, unit) {
   const grams = gramsOf(item);
   let quantity = 1;
   if (!to.size) quantity = grams > 0 ? Math.round(grams) : 100;
+  if (!to.size) return { ...item, unit, unitSize: undefined, quantity, baseGrams: item.baseGrams || quantity };
   else if (MEASURE_UNITS.includes(unit) || unit === 'piece' || unit === 'portion') quantity = 1;
   return { ...item, unit, unitSize: to.size || undefined, quantity };
 }
@@ -63,7 +64,40 @@ export function mealTotals(items) {
   return t;
 }
 
-/** Multiply the amount: ½, ¼, ×2. Counted units keep sensible steps. */
+// Quick-set amounts shown under each food
+export const QUICK_AMOUNTS = [0.25, 0.5, 1, 1.5, 2];
+
+/** Step size for − / +: half a spoon, bowl or piece; 10 g or ml. */
+export function stepSize(item) {
+  return MASS_UNITS.includes(item.unit) ? 10 : 0.5;
+}
+
+/** − / +: change by one step, never below a small minimum. */
+export function stepItem(item, dir) {
+  const step = stepSize(item);
+  const min = MASS_UNITS.includes(item.unit) ? 5 : 0.25;
+  // Snap to the step grid first, so 0.25 + ½ becomes 0.5, not 0.75
+  const snapped = dir > 0 ? Math.floor(item.quantity / step + 1e-9) * step + step : Math.ceil(item.quantity / step - 1e-9) * step - step;
+  return { ...item, quantity: Math.max(min, Math.round(snapped * 100) / 100) };
+}
+
+/**
+ * Quick-set: ¼ ½ 1 1½ 2 of the unit (spoons, bowls, pieces). For grams,
+ * "1" is the food's usual portion (or 100 g when it has none).
+ */
+export function setAmount(item, value) {
+  if (!MASS_UNITS.includes(item.unit)) return { ...item, quantity: value };
+  const base = item.baseGrams > 0 ? item.baseGrams : 100;
+  return { ...item, quantity: Math.max(1, Math.round(base * value)) };
+}
+
+/** Which quick-set button matches the current amount, if any. */
+export function currentQuick(item) {
+  const base = MASS_UNITS.includes(item.unit) ? (item.baseGrams > 0 ? item.baseGrams : 100) : 1;
+  return QUICK_AMOUNTS.find((v) => Math.abs(item.quantity - v * base) < 1e-6);
+}
+
+/** Multiply the amount (kept for older callers). */
 export function scaleItem(item, factor) {
   const q = item.quantity * factor;
   const counted = !MASS_UNITS.includes(item.unit);
@@ -90,7 +124,7 @@ export function itemFromFood(f) {
   if (!MASS_UNITS.includes(f.per.unit)) return { ...item, unit: f.per.unit, quantity: f.per.amount || 1 };
   if (MEASURE_UNITS.includes(f.lastUnit)) return { ...item, unit: f.lastUnit, quantity: 1, unitSize: measureSize(f.lastUnit, f.name, f.measures) };
   if (f.servingSize > 0) return { ...item, unit: 'portion', quantity: 1, unitSize: f.servingSize };
-  return { ...item, unit: f.per.unit, quantity: 100 };
+  return { ...item, unit: f.per.unit, quantity: f.lastGrams > 0 ? f.lastGrams : 100, baseGrams: f.lastGrams > 0 ? f.lastGrams : 100 };
 }
 
 /** From the built-in everyday list (js/foods/everyday.js). */
@@ -106,7 +140,7 @@ export function itemFromEveryday(c) {
     per: { ...c.per },
     measures: { ...(c.measures || {}) },
   };
-  if (p.unit === 'g') return { ...item, unit: c.per.unit, quantity: p.g };
+  if (p.unit === 'g') return { ...item, unit: c.per.unit, quantity: p.g, baseGrams: p.g };
   if (MEASURE_UNITS.includes(p.unit)) return { ...item, measures: { ...item.measures, [p.unit]: p.g }, unit: p.unit, quantity: 1, unitSize: p.g };
   // A piece (brownie) or a portion (bowl of soup)
   if (p.unit === 'piece') return { ...item, pieceSize: p.g, unit: 'piece', quantity: 1, unitSize: p.g, portionLabel: p.label };
@@ -128,7 +162,7 @@ export function itemFromProduct(f) {
   };
   for (const k of ['protein', 'carbs', 'fat']) if (!Number.isFinite(item.per[k])) item.per[k] = 0;
   if (f.servingSize > 0) return { ...item, unit: 'portion', quantity: 1, unitSize: f.servingSize };
-  return { ...item, unit: f.per.unit, quantity: 100 };
+  return { ...item, unit: f.per.unit, quantity: 100, baseGrams: 100 };
 }
 
 /** A food the app doesn't know: only the calories of what was eaten. */

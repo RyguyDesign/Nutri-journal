@@ -180,6 +180,24 @@ export async function render(root, rerender, params = {}) {
     $.status.replaceChildren(...list.map((l) => h('p', {}, l)));
   }
 
+  // − / + and quick-set amounts (¼ ½ 1 1½ 2): spoons, bowls and pieces
+  // count in halves; grams in 10s, and "1" is the usual portion (or 100 g).
+  function setQtyValue(v) {
+    $.qty.value = fmtInput(v);
+    $.qty.dispatchEvent(new Event('input'));
+  }
+  function stepQty(dir) {
+    const counted = !MASS_UNITS.includes($.unit.value);
+    const step = counted ? 0.5 : 10;
+    const q = parseNumber($.qty.value) || 0;
+    const next = dir > 0 ? Math.floor(q / step + 1e-9) * step + step : Math.ceil(q / step - 1e-9) * step - step;
+    setQtyValue(Math.max(counted ? 0.25 : 5, Math.round(next * 100) / 100));
+  }
+  function setQty(v) {
+    const counted = !MASS_UNITS.includes($.unit.value);
+    setQtyValue(counted ? v : Math.max(1, Math.round((s.servingSize > 0 ? s.servingSize : 100) * v)));
+  }
+
   /** Show or fold away the nutrition values. */
   function showValues(open) {
     const box = root.querySelector('#values-box');
@@ -734,19 +752,11 @@ export async function render(root, rerender, params = {}) {
         field('qty', t('entry.amount'), $.qty),
         field('unit', t('entry.unit'), $.unit),
       ),
-      h('div', { class: 'chips portion-chips' }, [['½', 0.5], ['¼', 0.25], ['×2', 2]].map(([label, f]) =>
-        h('button', {
-          type: 'button',
-          class: 'chip mini',
-          onclick: () => {
-            const v = parseNumber($.qty.value);
-            if (!(v > 0)) return;
-            const counted = !MASS_UNITS.includes($.unit.value);
-            const nv = counted ? Math.max(0.25, Math.round(v * f * 4) / 4) : Math.max(1, Math.round(v * f));
-            $.qty.value = fmtInput(nv);
-            $.qty.dispatchEvent(new Event('input'));
-          },
-        }, label))),
+      h('div', { class: 'portion-controls' },
+        h('button', { type: 'button', class: 'step-btn', 'aria-label': t('meal.less'), onclick: () => stepQty(-1) }, '−'),
+        h('button', { type: 'button', class: 'step-btn', 'aria-label': t('meal.more'), onclick: () => stepQty(1) }, '+'),
+        h('div', { class: 'chips quick' }, [0.25, 0.5, 1, 1.5, 2].map((v) =>
+          h('button', { type: 'button', class: 'chip mini', 'aria-label': t('meal.setAmount', { n: v }), onclick: () => setQty(v) }, { 0.25: '¼', 0.5: '½', 1: '1', 1.5: '1½', 2: '2' }[v])))),
       field('usize', '', h('div', { class: 'with-unit' }, $.usize, h('span', { class: 'unit', id: 'u-usize' }, 'g')), { hint: ' ', hidden: true }),
       $.result,
       // Nutrition values stay folded away once the food is known

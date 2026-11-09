@@ -476,7 +476,12 @@ h2.gap { margin-top: 20px; }
 .meal-item .kcal { font-weight: 600; white-space: nowrap; }
 .meal-item .remove { width: 36px; height: 36px; font-size: 1.3rem; }
 .meal-item-amount { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
-.meal-item-amount .qty { width: 72px; flex: 0 0 72px; text-align: right; }
+.stepper { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.stepper .qty { width: 64px; text-align: center; }
+.step-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 1.4rem; font-weight: 600; line-height: 1; cursor: pointer; }
+.step-btn:active { background: var(--accent-soft); }
+.chips.quick { margin-top: 8px; gap: 6px; }
+.chips.quick .chip.mini { min-width: 48px; }
 .meal-item-amount .unit { flex: 1 1 120px; min-width: 110px; }
 .meal-item-amount .chips { flex: 0 0 auto; gap: 6px; }
 .meal-item-size { margin-top: 4px; }
@@ -485,5 +490,6 @@ h2.gap { margin-top: 20px; }
 .kcal-only { margin-top: 8px; max-width: 180px; }
 .meal-total { margin-top: 14px; }
 .save-meal-row { margin-top: 12px; display: grid; gap: 8px; }
-.portion-chips { margin: -4px 0 10px; }
+.portion-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 12px; }
+.portion-controls .chips.quick { margin-top: 0; }
 .empty { margin: 4px 0; }
