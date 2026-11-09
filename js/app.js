@@ -9,6 +9,7 @@ import * as profile from './ui/profile.js';
 import * as entryForm from './ui/entry-form.js';
 import * as ideas from './ui/ideas.js';
 import * as tastes from './ui/tastes.js';
+import * as mealView from './ui/meal.js';
 import { getSelectedDate, setSelectedDate, noteNavigation } from './ui/state.js';
 
 // 24×24 stroke icons
@@ -27,7 +28,8 @@ const ROUTES = [
   { pattern: /^\/ideas$/, view: ideas, tab: '/ideas', label: 'nav.ideas', icon: ICONS.ideas },
   { pattern: /^\/profile$/, view: profile, tab: '/profile', label: 'nav.profile', icon: ICONS.profile },
   { pattern: /^\/tastes$/, view: tastes },
-  { pattern: /^\/add$/, view: entryForm },
+  { pattern: /^\/add$/, view: mealView },
+  { pattern: /^\/add\/detail$/, view: entryForm },
   { pattern: /^\/edit\/([\w-]+)$/, view: entryForm, params: (m) => ({ id: m[1] }) },
 ];
 

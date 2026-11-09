@@ -38,7 +38,7 @@ export function addToJournal(s) {
     meal: s.meal,
     notes: t('ideas.ingredients', { list: s.items.map(itemLabel).join(', ') }),
   });
-  location.hash = '#/add';
+  location.hash = '#/add/detail';
 }
 
 export function card(s) {

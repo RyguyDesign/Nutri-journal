@@ -68,6 +68,37 @@ export async function saveTastes(tastes) {
   emit('tastes');
 }
 
+// ---- Saved meals ("Soup dinner" = pumpkin soup + Frischkäse) ---------------
+// kv/meals: [{ id, name, items: [meal items, see js/core/meal.js], useCount, lastUsedAt }]
+
+export async function getSavedMeals() {
+  const list = (await db.get('kv', 'meals')) || [];
+  return [...list].sort((a, b) => (b.lastUsedAt || '').localeCompare(a.lastUsedAt || ''));
+}
+
+export async function saveSavedMeal(meal) {
+  const list = (await db.get('kv', 'meals')) || [];
+  const now = new Date().toISOString();
+  const name = meal.name.trim();
+  const existing = list.find((m) => m.id === meal.id || m.name.toLowerCase() === name.toLowerCase());
+  const value = { ...(existing || {}), ...meal, name, id: existing?.id || newId(), lastUsedAt: now, useCount: (existing?.useCount || 0) + 1 };
+  await db.put('kv', [...list.filter((m) => m.id !== value.id), value], 'meals');
+  emit('meals');
+  return value;
+}
+
+export async function useSavedMeal(id) {
+  const list = (await db.get('kv', 'meals')) || [];
+  const now = new Date().toISOString();
+  await db.put('kv', list.map((m) => (m.id === id ? { ...m, lastUsedAt: now, useCount: (m.useCount || 0) + 1 } : m)), 'meals');
+}
+
+export async function deleteSavedMeal(id) {
+  const list = (await db.get('kv', 'meals')) || [];
+  await db.put('kv', list.filter((m) => m.id !== id), 'meals');
+  emit('meals');
+}
+
 // ---- Settings ------------------------------------------------------------
 
 const DEFAULT_SETTINGS = { locale: 'en' };

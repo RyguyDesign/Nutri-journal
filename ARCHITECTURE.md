@@ -96,3 +96,7 @@ Claude, Gemini, Grok and ChatGPT behind one adapter interface, chosen per reques
 ## Updates on the phone
 
 Android resumes an installed web app from memory, so it would keep running an old version until fully closed. `js/update.js` compares `version.json` with the version the page loaded, on start and whenever the app returns to the foreground: it reloads on a new version, or offers an **Update** button when a form is open. **Change `version.json` with every deploy.**
+
+## Add food: one meal, several foods
+
+`#/add` (`js/ui/meal.js`, logic in `js/core/meal.js`) logs one or several foods for a meal on one screen: search (saved meals, your foods, everyday foods, online, or calories only), each food joins a list with its typical amount, adjust with amount, unit or ½ ¼ ×2, one Save. Combinations can be saved as a meal (`kv/meals`) and added again with one tap. The single-food form with label photos and per-100 values is `#/add/detail`, also used for editing entries.

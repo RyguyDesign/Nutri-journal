@@ -734,6 +734,19 @@ export async function render(root, rerender, params = {}) {
         field('qty', t('entry.amount'), $.qty),
         field('unit', t('entry.unit'), $.unit),
       ),
+      h('div', { class: 'chips portion-chips' }, [['½', 0.5], ['¼', 0.25], ['×2', 2]].map(([label, f]) =>
+        h('button', {
+          type: 'button',
+          class: 'chip mini',
+          onclick: () => {
+            const v = parseNumber($.qty.value);
+            if (!(v > 0)) return;
+            const counted = !MASS_UNITS.includes($.unit.value);
+            const nv = counted ? Math.max(0.25, Math.round(v * f * 4) / 4) : Math.max(1, Math.round(v * f));
+            $.qty.value = fmtInput(nv);
+            $.qty.dispatchEvent(new Event('input'));
+          },
+        }, label))),
       field('usize', '', h('div', { class: 'with-unit' }, $.usize, h('span', { class: 'unit', id: 'u-usize' }, 'g')), { hint: ' ', hidden: true }),
       $.result,
       // Nutrition values stay folded away once the food is known
