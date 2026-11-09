@@ -73,6 +73,7 @@ export async function render(root, rerender, params = {}) {
   $.status = h('div', { class: 'status', id: 'status', role: 'status', 'aria-live': 'polite' });
   $.result = h('div', { class: 'result', id: 'result' });
   $.valuesHead = h('h3', { class: 'values-head' });
+  $.valuesSummary = h('span', {});
   $.sourceLine = h('p', { class: 'muted small', id: 'source-line' });
   $.file = h('input', { type: 'file', accept: 'image/*', capture: 'environment', hidden: true });
 
@@ -179,10 +180,18 @@ export async function render(root, rerender, params = {}) {
     $.status.replaceChildren(...list.map((l) => h('p', {}, l)));
   }
 
+  /** Show or fold away the nutrition values. */
+  function showValues(open) {
+    const box = root.querySelector('#values-box');
+    if (box) box.open = open;
+  }
+  const haveAllValues = () => NUTRIENTS.every((k) => Number.isFinite(parseNumber($.vals[k].value)));
+
   function showErrors(errors) {
     root.querySelectorAll('.field').forEach((f) => f.classList.remove('invalid'));
     root.querySelectorAll('.err').forEach((e) => (e.textContent = ''));
     const map = { quantity: 'qty', unitSize: 'usize', kcal: 'v-kcal', protein: 'v-protein', carbs: 'v-carbs', fat: 'v-fat' };
+    if (['kcal', 'protein', 'carbs', 'fat'].some((k) => errors[k])) showValues(true);
     for (const [k, code] of Object.entries(errors)) {
       const id = map[k] || k;
       root.querySelector(`#f-${id}`)?.classList.add('invalid');
@@ -240,6 +249,10 @@ export async function render(root, rerender, params = {}) {
           ].map((w) => h('p', { class: 'warn small' }, t(`entry.warn.${w}`)))
         : []),
     );
+    const per = d.per;
+    $.valuesSummary.textContent = Number.isFinite(per.kcal)
+      ? t('entry.valuesSummary', { kcal: fmtNumber(per.kcal, 0), amount: s.mode === 'per100' ? `100 ${s.base}` : `${fmtNumber(per.amount, 2)} ${unitLabel(d.unit, per.amount)}` })
+      : t('entry.valuesEmpty');
     const src = s.source === 'database' && s.valuesEdited ? 'manual' : s.source;
     $.sourceLine.textContent = t('entry.sourceLine', { source: t(`source.${src}`) });
   }
@@ -281,6 +294,7 @@ export async function render(root, rerender, params = {}) {
       captureScaleBase();
     }
     hideSuggestions();
+    showValues(!haveAllValues());
     update();
   }
 
@@ -432,6 +446,7 @@ export async function render(root, rerender, params = {}) {
       s.servingSize = undefined;
       setValues(r.values);
       for (const k of r.uncertain) $.vals[k].classList.add('check');
+      showValues(true); // read from a photo: worth a look
       s.source = 'label';
       s.valuesEdited = false;
       setStatus(
@@ -714,28 +729,35 @@ export async function render(root, rerender, params = {}) {
       'section',
       { class: 'card' },
       h(
-        'fieldset',
-        { class: 'segmented' },
-        h('legend', {}, t('entry.mode')),
-        h('label', {}, $.modePer100, h('span', {}, t('entry.mode.per100'))),
-        h('label', {}, $.modeTotal, h('span', {}, t('entry.mode.total'))),
-      ),
-      field('base', t('entry.base'), $.base),
-      h(
         'div',
         { class: 'grid2' },
         field('qty', t('entry.amount'), $.qty),
-        field('unit', ' ', $.unit),
+        field('unit', ' ', $.unit),
       ),
       field('usize', '', h('div', { class: 'with-unit' }, $.usize, h('span', { class: 'unit', id: 'u-usize' }, 'g')), { hint: ' ', hidden: true }),
-      $.valuesHead,
-      valuesGrid,
       $.result,
-      $.sourceLine,
+      // Nutrition values stay folded away once the food is known
+      h(
+        'details',
+        { class: 'values-box', id: 'values-box' },
+        h('summary', {}, $.valuesSummary),
+        h(
+          'fieldset',
+          { class: 'segmented' },
+          h('legend', {}, t('entry.mode')),
+          h('label', {}, $.modePer100, h('span', {}, t('entry.mode.per100'))),
+          h('label', {}, $.modeTotal, h('span', {}, t('entry.mode.total'))),
+        ),
+        field('base', t('entry.base'), $.base),
+        $.valuesHead,
+        valuesGrid,
+        $.sourceLine,
+      ),
     ),
     h(
-      'section',
-      { class: 'card' },
+      'details',
+      { class: 'card more-box' },
+      h('summary', {}, t('entry.more')),
       field('prep', t('entry.prep'), $.prep, { hint: t('entry.prep.hint') }),
       field('notes', t('entry.notes'), $.notes),
       h('label', { class: 'check-row' }, $.saveFood, h('span', {}, t('entry.saveFood'))),

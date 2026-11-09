@@ -457,3 +457,9 @@ h2.gap { margin-top: 20px; }
 .chip .level { font-weight: 400; font-size: 0.85em; }
 
 .values-head .link-btn.small { font-size: 0.85rem; font-weight: 500; margin-left: 6px; }
+
+/* Entry form: folded sections */
+.values-box { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.values-box > summary, .more-box > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--muted); font-size: 0.95rem; }
+.values-box[open] > summary { margin-bottom: 8px; }
+.more-box > summary { font-weight: 600; color: var(--ink); }
