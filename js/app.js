@@ -96,6 +96,7 @@ async function start() {
     if (resolve().route.view.live !== false) render();
   });
   await render();
+  window.__appStarted = true;
   store.requestPersistence();
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Service worker not registered', e));
@@ -104,5 +105,6 @@ async function start() {
 
 start().catch((err) => {
   console.error(err);
+  window.__appStarted = true; // the error below replaces the loading safety net
   main.replaceChildren(h('div', { class: 'card error' }, t('app.loadError', { msg: err.message })));
 });

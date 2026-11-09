@@ -19,6 +19,44 @@
   <main id="main" class="main" tabindex="-1"></main>
   <nav id="tabbar" class="tabbar" aria-label="Main"></nav>
   <noscript>This app needs JavaScript.</noscript>
+  <script>
+    // Safety net: if the app hasn't started after a few seconds, show why and
+    // offer a reload that clears cached app files. Journal data is not touched.
+    (function () {
+      var errors = [];
+      window.addEventListener('error', function (e) {
+        errors.push((e.message || 'Error') + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''));
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        errors.push(String(e.reason && e.reason.message || e.reason));
+      });
+      function reload() {
+        var jobs = [];
+        if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+        if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+        Promise.all(jobs).catch(function () {}).then(function () { location.reload(); });
+      }
+      setTimeout(function () {
+        if (window.__appStarted) return;
+        var main = document.getElementById('main');
+        main.innerHTML = '';
+        var box = document.createElement('div');
+        box.className = 'card error';
+        box.style.cssText = 'margin:24px 0;padding:16px;border:1px solid #b42318;border-radius:14px;font:16px/1.45 system-ui,sans-serif';
+        var p = document.createElement('p');
+        p.textContent = 'The app didn’t load. Tap Reload to fetch a fresh copy. Your journal is not affected.';
+        var btn = document.createElement('button');
+        btn.textContent = 'Reload';
+        btn.style.cssText = 'min-height:44px;padding:0 18px;border-radius:10px;border:0;background:#2f6b4f;color:#fff;font:inherit;font-weight:600';
+        btn.onclick = reload;
+        var detail = document.createElement('p');
+        detail.style.cssText = 'color:#6b6d68;font-size:13px;margin-top:12px;word-break:break-word';
+        detail.textContent = errors.length ? 'Details: ' + errors.join(' | ') : (('noModule' in document.createElement('script')) ? 'No error was reported.' : 'This browser is too old for the app. Open it in an up-to-date Chrome.');
+        box.append(p, btn, detail);
+        main.append(box);
+      }, 6000);
+    })();
+  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
