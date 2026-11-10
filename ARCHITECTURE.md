@@ -106,3 +106,15 @@ Fibre, sugar, saturated fat (`satFat`) and salt are optional fields, in grams, o
 - When some of the day's entries have no values, the rings card says how many.
 
 Nutrient colours are tokens in `css/app.css` (`--protein`, `--carbs`, `--fat`, `--fibre`, `--sugar`, `--salt`, `--on-fill`).
+
+## Screens: Diet & fasting, Me, dashboard tiles
+
+The tab bar is Dashboard, Journal, Recipes, Diet, Me.
+
+- **Diet & fasting** (`#/diet`, `js/ui/diet.js`): diet style and fasting plan (single-choice chips with radio semantics), eating-window start with a 24-hour bar, dietary preferences, allergies and dislikes, daily targets (`targetsCard`, moved from Profile), a link to Foods I like and cooking styles (`#/tastes`), and diet history. Saving merges these fields into the stored profile.
+- **Me** (`#/profile`, `js/ui/profile.js`): body, goal and backup only. Saving merges into the stored profile and keeps the diet, fasting and food-preference fields.
+- **Dashboard tiles** (`#/tiles`, `js/ui/tiles.js`; logic in `js/core/tiles.js`):
+  - Each tile can be ticked on or off and moved up or down. The choice is saved in `settings.dashTiles = { order, off }`.
+  - `tileLayout` repairs saved data: unknown ids are dropped, and tiles added later appear at the end with their default on/off.
+  - Wide tiles take a row each; neighbouring small tiles (shortcuts) share a row, three at most.
+  - Tiles: calories and macros bar, nutrient rings, nutrient table, meals today, fasting and diet check, recipe idea, and the shortcuts Journal, Recipes, Diet & fasting, Scan barcode (`#/add?scan=1` opens the camera) and Foods I like.
