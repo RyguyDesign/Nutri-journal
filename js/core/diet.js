@@ -162,3 +162,33 @@ export function streak(checksByDate, today) {
   }
   return n;
 }
+
+/**
+ * Daily guide values for fibre, sugar, saturated fat and salt, in grams.
+ *   fibre      aim for at least 30 g (DGE)
+ *   sugar      at most 50 g, and never more than the carbohydrate target
+ *   satFat     at most 10% of calories (WHO)
+ *   salt       at most 6 g (DGE)
+ * kind 'min' is a goal to reach; 'max' is a limit to stay under.
+ */
+export function nutrientGoals(targets) {
+  const kcal = targets?.kcal > 0 ? targets.kcal : 2000;
+  const carbs = targets?.carbs > 0 ? targets.carbs : 50;
+  return {
+    fibre: { target: 30, kind: 'min' },
+    sugar: { target: Math.min(50, carbs), kind: 'max' },
+    satFat: { target: Math.round((kcal * 0.1) / 9), kind: 'max' },
+    salt: { target: 6, kind: 'max' },
+  };
+}
+
+/**
+ * How the day's calories are planned across protein, carbs and fat:
+ * shares that add up to 1 (used for the widths of the dashboard bar).
+ */
+export function macroShares(targets) {
+  const k = { protein: (targets?.protein || 0) * 4, carbs: (targets?.carbs || 0) * 4, fat: (targets?.fat || 0) * 9 };
+  const sum = k.protein + k.carbs + k.fat;
+  if (!(sum > 0)) return { protein: 1 / 3, carbs: 1 / 3, fat: 1 / 3 };
+  return { protein: k.protein / sum, carbs: k.carbs / sum, fat: k.fat / sum };
+}

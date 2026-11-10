@@ -7,6 +7,7 @@ import { today } from '../core/dates.js';
 import * as store from '../data/store.js';
 import { suggest } from '../suggest/engine.js';
 import { setPendingFood, getIdeasRound, nextIdeasRound } from './state.js';
+import { extrasFor } from '../foods/extras.js';
 
 const GROUPS = ['quick', 'regular', 'protein', 'light', 'pantry'];
 let filter = 'all';
@@ -29,11 +30,24 @@ export function itemLabel(it) {
   return `${it.name}${it.prep === 'cooked' ? ' (cooked weight)' : ''}: ${amount}`;
 }
 
+/** Fibre, sugar, saturated fat and salt of a recipe, from its main ingredients (seasoning isn't counted). */
+function recipeExtras(s) {
+  const out = { fibre: 0, sugar: 0, satFat: 0, salt: 0 };
+  let known = 0;
+  for (const it of s.items) {
+    const x = extrasFor(it.id);
+    if (!x || !(it.grams > 0)) continue;
+    known += 1;
+    for (const k of Object.keys(out)) out[k] += (x[k] * it.grams) / 100;
+  }
+  return known ? out : {};
+}
+
 /** Hand a suggestion to the entry form as one journal entry. */
 export function addToJournal(s) {
   setPendingFood({
     name: s.title,
-    per: { amount: 1, unit: 'portion', ...s.totals },
+    per: { amount: 1, unit: 'portion', ...s.totals, ...recipeExtras(s) },
     source: 'typical',
     meal: s.meal,
     notes: t('ideas.ingredients', { list: s.items.map(itemLabel).join(', ') }),

@@ -8,7 +8,7 @@
 // The eaten amount (quantity + unit) is scaled against it, so changing the
 // quantity later recalculates everything proportionally.
 
-import { scaleNutrients, macroCalories, NUTRIENTS } from './calc.js';
+import { scaleNutrients, macroCalories, NUTRIENTS, EXTRAS } from './calc.js';
 
 export const MEALS = ['breakfast', 'lunch', 'dinner', 'snacks', 'drinks'];
 export const UNITS = ['g', 'ml', 'tsp', 'tbsp', 'cup', 'handful', 'slice', 'piece', 'portion'];
@@ -108,4 +108,34 @@ export function energyConsistent(n) {
   if (kcal < 20 && fromMacros < 20) return true;
   const diff = Math.abs(fromMacros - kcal);
   return diff <= Math.max(25, kcal * 0.25);
+}
+
+/** The known fibre/sugar/saturated fat/salt values of an object. */
+export function pickExtras(o) {
+  const out = {};
+  for (const k of EXTRAS) if (typeof o?.[k] === 'number' && Number.isFinite(o[k]) && o[k] >= 0) out[k] = o[k];
+  return out;
+}
+
+/** Extras with the amount they refer to: { amount, unit, fibre?, ... }, or null when none are known. */
+export function extrasBasis(per) {
+  const x = pickExtras(per);
+  return per?.amount > 0 && Object.keys(x).length ? { amount: per.amount, unit: per.unit, ...x } : null;
+}
+
+/**
+ * Extras for what was eaten. `basis` is from extrasBasis(); `e` has
+ * quantity, unit and (for counted units) unitSize. Returns {} when the
+ * amounts can't be related.
+ */
+export function extrasTotals(basis, e) {
+  if (!basis || !(e?.quantity > 0)) return {};
+  let amount;
+  if (e.unit === basis.unit) amount = e.quantity;
+  else if (MASS_UNITS.includes(basis.unit) && MASS_UNITS.includes(e.unit)) amount = e.quantity;
+  else if (MASS_UNITS.includes(basis.unit) && e.unitSize > 0) amount = e.quantity * e.unitSize;
+  else return {};
+  const out = {};
+  for (const [k, v] of Object.entries(pickExtras(basis))) out[k] = (v * amount) / basis.amount;
+  return out;
 }

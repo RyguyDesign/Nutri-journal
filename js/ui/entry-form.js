@@ -1,8 +1,8 @@
 // Add / edit a journal entry.
 import { h, toast } from './dom.js';
 import { t, fmtKcal, fmtNumber } from '../i18n/i18n.js';
-import { MEALS, UNITS, MASS_UNITS, PREPARATIONS, computeEntry, defaultMeal, nowTime, parseNumber, validateEntry } from '../core/entry.js';
-import { NUTRIENTS, scaleNutrients } from '../core/calc.js';
+import { MEALS, UNITS, MASS_UNITS, PREPARATIONS, computeEntry, defaultMeal, nowTime, parseNumber, validateEntry, pickExtras, extrasBasis, extrasTotals } from '../core/entry.js';
+import { NUTRIENTS, EXTRAS, scaleNutrients } from '../core/calc.js';
 import * as store from '../data/store.js';
 import { lookupBarcode } from '../foods/off.js';
 import { parseLabelText } from '../foods/label-parse.js';
@@ -296,6 +296,7 @@ export async function render(root, rerender, params = {}) {
     s.servingSize = f.servingSize;
     s.measures = f.measures || null;
     s.source = source || f.source || 'manual';
+    s.extras = extrasBasis(f.per); // fibre, sugar, saturated fat, salt when known
     s.valuesEdited = false;
     $.prep.value = f.prep || '';
     if (f.per.amount === 100 && MASS_UNITS.includes(f.per.unit)) {
@@ -410,6 +411,7 @@ export async function render(root, rerender, params = {}) {
     s.foodId = undefined;
     s.brand = '';
     s.servingSize = undefined;
+    s.extras = null;
     s.source = 'manual';
     setMode('per100');
     refreshUnits(s.base);
@@ -476,6 +478,7 @@ export async function render(root, rerender, params = {}) {
       $.usize.value = '';
       s.servingSize = undefined;
       setValues(r.values);
+      s.extras = extrasBasis({ amount: 100, unit: s.base, ...r.extras });
       for (const k of r.uncertain) $.vals[k].classList.add('check');
       showValues(true); // read from a photo: worth a look
       s.source = 'label';
@@ -686,6 +689,13 @@ export async function render(root, rerender, params = {}) {
     }
     const source = s.source === 'database' && s.valuesEdited ? 'manual' : s.source;
     const totals = computeEntry(d);
+    // Fibre, sugar, saturated fat and salt come with the food (database,
+    // label or typical values) and are scaled to the amount eaten.
+    const extraTotals = extrasTotals(s.extras, d);
+    const withExtras = (per) => {
+      if (!s.extras || s.extras.unit !== per.unit) return per;
+      return { ...per, ...extrasTotals(s.extras, { quantity: per.amount, unit: per.unit }) };
+    };
     try {
       let foodId = s.foodId;
       if ($.saveFood.checked) {
@@ -696,7 +706,7 @@ export async function render(root, rerender, params = {}) {
           name: d.name,
           brand: s.brand,
           barcode: s.barcode,
-          per,
+          per: withExtras(per),
           servingSize: ['piece', 'portion'].includes(d.unit) && d.unitSize ? d.unitSize : s.servingSize,
           measures: MEASURE_UNITS.includes(d.unit) && d.unitSize ? { [d.unit]: d.unitSize } : undefined,
           lastUnit: d.unit,
@@ -716,11 +726,12 @@ export async function render(root, rerender, params = {}) {
         quantity: d.quantity,
         unit: d.unit,
         unitSize: d.unitSize,
-        per: d.per,
+        per: withExtras(d.per),
         prep: d.prep,
         notes: d.notes,
         source,
         ...totals,
+        ...Object.fromEntries(EXTRAS.map((k) => [k, extraTotals[k]])),
       });
       toast(t('entry.saved'));
       goBack('#/journal');
@@ -842,6 +853,7 @@ export async function render(root, rerender, params = {}) {
     $.prep.value = editing.prep || '';
     $.notes.value = editing.notes || '';
     const p = editing.per;
+    s.extras = extrasBasis(p) || extrasBasis({ amount: editing.quantity, unit: editing.unit, ...pickExtras(editing) });
     if (p.amount === 100 && MASS_UNITS.includes(p.unit)) {
       s.base = p.unit;
       $.base.value = s.base;

@@ -36,6 +36,10 @@ export function mapOffProduct(json, code) {
     carbs: num(n.carbohydrates_100g),
     fat: num(n.fat_100g),
   };
+  // Optional detail; left out when the product doesn't list it
+  const salt = num(n.salt_100g) ?? (num(n.sodium_100g) !== undefined ? num(n.sodium_100g) * 2.5 : undefined);
+  const extra = { fibre: num(n.fiber_100g), sugar: num(n.sugars_100g), satFat: num(n['saturated-fat_100g']), salt };
+  for (const [k, v] of Object.entries(extra)) if (v !== undefined && v >= 0 && v <= 100) per[k] = v;
   // English name first; the app is used in English
   const name = (p.product_name_en || p.product_name || p.product_name_de || '').trim();
   const brand = String(p.brands || '').split(',')[0].trim();

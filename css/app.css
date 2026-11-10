@@ -12,6 +12,14 @@
   --track: #ecebe6;
   --over: #b7791f;
   --error: #b42318;
+  /* Nutrients: muted, earthy */
+  --protein: #7d97b8;
+  --carbs: #c2a061;
+  --fat: #b5806a;
+  --fibre: #8aa58c;
+  --sugar: #b98a8f;
+  --salt: #a3a39b;
+  --on-fill: #141513;
   --radius: 14px;
   --gap: 16px;
   --tabbar-h: 64px;
@@ -522,3 +530,61 @@ h2.gap { margin-top: 20px; }
 .fast-start-row input { width: auto; }
 .fast-list { list-style: none; padding: 0; margin: 8px 0 0; }
 .fast-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; border-top: 1px solid var(--line); }
+
+/* Dashboard: calories and macros in one bar */
+.dash-cal { display: flex; flex-direction: column; gap: 10px; }
+.dash-cal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.dash-cal-num { font-size: 1.9rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
+.mz-bar { display: flex; gap: 3px; height: 48px; }
+.mz { position: relative; min-width: 10px; border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--c) 26%, var(--surface)); }
+.mz-protein, .ml-protein { --c: var(--protein); }
+.mz-carbs, .ml-carbs { --c: var(--carbs); }
+.mz-fat, .ml-fat { --c: var(--fat); }
+.mz-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--c); overflow: hidden; }
+.mz.over .mz-fill { box-shadow: inset -4px 0 0 var(--over); }
+.mz-label { position: absolute; left: 8px; top: 0; height: 48px; display: flex; flex-direction: column; justify-content: center; line-height: 1.15; white-space: nowrap; color: var(--ink); }
+.mz-label.on { color: var(--on-fill); }
+.mz-fill .mz-label { width: max-content; }
+.mz.label-in > .mz-label { visibility: hidden; }
+.mz.label-out .mz-fill .mz-label { display: none; }
+.mz.label-out > .mz-label { left: auto; right: 8px; text-align: right; align-items: flex-end; }
+.mz-name { font-size: 0.7rem; font-weight: 600; }
+.mz-left { font-size: 0.875rem; font-weight: 800; }
+.mz-under { display: flex; gap: 3px; min-height: 18px; }
+.mu { display: flex; justify-content: center; min-width: 10px; font-size: 0.78rem; font-weight: 600; }
+.mu span { white-space: nowrap; }
+.mz-notes { position: relative; height: 18px; margin-top: -6px; }
+.mz-note { position: absolute; top: 0; white-space: nowrap; font-size: 0.78rem; color: var(--muted); }
+.mz-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-size: 0.8rem; }
+.ml { display: flex; flex-direction: column; gap: 1px; }
+.ml-name { display: flex; align-items: center; gap: 5px; color: var(--muted); }
+.ml .dot { width: 8px; height: 8px; border-radius: 2px; background: var(--c); }
+.strong { font-weight: 700; }
+
+/* Dashboard: fibre, sugar, saturated fat, salt */
+.dash-rings { padding: 12px 8px; }
+.nrings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.nring { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.nring-fibre { --c: var(--fibre); }
+.nring-sugar { --c: var(--sugar); }
+.nring-satFat { --c: var(--fat); }
+.nring-salt { --c: var(--salt); }
+.nring-art { position: relative; width: 52px; height: 52px; margin-bottom: 2px; }
+.nring-art svg { width: 52px; height: 52px; display: block; }
+.nring-track { stroke: color-mix(in srgb, var(--c) 26%, var(--surface)); }
+.nring-fill { stroke: var(--c); }
+.nring.over .nring-fill { stroke: var(--over); }
+.nring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+.nring-name { font-size: 0.78rem; font-weight: 600; }
+.nring-val { font-size: 0.7rem; color: var(--muted); }
+.nring-sub { font-size: 0.66rem; color: var(--muted); }
+.nring.over .nring-sub { color: var(--over); }
+.dash-partial { margin: 10px 8px 0; }
+
+/* Dashboard: shortcut tiles */
+.shortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.shortcut { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px; min-height: 84px; text-align: center; text-decoration: none; color: var(--ink); }
+.shortcut:active { transform: translateY(1px); }
+.shortcut-icon { width: 26px; height: 26px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.shortcut-title { font-size: 0.78rem; font-weight: 600; }
+.shortcut-sub { font-size: 0.68rem; color: var(--muted); }

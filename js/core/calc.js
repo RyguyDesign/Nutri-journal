@@ -145,6 +145,10 @@ export function recommendTargets(p) {
 
 export const NUTRIENTS = ['kcal', 'protein', 'carbs', 'fat'];
 
+// Optional detail, known only for some foods: fibre, sugar, saturated fat
+// and salt, all in grams. A missing value means "not known", never zero.
+export const EXTRAS = ['fibre', 'sugar', 'satFat', 'salt'];
+
 /**
  * Scale nutrients given per `baseAmount` units (default 100 g/ml) to `amount`.
  * e.g. 165 kcal per 100 g, amount 150 -> 247.5 kcal.
@@ -155,6 +159,7 @@ export function scaleNutrients(perBase, amount, baseAmount = 100) {
   const factor = amount / baseAmount;
   const out = {};
   for (const k of NUTRIENTS) out[k] = (perBase?.[k] ?? 0) * factor;
+  for (const k of EXTRAS) if (isNum(perBase?.[k])) out[k] = perBase[k] * factor;
   return out;
 }
 
@@ -163,6 +168,25 @@ export function sumNutrients(items) {
   const total = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
   for (const it of items || []) for (const k of NUTRIENTS) total[k] += it?.[k] ?? 0;
   return total;
+}
+
+/**
+ * Sum fibre, sugar, saturated fat and salt over entries.
+ * Returns { fibre: { value, known }, ... , count } where `known` is how many
+ * of the `count` entries had that value.
+ */
+export function sumExtras(items) {
+  const out = { count: (items || []).length };
+  for (const k of EXTRAS) out[k] = { value: 0, known: 0 };
+  for (const it of items || []) {
+    for (const k of EXTRAS) {
+      if (isNum(it?.[k])) {
+        out[k].value += it[k];
+        out[k].known += 1;
+      }
+    }
+  }
+  return out;
 }
 
 /** Remaining = target - consumed. Negative means over target. */
