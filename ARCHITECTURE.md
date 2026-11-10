@@ -105,4 +105,4 @@ Fibre, sugar, saturated fat (`satFat`) and salt are optional fields, in grams, o
 - Entries saved earlier get typical values on the dashboard when their name matches a built-in food and their weight is known (`withTypicalExtras`). Stored data is not rewritten.
 - When some of the day's entries have no values, the rings card says how many.
 
-Nutrient colours are tokens in `css/app.css` (`--protein`, `--carbs`, `--fat`, `--fibre`, `--sugar`, `--salt`, `--on-fill`).
+Nutrient colours are tokens in `css/app.css` (`--protein`, `--carbs`, `--fat`, `--sat-fat`, `--fibre`, `--sugar`, `--salt`, `--on-fill`). Macro fat and saturated fat use separate tokens; the latter is the orange guide ring.

@@ -14,11 +14,12 @@
   --error: #b42318;
   /* Nutrients: muted, earthy */
   --protein: #7d97b8;
-  --carbs: #c2a061;
-  --fat: #b5806a;
+  --carbs: #6f9897;
+  --fat: #c2a061;
+  --sat-fat: #cc8d5a;
   --fibre: #8aa58c;
   --sugar: #b98a8f;
-  --salt: #a3a39b;
+  --salt: #83adca;
   --on-fill: #141513;
   --radius: 14px;
   --gap: 16px;
@@ -567,7 +568,7 @@ h2.gap { margin-top: 20px; }
 .nring { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
 .nring-fibre { --c: var(--fibre); }
 .nring-sugar { --c: var(--sugar); }
-.nring-satFat { --c: var(--fat); }
+.nring-satFat { --c: var(--sat-fat); }
 .nring-salt { --c: var(--salt); }
 .nring-art { position: relative; width: 52px; height: 52px; margin-bottom: 2px; }
 .nring-art svg { width: 52px; height: 52px; display: block; }
