@@ -18,45 +18,75 @@ const grams = (n) => fmtNumber(Math.abs(n), Math.abs(n) < 10 && !Number.isIntege
 // Bar labels: what you've eaten of the target, e.g. "110 / 121 g"
 const amountText = (s) => t('dash.gOf', { eaten: fmtNumber(s.eaten), target: fmtNumber(s.target) });
 
-/** One section of the calorie bar: colour only; the numbers sit underneath. */
-function section(s) {
-  return h(
-    'div',
-    { class: `mz mz-${s.key}${s.over ? ' over' : ''}`, style: { flex: `${Math.max(s.share, 0.03)} 1 0` } },
-    h('div', { class: 'mz-fill', style: { width: `${s.ratio * 100}%` } }),
+/** A progress ring; `big` is the calorie ring. */
+function ringSvg(ratio, label, big = false) {
+  const r = big ? 46 : 24;
+  const C = 2 * Math.PI * r;
+  const size = big ? 104 : 60;
+  const c = size / 2;
+  return svg(
+    'svg',
+    { viewBox: `0 0 ${size} ${size}`, role: 'img', 'aria-label': label },
+    svg('g', { transform: `rotate(-90 ${c} ${c})`, fill: 'none' },
+      svg('circle', { class: 'ring-track', cx: c, cy: c, r, 'stroke-width': big ? 9 : 7 }),
+      svg('circle', { class: 'ring-fill', cx: c, cy: c, r, 'stroke-width': big ? 9 : 7, 'stroke-linecap': 'round', 'stroke-dasharray': `${(Math.max(0, Math.min(1, ratio)) * C).toFixed(1)} ${C.toFixed(1)}` })),
   );
 }
+
+const GLYPH = {
+  flame: ['M12 3c1 3 4 4.5 4 8.5A4 4 0 0 1 12 15.5 4 4 0 0 1 8 11.5c0-1.6.8-2.6 1.6-3.4.2 1.4 1 2.2 1.9 2.4C11 8 11 5.5 12 3z', 'M12 21a5 5 0 0 1-5-5c0-1 .3-1.8.7-2.5'],
+  fibre: ['M5 19c4-4 8-6 14-14', 'M9 15c-2-1-3-3-2.5-5.5C9 10 10 12 9 15zM13 11c-2-1-3-3-2.5-5.5C13 6 14 8 13 11zM12 16c1 2 3 3 5.5 2.5C17 16 15 15 12 16zM16 12c1 2 3 3 5.5 2.5C21 12 19 11 16 12z'],
+  sugar: ['M12 3l8 4.5v9L12 21l-8-4.5v-9z', 'M4 7.5l8 4.5 8-4.5M12 12v9'],
+  satFat: ['M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z'],
+  salt: ['M8 9h8l1 11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z', 'M9 9V6a3 3 0 0 1 6 0v3', 'M11 5h.01M13 5h.01M12 3.6h.01'],
+  bolt: ['M13 2L4 14h7l-1 8 9-12h-7z'],
+  chevron: ['M9 6l6 6-6 6'],
+};
+const glyph = (name, cls) => svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: cls }, GLYPH[name].map((d) => svg('path', { d })));
 
 function macroCard(goal, eaten) {
   const rem = remainingNutrients(goal, { ...eaten, kcal: Math.round(eaten.kcal) });
   const over = rem.kcal < 0;
+  const ratio = goal.kcal > 0 ? eaten.kcal / goal.kcal : 0;
   const { sections } = macroBar(goal, eaten);
-  const summary = sections.map((s) => `${t(`nutrient.short.${s.key}`)} ${amountText(s)}, ${s.pct}%`).join('; ');
-  // One column per macro, in the same order and colours as the bar
-  const legend = h('div', { class: 'mz-legend' }, sections.map((s) => h(
+  const cols = sections.map((s) => h(
     'div',
-    { class: `ml ml-${s.key}${s.over ? ' over' : ''}` },
-    h('span', { class: 'ml-name' }, h('span', { class: 'dot', 'aria-hidden': 'true' }), t(`nutrient.short.${s.key}`)),
-    h('span', { class: 'num strong' }, amountText(s)),
-    h('span', { class: 'num muted' }, s.over ? t('dash.pctOver', { pct: s.pct }) : `${s.pct}%`),
-  )));
-
+    { class: `mc mc-${s.key}${s.over ? ' over' : ''}` },
+    h('span', { class: 'mc-pct num' }, `${s.pct}%`),
+    h('span', { class: 'mc-name' }, t(`nutrient.short.${s.key}`)),
+    h('span', { class: 'mc-line' },
+      h('span', { class: 'mc-bar', 'aria-hidden': 'true' }, h('span', { style: { width: `${s.ratio * 100}%` } })),
+      h('span', { class: 'mc-amount num' }, amountText(s))),
+  ));
   return h(
     'section',
-    { class: 'card dash-cal' },
+    { class: `card glass dash-cal${over ? ' over' : ''}` },
     h(
       'div',
-      { class: 'dash-cal-head' },
-      h('div', {}, h('span', { class: 'dash-cal-num num' }, fmtKcal(Math.abs(rem.kcal))), ' ', h('span', { class: 'muted' }, t(over ? 'dash.kcalOver' : 'dash.kcalLeft'))),
-      h('div', { class: 'muted small num' }, t('dash.of', { target: fmtKcal(goal.kcal) })),
+      { class: 'cal-top' },
+      h(
+        'div',
+        { class: 'cal-ring' },
+        ringSvg(ratio, t('dash.calRing', { eaten: fmtKcal(eaten.kcal), target: fmtKcal(goal.kcal) }), true),
+        h('div', { class: 'cal-ring-inner' },
+          glyph('flame', 'cal-flame'),
+          h('span', { class: 'cal-num num' }, fmtKcal(Math.abs(rem.kcal))),
+          h('span', { class: 'cal-unit' }, t(over ? 'dash.kcalOver' : 'dash.kcalLeft'))),
+      ),
+      h(
+        'div',
+        { class: 'cal-target' },
+        h('span', { class: 'cal-of' }, t('dash.ofWord')),
+        h('span', { class: 'cal-target-num num' }, fmtKcal(goal.kcal)),
+        h('span', { class: 'cal-bar', 'aria-hidden': 'true' }, h('span', { style: { width: `${Math.min(1, ratio) * 100}%` } })),
+        h('span', { class: 'cal-eaten num' }, t('dash.eatenKcal', { n: fmtKcal(eaten.kcal) })),
+      ),
     ),
-    h('div', { class: 'mz-bar', role: 'img', 'aria-label': summary }, sections.map(section)),
-    legend,
+    h('div', { class: 'cal-macros' }, cols),
   );
 }
 
 function ring(r, count) {
-  const C = 2 * Math.PI * 24;
   const value = r.key === 'salt' ? fmtNumber(r.value, 1) : fmtNumber(Math.round(r.value));
   const diff = r.key === 'salt' ? fmtNumber(r.diff, 1) : grams(Math.round(r.diff));
   const sub = r.state === 'reached' ? t('dash.reached') : t(r.kind === 'max' ? `dash.${r.state}Max` : 'dash.toGo', { n: diff });
@@ -64,23 +94,15 @@ function ring(r, count) {
   const unknown = count - r.known;
   return h(
     'div',
-    { class: `nring nring-${r.key}${r.state === 'over' ? ' over' : ''}` },
-    h(
-      'div',
-      { class: 'nring-art' },
-      svg(
-        'svg',
-        { viewBox: '0 0 60 60', role: 'img', 'aria-label': `${name}: ${value} / ${r.target} g, ${sub}` },
-        svg('g', { transform: 'rotate(-90 30 30)', fill: 'none' },
-          svg('circle', { class: 'nring-track', cx: 30, cy: 30, r: 24, 'stroke-width': 7 }),
-          svg('circle', { class: 'nring-fill', cx: 30, cy: 30, r: 24, 'stroke-width': 7, 'stroke-linecap': 'round', 'stroke-dasharray': `${(r.ratio * C).toFixed(1)} ${C.toFixed(1)}` })),
-      ),
-      h('span', { class: 'nring-pct num', 'aria-hidden': 'true' }, `${r.pct}%`),
-    ),
+    { class: `card glass nring nring-${r.key}${r.state === 'over' ? ' over' : ''}` },
+    h('div', { class: 'nring-art' },
+      ringSvg(r.ratio, `${name}: ${value} / ${r.target} g, ${sub}`),
+      h('span', { class: 'nring-pct num', 'aria-hidden': 'true' }, `${r.pct}%`)),
+    glyph(r.key, 'nring-icon'),
     h('span', { class: 'nring-name' }, name),
     r.key === 'satFat' ? h('span', { class: 'nring-note' }, t('dash.partOfFat')) : null,
     h('span', { class: 'nring-val num' }, t('dash.gOf', { eaten: value, target: fmtNumber(r.target) })),
-    h('span', { class: 'nring-sub num' }, sub),
+    r.state === 'over' || r.state === 'toGo' ? h('span', { class: 'nring-sub num' }, sub) : null,
     unknown > 0 ? h('span', { class: 'nring-unknown' }, t(unknown === 1 ? 'dash.unknown1' : 'dash.unknown', { n: unknown })) : null,
   );
 }
@@ -91,7 +113,7 @@ function ringsCard(entries, goal) {
   const anyUnknown = rings.some((r) => r.known < extras.count);
   return h(
     'section',
-    { class: 'card dash-rings' },
+    { class: 'dash-rings', 'aria-label': t('tile.nutrients') },
     h('div', { class: 'nrings' }, rings.map((r) => ring(r, extras.count))),
     anyUnknown ? h('p', { class: 'muted small dash-partial' }, t('dash.unknownHint')) : null,
   );
@@ -182,10 +204,11 @@ const ICON = {
 function shortcut(href, icon, title, sub) {
   return h(
     'a',
-    { class: 'card shortcut', href },
+    { class: 'card glass shortcut', href },
     svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: 'shortcut-icon' }, ICON[icon].map((d) => svg('path', { d }))),
     h('span', { class: 'shortcut-title' }, title),
     sub ? h('span', { class: 'shortcut-sub' }, sub) : null,
+    glyph('chevron', 'shortcut-chev'),
   );
 }
 

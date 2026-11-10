@@ -1,7 +1,7 @@
 // Diet and fasting status: the fasting card on the dashboard and the daily
 // check line in the journal. Uses the diet history so past days are judged
 // by the diet and fasting plan that applied then.
-import { h, bar, toast } from './dom.js';
+import { h, bar, toast, svg } from './dom.js';
 import { t, fmtGrams } from '../i18n/i18n.js';
 import * as store from '../data/store.js';
 import { addDays, today } from '../core/dates.js';
@@ -142,17 +142,9 @@ export async function dashboardStatus(rerender) {
       const now = new Date();
       const open = inWindow(clock(now), win);
       const startIn = h('input', { type: 'time', id: 'fast-start', value: clock(now), 'aria-label': t('fast.startedAt') });
-      parts.push(
-        h('h2', {}, t('fast.windowTitle', { plan: t(`profile.fasting.${plan}`) })),
-        h('p', {}, t(open ? 'fast.windowOpen' : 'fast.windowClosed', { start: win.start, end: win.end })),
-        h(
-          'div',
-          { class: 'fast-start-row' },
-          h('label', { for: 'fast-start' }, t('fast.startedAt')),
-          startIn,
-          h('button', {
+      const startBtn = h('button', {
             type: 'button',
-            class: 'btn primary',
+            class: 'btn primary fast-btn',
             onclick: async () => {
               const [hh, mm] = startIn.value.split(':').map(Number);
               const start = new Date();
@@ -162,8 +154,18 @@ export async function dashboardStatus(rerender) {
               toast(t('fast.started'));
               rerender();
             },
-          }, t('fast.start')),
+          }, t('fast.start'));
+      parts.push(
+        h(
+          'div',
+          { class: 'fast-head' },
+          svg('svg', { viewBox: '0 0 24 24', class: 'fast-bolt', 'aria-hidden': 'true' }, svg('path', { d: 'M13 2L4 14h7l-1 8 9-12h-7z' })),
+          h('div', { class: 'fast-text' },
+            h('h2', { class: 'fast-plan' }, t('fast.windowTitle', { plan: t(`profile.fasting.${plan}`) })),
+            h('p', { class: 'fast-state' }, t(open ? 'fast.windowOpen' : 'fast.windowClosed', { start: win.start, end: win.end }))),
+          startBtn,
         ),
+        h('div', { class: 'fast-start-row' }, h('label', { for: 'fast-start' }, t('fast.startedAt')), startIn),
       );
     }
   }
