@@ -29,7 +29,7 @@ function ringSvg(ratio, label, big = false) {
     { viewBox: `0 0 ${size} ${size}`, role: 'img', 'aria-label': label },
     svg('g', { transform: `rotate(-90 ${c} ${c})`, fill: 'none' },
       svg('circle', { class: 'ring-track', cx: c, cy: c, r, 'stroke-width': big ? 9 : 7 }),
-      svg('circle', { class: 'ring-fill', cx: c, cy: c, r, 'stroke-width': big ? 9 : 7, 'stroke-linecap': 'round', 'stroke-dasharray': `${(Math.max(0, Math.min(1, ratio)) * C).toFixed(1)} ${C.toFixed(1)}` })),
+      svg('circle', { class: 'ring-fill', cx: c, cy: c, r, 'stroke-width': big ? 9 : 7, 'stroke-linecap': ratio > 0.005 ? 'round' : 'butt', 'stroke-dasharray': `${(Math.max(0, Math.min(1, ratio)) * C).toFixed(1)} ${C.toFixed(1)}` })),
   );
 }
 
