@@ -73,6 +73,12 @@ export const EXTRA = {
   'sichuan-pepper': x('Sichuan pepper', 0, 0, 0, 0),
   coriander: x('Fresh coriander', 0, 0, 0, 0),
   'thai-basil': x('Thai basil', 0, 0, 0, 0),
+  'water-spinach': x('Water spinach (ong choy)', 19, 2.6, 1.1, 0.2),
+  'pork-ribs': x('Pork spare ribs, chopped (raw)', 230, 17, 0, 18, ['meat', 'pork']),
+  'beef-brisket': x('Beef brisket (raw)', 200, 18, 0, 14, ['meat']),
+  daikon: x('Daikon radish', 18, 0.6, 3.4, 0.1),
+  'star-anise': x('Star anise', 0, 0, 0, 0),
+  'black-pepper': x('Coarse black pepper', 0, 0, 0, 0),
 };
 
 const T = (show) => ({ show, fixed: true });
@@ -754,5 +760,47 @@ export const RECIPES = [
     'Heat the air fryer to 200 °C. Brush the salmon with half the glaze and air-fry for 8–10 minutes, brushing again halfway.',
     'Boil the edamame for 3 minutes. Slice the cucumber and toss with the rice vinegar and sesame oil.',
     'Serve the salmon over the rice with the edamame and cucumber.',
+  ]),
+  r('pork-water-spinach', 'Pork and water spinach stir-fry with garlic and chili', { meals: ['lunch', 'dinner'], minutes: 15, method: 'stirfry', cuisine: 'asian' }, [
+    ['pork-fillet', 140], ['water-spinach', 250], ['rice', 140], ['garlic', 9, T('3 cloves')], ['chili-flakes', 0, T('a pinch, or 1 fresh chili')], ['oyster-sauce', 10, T('2 tsp')], ['soy-sauce', 5, T('1 tsp')], ['cornflour', 3, T('1 tsp')], OIL(10, '1 tbsp'),
+  ], [
+    'Cook the rice. Slice the pork thinly and toss with the soy sauce and cornflour.',
+    'Cut the water spinach into 5 cm lengths, keeping the stems and leaves apart. Slice the garlic.',
+    'Heat half the oil in a wok until smoking, stir-fry the pork for 3 minutes until cooked, and take it out.',
+    'Add the rest of the oil, the garlic and chili for 20 seconds, then the stems for 1 minute, then the leaves and a splash of water.',
+    'Toss until just wilted, about 1 minute. Add the oyster sauce and the pork, toss and serve with the rice.',
+  ]),
+  r('garlic-water-spinach', 'Garlic water spinach with a fried egg (low carb)', { meals: ['lunch', 'dinner'], minutes: 10, method: 'stirfry', cuisine: 'asian' }, [
+    ['water-spinach', 300], ['eggs', 120], ['garlic', 9, T('3 cloves')], ['chili-flakes', 0, T('a pinch')], ['oyster-sauce', 10, T('2 tsp')], OIL(10, '1 tbsp'),
+  ], [
+    'Cut the water spinach into 5 cm lengths, stems and leaves apart. Slice the garlic.',
+    'Fry the eggs in half the oil until the edges are crisp, and keep them warm.',
+    'Heat the rest of the oil until very hot. Add the garlic and chili for 20 seconds, then the stems for 1 minute, then the leaves.',
+    'Toss until just wilted, add the oyster sauce and serve with the eggs on top.',
+  ]),
+  r('steamed-black-bean-ribs', 'Steamed pork rib pieces in black bean sauce with rice', { meals: ['lunch', 'dinner'], minutes: 35, method: 'pan', cuisine: 'asian' }, [
+    ['pork-ribs', 200], ['rice', 140], ['pak-choi', 120], ['black-bean-sauce', 15, T('1 tbsp')], ['garlic', 6, T('2 cloves')], ['cornflour', 5, T('1 tsp')], ['soy-sauce', 5, T('1 tsp')], ['sesame-oil', 3, T('½ tsp')], ['chili-flakes', 0, T('a pinch')],
+  ], [
+    'Ask the butcher to chop the ribs into small pieces, or buy them chopped. Rinse and pat dry.',
+    'Mix the ribs with the black bean sauce, chopped garlic, cornflour, soy sauce, sesame oil and chili. Leave for 15 minutes.',
+    'Spread the ribs on a heatproof plate, set it on an upturned bowl in a wide pan with 2 cm of simmering water, cover and steam for 20–25 minutes until cooked through.',
+    'Meanwhile cook the rice and steam the pak choi for the last 3 minutes. Serve the ribs with their juices over the rice.',
+  ]),
+  r('beef-brisket-stew', 'Cantonese braised beef brisket with daikon (ngau naam)', { meals: ['lunch', 'dinner'], minutes: 120, method: 'stew', cuisine: 'asian' }, [
+    ['beef-brisket', 180], ['daikon', 150], ['rice', 140], ['soy-sauce', 15, T('1 tbsp')], ['oyster-sauce', 10, T('2 tsp')], ['ginger', 10, T('3 slices')], ['garlic', 6, T('2 cloves')], ['star-anise', 0, T('1 star')], ['five-spice', 0, T('½ tsp')], ['honey', 4, T('½ tsp')], ['spring-onion', 10, T('1 spring onion')],
+  ], [
+    'Cut the brisket into 4 cm pieces. Cover with cold water, bring to the boil, skim, then drain and rinse.',
+    'Put the beef back in the pan with the ginger, garlic, star anise, five-spice, soy sauce, oyster sauce, honey and enough water to just cover.',
+    'Simmer with the lid on for 1½ hours until tender (or 35 minutes in a pressure cooker).',
+    'Add the daikon in chunks and simmer for 20–25 minutes more, uncovered, until soft and the sauce has reduced.',
+    'Serve the beef pieces and daikon in their sauce over rice, topped with spring onion.',
+  ]),
+  r('black-pepper-beef', 'Black pepper beef with peppers and onion', { meals: ['lunch', 'dinner'], minutes: 20, method: 'stirfry', cuisine: 'asian' }, [
+    ['steak', 150], ['peppers', 120], ['onion', 60], ['rice', 140], ['oyster-sauce', 15, T('1 tbsp')], ['soy-sauce', 5, T('1 tsp')], ['black-pepper', 0, T('1–2 tsp, coarse')], ['cornflour', 3, T('1 tsp')], ['garlic', 3, T('1 clove')], OIL(10, '1 tbsp'),
+  ], [
+    'Cook the rice. Cut the beef into bite-size pieces and toss with the soy sauce and cornflour.',
+    'Heat half the oil in a wok until smoking. Sear the beef for 1–2 minutes, then take it out.',
+    'Add the rest of the oil, the sliced onion, peppers and garlic and stir-fry for 3 minutes.',
+    'Add the oyster sauce, the black pepper and 2 tbsp water. Return the beef and toss until coated in a glossy sauce. Serve with the rice.',
   ]),
 ];
