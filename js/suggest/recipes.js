@@ -52,6 +52,27 @@ export const EXTRA = {
   turmeric: x('Turmeric', 0, 0, 0, 0),
   'curry-powder': x('Curry powder', 0, 0, 0, 0),
   'salt-pepper': x('Salt and pepper', 0, 0, 0, 0),
+  // Asian pantry
+  'rice-noodles': x('Rice noodles (dry)', 360, 6, 80, 0.6),
+  'dumpling-wrappers': x('Wonton wrappers', 290, 9, 58, 1.5, ['gluten']),
+  'oyster-sauce': x('Oyster sauce', 51, 1.4, 11, 0.3, ['shellfish']),
+  hoisin: x('Hoisin sauce', 220, 3.3, 44, 3.4, ['soy']),
+  'black-bean-sauce': x('Black bean sauce', 130, 5, 15, 5, ['soy']),
+  'chili-bean-paste': x('Chili bean paste (doubanjiang)', 180, 9, 15, 9, ['soy', 'gluten']),
+  'fish-sauce': x('Fish sauce', 35, 5, 3.6, 0, ['fish']),
+  'rice-vinegar': x('Rice vinegar', 18, 0, 4, 0),
+  'shaoxing': x('Shaoxing rice wine', 100, 1.5, 5, 0, ['gluten']),
+  cornflour: x('Cornflour', 380, 0.3, 91, 0.1),
+  'pak-choi': x('Pak choi', 13, 1.5, 2.2, 0.2),
+  'spring-onion': x('Spring onions', 32, 1.8, 7, 0.2),
+  'bean-sprouts': x('Bean sprouts', 30, 3, 6, 0.2),
+  edamame: x('Edamame (shelled)', 121, 12, 9, 5, ['soy']),
+  lime: x('Lime juice', 25, 0.4, 8, 0.1),
+  'five-spice': x('Chinese five-spice', 0, 0, 0, 0),
+  'white-pepper': x('White pepper', 0, 0, 0, 0),
+  'sichuan-pepper': x('Sichuan pepper', 0, 0, 0, 0),
+  coriander: x('Fresh coriander', 0, 0, 0, 0),
+  'thai-basil': x('Thai basil', 0, 0, 0, 0),
 };
 
 const T = (show) => ({ show, fixed: true });
@@ -609,4 +630,129 @@ export const RECIPES = [
   r('quark-cinnamon-apple', 'Cinnamon quark with grated apple', { meals: ['snacks', 'breakfast'], minutes: 3, method: 'nocook', cuisine: 'german' }, [
     ['quark', 150], ['apple', 90], ['walnuts', 10], ['cinnamon', 0, T('½ tsp')], ['milk', 20, T('a splash')],
   ], ['Stir the quark with a splash of milk until creamy.', 'Grate in the apple and add the cinnamon.', 'Top with chopped walnuts.']),
+  // ======================= HONG KONG AND ASIAN =======================
+  r('hk-steamed-fish', 'Cantonese steamed fish with ginger, spring onion and pak choi', { meals: ['lunch', 'dinner'], minutes: 20, method: 'pan', cuisine: 'asian' }, [
+    ['cod', 180], ['pak-choi', 150], ['rice', 150], ['ginger', 10, T('2 cm')], ['spring-onion', 20, T('2 spring onions')], ['soy-sauce', 15, T('1 tbsp')], ['sesame-oil', 5, T('1 tsp')], ['white-pepper', 0, T('a pinch')],
+  ], [
+    'Cook the rice. Cut the ginger and spring onions into very thin matchsticks.',
+    'Put the fish on a heatproof plate and scatter half the ginger over it.',
+    'Set the plate on an upturned bowl in a wide pan with 2 cm of simmering water, cover and steam for 8–10 minutes until the fish flakes. Steam the halved pak choi next to it for the last 3 minutes.',
+    'Pour off the liquid on the plate. Top the fish with the rest of the ginger, the spring onions and white pepper.',
+    'Heat the sesame oil until just smoking and pour it over the fish so it sizzles, then spoon over the soy sauce. Serve with the rice and pak choi.',
+  ]),
+  r('af-char-siu', 'Air-fryer char siu pork with rice and pak choi', { meals: ['lunch', 'dinner'], minutes: 30, method: 'airfryer', cuisine: 'asian' }, [
+    ['pork-fillet', 160], ['pak-choi', 150], ['rice', 150], ['hoisin', 15, T('1 tbsp')], ['honey', 7, T('1 tsp')], ['soy-sauce', 10, T('2 tsp')], ['garlic', 3, T('1 clove')], ['five-spice', 0, T('½ tsp')], ['sesame-oil', 3, T('½ tsp')],
+  ], [
+    'Mix the hoisin, honey, soy sauce, grated garlic and five-spice. Coat the pork and leave for 10 minutes (or overnight in the fridge).',
+    'Heat the air fryer to 200 °C. Cook the pork for 14–16 minutes, turning halfway and brushing with the leftover marinade, until sticky and cooked through (63 °C inside).',
+    'Meanwhile cook the rice. Steam or stir-fry the pak choi for 3 minutes and dress with the sesame oil.',
+    'Rest the pork for 3 minutes, slice thinly and serve over the rice with the pak choi.',
+  ]),
+  r('beef-chow-fun', 'Beef chow fun: wok-fried rice noodles with beef and bean sprouts', { meals: ['lunch', 'dinner'], minutes: 20, method: 'stirfry', cuisine: 'asian' }, [
+    ['steak', 130], ['rice-noodles', 70], ['bean-sprouts', 100], ['spring-onion', 30, T('3 spring onions')], ['soy-sauce', 15, T('1 tbsp')], ['oyster-sauce', 15, T('1 tbsp')], ['cornflour', 3, T('1 tsp')], OIL(10, '1 tbsp'),
+  ], [
+    'Soak or boil the rice noodles as the packet says, rinse in cold water and drain well.',
+    'Slice the beef thinly across the grain and toss with the cornflour and a splash of the soy sauce.',
+    'Heat half the oil in a wok until smoking. Sear the beef for 1–2 minutes, then take it out.',
+    'Add the rest of the oil, the noodles and the soy and oyster sauces. Toss over high heat for 2 minutes until the noodles start to char at the edges.',
+    'Add the bean sprouts, spring onions and the beef, and toss for 1 more minute. Serve straight away.',
+  ]),
+  r('wonton-soup', 'Pork and prawn wonton soup with pak choi', { meals: ['lunch', 'dinner'], minutes: 35, method: 'stew', cuisine: 'asian' }, [
+    ['beef-mince', 80], ['shrimp', 80], ['dumpling-wrappers', 60, T('about 12 wrappers')], ['pak-choi', 100], ['stock', 400, T('400 ml')], ['ginger', 5, T('1 cm')], ['spring-onion', 10, T('1 spring onion')], ['soy-sauce', 10, T('2 tsp')], ['sesame-oil', 3, T('½ tsp')], ['white-pepper', 0, T('a pinch')],
+  ], [
+    'Finely chop the prawns and mix with the mince, grated ginger, half the spring onion, 1 tsp soy sauce, the sesame oil and white pepper.',
+    'Put a teaspoon of filling in the middle of each wrapper, wet the edges, fold into a triangle and pinch the two corners together.',
+    'Bring the stock to a simmer with the rest of the soy sauce. Add the wontons and cook for 4–5 minutes until they float and the filling is cooked.',
+    'Add the pak choi for the last 2 minutes. Serve in a bowl topped with the rest of the spring onion.',
+  ]),
+  r('chicken-ginger-congee', 'Chicken and ginger congee', { meals: ['breakfast', 'lunch'], minutes: 40, method: 'stew', cuisine: 'asian' }, [
+    ['rice', 120], ['chicken', 120], ['stock', 500, T('500 ml')], ['ginger', 10, T('2 cm')], ['spring-onion', 10, T('1 spring onion')], ['soy-sauce', 5, T('1 tsp')], ['sesame-oil', 3, T('½ tsp')], ['white-pepper', 0, T('a pinch')],
+  ], [
+    'Put cooked rice (leftover rice is ideal) in a pan with the stock and the ginger cut into thin strips.',
+    'Simmer gently for 25–30 minutes, stirring now and then and adding water if needed, until thick and creamy.',
+    'Slice the chicken thinly and stir it in for the last 6–8 minutes until cooked through.',
+    'Serve topped with spring onion, soy sauce, sesame oil and white pepper.',
+  ]),
+  r('af-salt-pepper-prawns', 'Air-fryer salt and pepper prawns with cucumber salad', { meals: ['lunch', 'dinner'], minutes: 15, method: 'airfryer', cuisine: 'asian' }, [
+    ['shrimp', 200], ['cucumber', 150], ['peppers', 60], ['cornflour', 10, T('1 tbsp')], ['garlic', 6, T('2 cloves')], ['chili-flakes', 0, T('a pinch')], ['sichuan-pepper', 0, T('½ tsp, crushed')], ['rice-vinegar', 10, T('2 tsp')], ['sesame-oil', 5, T('1 tsp')], SP,
+  ], [
+    'Heat the air fryer to 200 °C. Pat the prawns dry and toss with the cornflour, salt, crushed Sichuan pepper and chili.',
+    'Air-fry for 6–8 minutes until crisp and pink, shaking once.',
+    'Meanwhile smash the cucumber with a knife, cut into chunks and toss with the rice vinegar, sesame oil and a pinch of salt.',
+    'Fry the chopped garlic and diced pepper in a dry pan for 1 minute, toss with the prawns and serve with the cucumber salad.',
+  ]),
+  r('tomato-egg-stirfry', 'Hong Kong tomato and egg stir-fry with rice', { meals: ['breakfast', 'lunch', 'dinner'], minutes: 15, method: 'stirfry', cuisine: 'asian' }, [
+    ['eggs', 150], ['tomatoes', 200], ['rice', 140], ['spring-onion', 10, T('1 spring onion')], ['soy-sauce', 5, T('1 tsp')], OIL(10, '1 tbsp'), ['honey', 4, T('½ tsp sugar or honey')], SP,
+  ], [
+    'Cook the rice. Cut the tomatoes into wedges and beat the eggs with a pinch of salt.',
+    'Heat half the oil in a wok, pour in the eggs and stir gently until just set and still soft. Take them out.',
+    'Add the rest of the oil and the tomatoes. Cook for 3–4 minutes until they soften into a sauce, then add the soy sauce, the sugar and a splash of water.',
+    'Return the eggs, fold through, top with spring onion and serve over the rice.',
+  ]),
+  r('steamed-egg-custard', 'Silky steamed egg with soy and spring onion', { meals: ['breakfast', 'lunch', 'snacks'], minutes: 15, method: 'pan', cuisine: 'asian' }, [
+    ['eggs', 120], ['stock', 180, T('180 ml')], ['spring-onion', 5, T('a little')], ['soy-sauce', 5, T('1 tsp')], ['sesame-oil', 3, T('½ tsp')],
+  ], [
+    'Beat the eggs gently with the warm stock (about 1½ times the egg volume) and pour through a sieve into a shallow bowl.',
+    'Cover the bowl with a plate and steam over gently simmering water for 10–12 minutes until just set and wobbly.',
+    'Drizzle with soy sauce and sesame oil and scatter over the spring onion.',
+  ]),
+  r('kung-pao-chicken', 'Kung pao chicken with peanuts and rice', { meals: ['lunch', 'dinner'], minutes: 20, method: 'stirfry', cuisine: 'asian' }, [
+    ['chicken', 150], ['peppers', 100], ['peanuts', 20], ['rice', 150], ['soy-sauce', 15, T('1 tbsp')], ['rice-vinegar', 10, T('2 tsp')], ['honey', 7, T('1 tsp')], ['cornflour', 3, T('1 tsp')], ['garlic', 3, T('1 clove')], ['ginger', 5, T('1 cm')], ['chili-flakes', 0, T('to taste')], ['sichuan-pepper', 0, T('½ tsp')], OIL(10, '1 tbsp'),
+  ], [
+    'Cook the rice. Cut the chicken into small cubes and toss with half the soy sauce and the cornflour.',
+    'Mix the rest of the soy sauce with the vinegar, honey and 2 tbsp water.',
+    'Heat the oil in a wok until very hot. Stir-fry the chicken for 4–5 minutes until golden and cooked through.',
+    'Add the diced pepper, garlic, ginger, chili and crushed Sichuan pepper for 2 minutes.',
+    'Pour in the sauce, let it bubble and thicken, then stir in the peanuts. Serve with the rice.',
+  ]),
+  r('mapo-tofu', 'Mapo tofu with beef mince and rice', { meals: ['lunch', 'dinner'], minutes: 20, method: 'stew', cuisine: 'asian' }, [
+    ['tofu', 200], ['beef-mince', 80], ['rice', 140], ['chili-bean-paste', 15, T('1 tbsp')], ['garlic', 6, T('2 cloves')], ['ginger', 5, T('1 cm')], ['stock', 150, T('150 ml')], ['cornflour', 3, T('1 tsp')], ['spring-onion', 10, T('1 spring onion')], ['sichuan-pepper', 0, T('½ tsp, ground')], OIL(5, '1 tsp'),
+  ], [
+    'Cook the rice. Cut the tofu into 2 cm cubes and warm them in lightly salted simmering water for 2 minutes, then drain.',
+    'Fry the mince in the oil until browned. Add the chili bean paste, garlic and ginger and fry for 1 minute until the oil turns red.',
+    'Add the stock and the tofu and simmer gently for 5 minutes.',
+    'Stir in the cornflour mixed with a little water to thicken. Finish with ground Sichuan pepper and spring onion and serve with the rice.',
+  ]),
+  r('singapore-noodles', 'Singapore noodles with prawns and chicken', { meals: ['lunch', 'dinner'], minutes: 20, method: 'stirfry', cuisine: 'asian' }, [
+    ['rice-noodles', 60], ['shrimp', 70], ['chicken', 70], ['peppers', 80], ['bean-sprouts', 60], ['eggs', 50], ['curry-powder', 0, T('2 tsp')], ['soy-sauce', 15, T('1 tbsp')], ['spring-onion', 10, T('1 spring onion')], OIL(10, '1 tbsp'),
+  ], [
+    'Soak the thin rice noodles as the packet says, drain and snip into shorter lengths.',
+    'Heat half the oil in a wok, scramble the egg quickly and set aside.',
+    'Add the rest of the oil and stir-fry the sliced chicken for 3 minutes, then the prawns and pepper strips for 2 minutes.',
+    'Add the noodles, curry powder and soy sauce and toss over high heat for 2 minutes until evenly yellow.',
+    'Toss in the bean sprouts, egg and spring onion and serve.',
+  ]),
+  r('cauli-fried-rice', 'Cauliflower egg fried rice with prawns (low carb)', { meals: ['lunch', 'dinner'], minutes: 15, method: 'stirfry', cuisine: 'asian' }, [
+    ['cauliflower', 250], ['shrimp', 120], ['eggs', 100], ['pak-choi', 80], ['spring-onion', 10, T('1 spring onion')], ['soy-sauce', 15, T('1 tbsp')], ['garlic', 3, T('1 clove')], ['sesame-oil', 5, T('1 tsp')], OIL(5, '1 tsp'),
+  ], [
+    'Grate the cauliflower or pulse it in a food processor until it looks like rice.',
+    'Heat the oil in a wok, stir-fry the prawns for 2–3 minutes until pink and take them out.',
+    'Scramble the eggs in the wok, then add the cauliflower, the sliced pak choi and the garlic and stir-fry for 4–5 minutes until tender but not mushy.',
+    'Return the prawns, add the soy sauce and sesame oil, toss and finish with spring onion.',
+  ]),
+  r('thai-green-curry', 'Thai green chicken curry with rice', { meals: ['lunch', 'dinner'], minutes: 25, method: 'stew', cuisine: 'asian' }, [
+    ['chicken', 150], ['coconut-milk', 150], ['curry-paste', 20, T('1 tbsp green curry paste')], ['green-beans', 80], ['peppers', 60], ['rice', 140], ['fish-sauce', 5, T('1 tsp')], ['lime', 5, T('a squeeze')], ['thai-basil', 0, T('a handful')], OIL(5, '1 tsp'),
+  ], [
+    'Cook the rice. Slice the chicken and trim the beans.',
+    'Fry the curry paste in the oil for 1 minute until fragrant, then add a third of the coconut milk and let it bubble.',
+    'Add the chicken and cook for 3 minutes, then the rest of the coconut milk, the beans and the pepper. Simmer for 8–10 minutes until the chicken is cooked.',
+    'Season with fish sauce and lime, stir in the basil and serve with the rice.',
+  ]),
+  r('thai-basil-chicken', 'Thai basil chicken (pad krapow) with a fried egg', { meals: ['lunch', 'dinner'], minutes: 15, method: 'stirfry', cuisine: 'asian' }, [
+    ['turkey-mince', 150], ['eggs', 60], ['peppers', 60], ['green-beans', 60], ['rice', 140], ['oyster-sauce', 10, T('2 tsp')], ['soy-sauce', 5, T('1 tsp')], ['fish-sauce', 5, T('1 tsp')], ['garlic', 6, T('2 cloves')], ['chili-flakes', 0, T('to taste')], ['thai-basil', 0, T('a big handful')], OIL(10, '1 tbsp'),
+  ], [
+    'Cook the rice. Crush the garlic with the chili.',
+    'Fry the egg in half the oil until the edges are crisp, and set aside.',
+    'Heat the rest of the oil until very hot. Fry the garlic and chili for 20 seconds, then add the mince and stir-fry for 4 minutes.',
+    'Add the sliced beans and pepper for 2 minutes, then the oyster, soy and fish sauces.',
+    'Stir in the basil until it wilts. Serve over the rice with the fried egg on top.',
+  ]),
+  r('af-teriyaki-salmon', 'Air-fryer teriyaki salmon with rice and edamame', { meals: ['lunch', 'dinner'], minutes: 20, method: 'airfryer', cuisine: 'asian' }, [
+    ['salmon', 140], ['edamame', 80], ['rice', 140], ['cucumber', 80], ['soy-sauce', 15, T('1 tbsp')], ['honey', 7, T('1 tsp')], ['ginger', 5, T('1 cm')], ['rice-vinegar', 5, T('1 tsp')], ['sesame-oil', 3, T('½ tsp')],
+  ], [
+    'Cook the rice. Mix the soy sauce, honey and grated ginger.',
+    'Heat the air fryer to 200 °C. Brush the salmon with half the glaze and air-fry for 8–10 minutes, brushing again halfway.',
+    'Boil the edamame for 3 minutes. Slice the cucumber and toss with the rice vinegar and sesame oil.',
+    'Serve the salmon over the rice with the edamame and cucumber.',
+  ]),
 ];
