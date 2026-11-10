@@ -106,7 +106,7 @@ export const COMMON = [
   c('Lo mai gai (sticky rice in lotus leaf)', 190, 7, 26, 6.5, { u: 'piece', g: 200, label: 'parcel', aka: 'glutinous rice chicken dim sum yum cha' }),
   c('Turnip cake (lo bak go)', 160, 4, 20, 7, { u: 'piece', g: 60, label: 'piece', aka: 'radish cake lor bak go dim sum yum cha' }),
   c('Chicken feet in black bean sauce', 215, 19, 1, 15, { g: 120, label: 'plate', aka: 'phoenix claws fung zao dim sum yum cha' }),
-  c('Pork ribs in black bean sauce', 250, 17, 4, 18.5, { g: 120, label: 'plate', aka: 'spare ribs pai gwat dim sum yum cha' }),
+  c('Pork ribs in black bean sauce', 250, 17, 4, 18.5, { g: 120, label: 'plate', aka: 'spare ribs pai gwat pork rib pieces steamed dim sum yum cha' }),
   c('Beef balls (dim sum)', 200, 12, 8, 13, { u: 'piece', g: 40, label: 'piece', aka: 'steamed beef meatball yum cha dim sum' }),
   c('Xiao long bao', 220, 9, 24, 9.5, { u: 'piece', g: 30, label: 'piece', aka: 'soup dumpling xlb yum cha dim sum' }),
   c('Fried taro dumpling (wu gok)', 280, 6, 25, 17, { u: 'piece', g: 50, label: 'piece', aka: 'taro puff dim sum yum cha' }),
@@ -133,6 +133,23 @@ export const COMMON = [
   c('Hong Kong milk tea', 70, 2.2, 9.5, 2.5, { ml: true, g: 250, label: 'cup', aka: 'nai cha silk stocking tea' }),
   c('Hong Kong French toast', 330, 9, 32, 18.5, { g: 150, label: 'portion', aka: 'peanut butter french toast' }),
   c('Egg waffle (gai daan jai)', 280, 7, 45, 7.5, { g: 120, label: 'portion', aka: 'bubble waffle eggette' }),
+
+  // ---- Water spinach, rib pieces, beef in sauce (Cantonese) -------------
+  c('Water spinach with garlic', 55, 2.8, 3.5, 3.5, { g: 200, label: 'plate', aka: 'ong choy kangkong kangkung morning glory tung choi stir-fried wasserspinat' }),
+  c('Water spinach with fermented bean curd', 65, 3, 4, 4.2, { g: 200, label: 'plate', aka: 'ong choy fu yu kangkong wasserspinat' }),
+  c('Water spinach with shrimp paste', 70, 3.5, 4, 4.5, { g: 200, label: 'plate', aka: 'kangkung belacan sambal ong choy wasserspinat' }),
+  c('Water spinach (raw)', 19, 2.6, 1.1, 0.2, { g: 100, label: 'portion', aka: 'ong choy kangkong morning glory wasserspinat' }),
+  c('Sweet and sour pork ribs', 270, 14, 18, 16, { g: 200, label: 'plate', aka: 'pork rib pieces sweet sour spare ribs' }),
+  c('Salt and pepper pork ribs', 300, 18, 6, 23, { g: 150, label: 'plate', aka: 'pork rib pieces fried spare ribs' }),
+  c('Braised pork ribs in soy sauce', 260, 17, 6, 19, { g: 200, label: 'plate', aka: 'red braised pork rib pieces spare ribs' }),
+  c('Pork spare ribs (cooked meat)', 290, 25, 0, 21, { g: 100, label: 'portion', aka: 'pork rib pieces spareribs schweinerippchen' }),
+  c('Beef brisket stew (ngau naam)', 160, 14, 4, 10, { g: 300, label: 'bowl', aka: 'braised beef brisket beef pieces in sauce ngau lam rinderbrust' }),
+  c('Curry beef brisket', 175, 12, 7, 11, { g: 300, label: 'bowl', aka: 'beef pieces in curry sauce' }),
+  c('Beef in black pepper sauce', 160, 14, 6, 9, { g: 250, label: 'plate', aka: 'black pepper beef pieces in sauce' }),
+  c('Beef in oyster sauce', 140, 13, 6, 7, { g: 250, label: 'plate', aka: 'beef pieces in oyster sauce' }),
+  c('Beef in satay sauce', 180, 13, 7, 11, { g: 250, label: 'plate', aka: 'beef pieces in satay sauce' }),
+  c('Braised beef tendon', 150, 30, 1, 3, { g: 150, label: 'portion', aka: 'ngau gun beef pieces' }),
+  c('Beef brisket (cooked)', 250, 28, 0, 15, { g: 100, label: 'portion', aka: 'beef pieces rinderbrust' }),
 
   // ---- Chinese takeaway (as in Germany) --------------------------------
   c('Sweet and sour chicken', 175, 9, 20, 6.5, { g: 350, label: 'plate', aka: 'hühnchen süß-sauer huhn süss sauer' }),

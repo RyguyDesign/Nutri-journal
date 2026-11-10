@@ -154,6 +154,21 @@ const T = {
   'common:hoisin-sauce': [2.8, 27, 0.6, 4.5],
   'common:oyster-sauce': [0.3, 7, 0.1, 9],
   'common:sriracha': [2, 15, 0.1, 5.5],
+  'common:water-spinach-with-garlic': [2, 1.5, 0.5, 0.6],
+  'common:water-spinach-with-fermented-bean-curd': [2, 1.5, 0.6, 1.2],
+  'common:water-spinach-with-shrimp-paste': [2, 2, 0.7, 1.5],
+  'common:water-spinach-raw-': [2.1, 0, 0, 0.3],
+  'common:sweet-and-sour-pork-ribs': [0.4, 12, 5.5, 0.9],
+  'common:salt-and-pepper-pork-ribs': [0.3, 0.5, 8, 1.4],
+  'common:braised-pork-ribs-in-soy-sauce': [0.2, 4, 7, 1.3],
+  'common:pork-spare-ribs-cooked-meat-': [0, 0, 7.5, 0.2],
+  'common:beef-brisket-stew-ngau-naam-': [0.5, 2, 4, 1.0],
+  'common:curry-beef-brisket': [1, 2, 5.5, 0.9],
+  'common:beef-in-black-pepper-sauce': [0.6, 3, 3.5, 1.1],
+  'common:beef-in-oyster-sauce': [0.6, 3, 2.5, 1.1],
+  'common:beef-in-satay-sauce': [1, 4, 3.5, 1.0],
+  'common:braised-beef-tendon': [0, 0.5, 1, 0.6],
+  'common:beef-brisket-cooked-': [0, 0, 6, 0.15],
 };
 
 /** { fibre, sugar, satFat, salt } per 100 g/ml for a built-in food id, or null. */
