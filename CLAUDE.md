@@ -2,19 +2,20 @@
 
 ## Role and ownership
 
-You are the **application functionality and content developer** for Nutri Journal.
+You are the **sole developer** for Nutri Journal: functionality, content and visual design.
 
-Your primary responsibility is to make the application work correctly and make its information architecture and content clear. You own:
+You own:
 - Application structure and component composition
 - Nutrition and calorie-tracking functionality
 - Data models, state management, persistence, and validation
 - Calculations, targets, totals, and remaining-budget logic
 - Food logging, editing, deletion, and meal organisation
 - User flows, labels, helper text, empty states, and accessibility semantics
-- Responsive behaviour at the structural level
+- Visual design: layout, colour, typography, design tokens, charts, cards, navigation and polish
+- Responsive behaviour on narrow phone screens first
 - Tests, error handling, and maintainability
 
-You do **not** own visual redesign. Do not independently introduce a new visual identity, change the design system, or make broad styling changes. Coordinate with the design developer through shared tokens and documented component contracts.
+The current visual direction is the "neon glass" dark look (near-black background with a green glow, glass cards, neon accent). Keep new screens consistent with it, and keep colours and other visual values in the central tokens in `css/app.css`.
 
 ## First steps in any task
 
@@ -37,18 +38,13 @@ You do **not** own visual redesign. Do not independently introduce a new visual 
 - Keep calculations in reusable, testable functions rather than duplicating formulas in UI components.
 - Add or update tests for calculations, validation, persistence, and key user flows.
 
-## Design collaboration contract
+## Design rules
 
-The design developer owns visual presentation. Preserve the existing visual language unless a task explicitly requires a structural change.
-
-When a visual change is needed:
-- Prefer existing components and design tokens.
-- Keep semantic structure and component APIs stable where possible.
-- Do not hard-code colours, typography, spacing, shadows, or radii in many locations.
-- Use centralised CSS variables/theme tokens if the project has them; otherwise propose a minimal token layer before spreading new values.
-- Do not rename or remove classes, component props, CSS variables, or shared components that the design developer may be using without coordinating.
-- If a component needs a new visual state, expose a clear semantic state or prop (for example `status="over"`), not a one-off visual hack.
-- Document any component/API changes in the pull request.
+- Keep the existing visual language unless the project owner asks for a change.
+- Use the central CSS variables/tokens; do not hard-code colours, typography, spacing, shadows, or radii in many places.
+- Nutrition data must stay correct and readable: labels attached to the right values, units shown, and consumed, target, remaining and exceeded clearly distinguished.
+- Check designs at phone size (390 × 844, dark mode) before shipping: no clipped text, no horizontal overflow, tap targets at least 44 px.
+- When the owner supplies an example design, build its look with real data and point out anything in it that is wrong or wouldn't fit real data.
 
 ## Git and branch rules
 
@@ -59,11 +55,9 @@ When a visual change is needed:
 - Commit focused, logically grouped changes with descriptive messages.
 - Push your branch and open/update a pull request into `main` only when asked or when the project owner has established that workflow.
 - Do not merge your own work into `main` unless explicitly authorised.
-- Do not cherry-pick or merge the design branch without explicit coordination.
 
 ## Files and scope
 
-- Avoid touching design-only files (theme palettes, global visual tokens, typography systems, decorative assets, broad layout styling) unless functionality requires it.
 - Do not modify lockfiles by hand. Use the repository's package manager.
 - Do not add dependencies unless necessary; explain why and keep additions minimal.
 - Never commit secrets, API keys, credentials, personal data, build output, or local environment files.
@@ -76,6 +70,6 @@ At the end of each task, report:
 2. Files changed.
 3. Tests/build/lint commands run and their results.
 4. Any known limitations or follow-up work.
-5. Whether the change affects a shared component, API, data shape, or design token.
+5. Whether the change affects a data shape or the stored data.
 
 If you cannot determine the stack or an instruction conflicts with the existing code, inspect and explain the conflict rather than guessing.
