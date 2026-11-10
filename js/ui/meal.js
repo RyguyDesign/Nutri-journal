@@ -2,6 +2,7 @@
 // Search -> tap -> it joins the list with a typical amount; adjust with the
 // amount, unit, or ½ ¼ ×2; one Save for everything. Combinations can be
 // saved as a meal and logged again with one tap.
+import { macroPills } from './macros.js';
 import { h, toast } from './dom.js';
 import { t, fmtKcal, fmtGrams, fmtNumber } from '../i18n/i18n.js';
 import { MEALS, MASS_UNITS, defaultMeal, nowTime, parseNumber } from '../core/entry.js';
@@ -239,7 +240,7 @@ export async function render(root, rerender, params = {}) {
     const tt = mealTotals(items);
     totalsEl.replaceChildren(
       items.length ? h('strong', {}, t('meal.total', { kcal: fmtKcal(tt.kcal) })) : null,
-      items.length ? h('span', { class: 'muted small' }, ` · ${t('ideas.macros', { p: fmtGrams(tt.protein), c: fmtGrams(tt.carbs), f: fmtGrams(tt.fat) })}`) : null,
+      items.length ? macroPills(tt, { size: 'sm' }) : null,
     );
   }
 
