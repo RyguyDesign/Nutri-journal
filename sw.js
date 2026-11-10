@@ -2,7 +2,7 @@
 // phone is online; the cached copy is used when offline.
 // Bump CACHE when the file list changes.
 
-const CACHE = 'nutri-journal-v25';
+const CACHE = 'nutri-journal-v26';
 const SHELL = [
   './',
   './index.html',
@@ -12,6 +12,9 @@ const SHELL = [
   './js/ui/diet-status.js',
   './js/core/diet.js',
   './js/core/dash.js',
+  './js/core/tiles.js',
+  './js/ui/diet.js',
+  './js/ui/tiles.js',
   './js/foods/extras.js',
   './js/ui/slider.js',
   './js/ui/meal.js',

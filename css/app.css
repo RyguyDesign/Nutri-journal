@@ -588,3 +588,43 @@ h2.gap { margin-top: 20px; }
 .shortcut-icon { width: 26px; height: 26px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .shortcut-title { font-size: 0.78rem; font-weight: 600; }
 .shortcut-sub { font-size: 0.68rem; color: var(--muted); }
+
+/* ---- Structure for: tile picker, Diet & fasting, extra dashboard tiles ----
+   Layout only, using existing tokens; visual styling is the design branch's. */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.page-head { display: flex; align-items: center; gap: 12px; }
+.page-head .page-title { margin: 0; }
+.edit-tiles { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; }
+.edit-tiles .shortcut-icon { width: 20px; height: 20px; }
+
+.tile-list { list-style: none; margin: 0; padding: 0; }
+.tile-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.tile-row:first-child { border-top: 0; }
+.tile-check { flex: 1; min-width: 0; font-weight: 400; }
+.tile-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tile-name { font-weight: 600; }
+.tile-row.off .tile-name { color: var(--muted); }
+.tile-move { display: flex; gap: 4px; }
+.tile-move .icon-btn:disabled { opacity: 0.35; }
+
+.window-bar { position: relative; height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; margin-top: 8px; }
+.window-fill { position: absolute; top: 0; bottom: 0; background: var(--accent); }
+.window-scale { display: flex; justify-content: space-between; margin-top: 4px; }
+
+.history-list { list-style: none; margin: 0; padding: 0; }
+.history-list li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.history-list li:first-child { border-top: 0; }
+
+.nutrient-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.nutrient-table th, .nutrient-table td { padding: 6px 4px; text-align: right; border-top: 1px solid var(--line); }
+.nutrient-table thead th { border-top: 0; color: var(--muted); font-weight: 600; font-size: 0.8rem; }
+.nutrient-table tbody th { text-align: left; font-weight: 600; }
+.nutrient-table tr.over td:last-child { color: var(--over); font-weight: 600; }
+
+.meal-sum { list-style: none; margin: 0 0 8px; padding: 0; }
+.meal-sum li { padding: 8px 0; border-top: 1px solid var(--line); }
+.meal-sum li:first-child { border-top: 0; }
+.meal-sum-head { display: flex; align-items: baseline; gap: 8px; }
+.meal-sum-kcal { margin-left: auto; font-weight: 600; }
+.tile-check input { flex: none; }
+.page-head a.icon-btn { display: inline-flex; align-items: center; justify-content: center; flex: none; color: inherit; text-decoration: none; font-size: 1.4rem; line-height: 1; }

@@ -10,6 +10,8 @@ import * as entryForm from './ui/entry-form.js';
 import * as ideas from './ui/ideas.js';
 import * as tastes from './ui/tastes.js';
 import * as mealView from './ui/meal.js';
+import * as dietView from './ui/diet.js';
+import * as tilesView from './ui/tiles.js';
 import { getSelectedDate, setSelectedDate, noteNavigation } from './ui/state.js';
 
 // 24×24 stroke icons
@@ -17,6 +19,8 @@ const ICONS = {
   dashboard: 'M12 3a9 9 0 1 0 9 9M12 3v9h9M12 3a9 9 0 0 1 9 9',
   journal: 'M6 3h11a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V4a1 1 0 0 1 1-1zM5 17a2 2 0 0 1 2-2h12M9 7h6M9 11h6',
   profile: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  // sliders
+  diet: 'M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1M15 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM9 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM17 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4z',
   // a cooking pot
   ideas: 'M3 11h18M5 11v6a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-6M8 7c0-1.2 1-1.2 1-2.4M12 7c0-1.2 1-1.2 1-2.4M16 7c0-1.2 1-1.2 1-2.4',
 };
@@ -27,7 +31,9 @@ const ROUTES = [
   { pattern: /^\/$/, view: dashboard, tab: '/', label: 'nav.dashboard', icon: ICONS.dashboard },
   { pattern: /^\/journal$/, view: journal, tab: '/journal', label: 'nav.journal', icon: ICONS.journal },
   { pattern: /^\/ideas$/, view: ideas, tab: '/ideas', label: 'nav.ideas', icon: ICONS.ideas },
+  { pattern: /^\/diet$/, view: dietView, tab: '/diet', label: 'nav.diet', icon: ICONS.diet },
   { pattern: /^\/profile$/, view: profile, tab: '/profile', label: 'nav.profile', icon: ICONS.profile },
+  { pattern: /^\/tiles$/, view: tilesView },
   { pattern: /^\/tastes$/, view: tastes },
   { pattern: /^\/add$/, view: mealView },
   { pattern: /^\/add\/detail$/, view: entryForm },

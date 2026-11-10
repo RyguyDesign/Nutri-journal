@@ -316,6 +316,13 @@ export async function render(root, rerender, params = {}) {
     h('section', { class: 'card' }, list, totalsEl, saveRow),
     h('div', { class: 'actions sticky' }, saveBtn),
   );
+
+  // Opened from the dashboard's Scan barcode tile: go straight to the camera.
+  // The flag is removed so going back here doesn't open it again.
+  if (q.scan === '1') {
+    history.replaceState(null, '', location.href.replace(/[?&]scan=1/, (m) => (m[0] === '?' ? '?' : '')).replace('?&', '?').replace(/\?$/, ''));
+    onScan();
+  }
   drawItems();
   showResults();
 }

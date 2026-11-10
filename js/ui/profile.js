@@ -1,8 +1,7 @@
 import { h, toast } from './dom.js';
 import { t, fmtKcal, fmtNumber } from '../i18n/i18n.js';
-import { ACTIVITY_LEVELS, GOALS, RATES, DIET_STYLES, validateProfile } from '../core/calc.js';
+import { ACTIVITY_LEVELS, GOALS, RATES, validateProfile } from '../core/calc.js';
 import * as store from '../data/store.js';
-import { recommendationFor } from './targets-compare.js';
 import { FASTING_IDS, eatingWindow } from '../core/diet.js';
 
 const RANGES = { age: [18, 100], heightCm: [120, 230], weightKg: [35, 300], targetWeightKg: [35, 300] };
@@ -14,9 +13,9 @@ const parseNum = (s) => {
   const v = String(s ?? '').trim().replace(',', '.');
   return v === '' ? NaN : Number(v);
 };
-const splitList = (s) => String(s || '').split(',').map((x) => x.trim()).filter(Boolean);
+export const splitList = (s) => String(s || '').split(',').map((x) => x.trim()).filter(Boolean);
 
-function field(id, label, input, hint) {
+export function field(id, label, input, hint) {
   return h('div', { class: 'field', id: `f-${id}` }, h('label', { for: id }, label), input, hint ? h('small', { class: 'muted' }, hint) : null, h('small', { class: 'err', id: `e-${id}` }));
 }
 
@@ -29,7 +28,7 @@ function numInput(id, value, unit, step = 'any') {
   );
 }
 
-function select(id, options, value) {
+export function select(id, options, value) {
   return h('select', { id, name: id }, options.map(([v, label]) => h('option', { value: v, selected: String(v) === String(value) }, label)));
 }
 
@@ -41,7 +40,7 @@ function rateOptions(goal) {
 // ---------------------------------------------------------------------------
 
 /** Fasting plan and when the eating window opens. */
-function fastingFields(p) {
+export function fastingFields(p) {
   const plan = select('fasting', FASTING_IDS.map((f) => [f, t(`profile.fasting.${f}`)]), p.fasting || 'none');
   const start = h('input', { id: 'eatingStart', name: 'eatingStart', type: 'time', value: p.eatingStart || '12:00' });
   const startField = h('div', { class: 'field', id: 'f-eatingStart' }, h('label', { for: 'eatingStart' }, t('profile.eatingStart')), start, h('small', { class: 'muted', id: 'eating-window' }));
@@ -87,13 +86,6 @@ function profileForm(profile) {
       field('rateKgPerWeek', t('profile.rate'), rateSel),
     ),
     field('targetWeightKg', t('profile.targetWeight'), numInput('targetWeightKg', p.targetWeightKg, t('common.kg'))),
-    field('dietStyle', t('profile.dietStyle'), select('dietStyle', DIET_STYLES.map((d) => [d, t(`profile.dietStyle.${d}`)]), p.dietStyle || 'balanced'), t('profile.dietStyle.hint')),
-    fastingFields(p),
-    h('h2', {}, t('profile.foodSection')),
-    h('p', { class: 'muted small' }, t('profile.foodHint'), ' ', h('a', { class: 'link-btn', href: '#/tastes' }, `${t('profile.likesLink')} →`)),
-    field('diet', t('profile.diet'), h('input', { id: 'diet', type: 'text', value: (p.diet || []).join(', '), placeholder: t('profile.diet.ph') })),
-    field('allergies', t('profile.allergies'), h('input', { id: 'allergies', type: 'text', value: (p.allergies || []).join(', '), placeholder: t('profile.allergies.ph') })),
-    field('dislikes', t('profile.dislikes'), h('input', { id: 'dislikes', type: 'text', value: (p.dislikes || []).join(', '), placeholder: t('profile.dislikes.ph') })),
     h('div', { class: 'warn', id: 'profile-warnings' }),
     h('button', { class: 'btn primary', type: 'submit' }, t('profile.save')),
   );
@@ -101,7 +93,11 @@ function profileForm(profile) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const v = (id) => form.querySelector(`#${id}`).value;
+    // Diet, fasting and food preferences live on the Diet & fasting screen:
+    // keep whatever is saved there.
+    const saved = (await store.getProfile()) || {};
     const next = {
+      ...saved,
       age: parseNum(v('age')),
       sex: v('sex'),
       heightCm: parseNum(v('heightCm')),
@@ -110,13 +106,8 @@ function profileForm(profile) {
       activity: v('activity'),
       goal: v('goal'),
       rateKgPerWeek: Number(v('rateKgPerWeek')),
-      dietStyle: v('dietStyle'),
-      fasting: v('fasting'),
-      eatingStart: v('eatingStart') || '12:00',
-      diet: splitList(v('diet')),
-      allergies: splitList(v('allergies')),
-      dislikes: splitList(v('dislikes')),
     };
+    delete next.updatedAt;
     const { errors, warnings, valid } = validateProfile(next);
     form.querySelectorAll('.field').forEach((f) => f.classList.remove('invalid'));
     form.querySelectorAll('.err').forEach((el) => (el.textContent = ''));
@@ -144,7 +135,7 @@ function profileForm(profile) {
 
 // ---------------------------------------------------------------------------
 
-function targetsCard(targets, rec) {
+export function targetsCard(targets, rec) {
   const card = h('section', { class: 'card', id: 'targets' }, h('h2', {}, t('targets.title')));
   if (!rec && !targets) {
     card.append(h('p', { class: 'muted' }, t('targets.needProfile')));
@@ -319,12 +310,15 @@ async function dataCard() {
   );
 }
 
+/** Me: only about you. Diet, fasting, targets and food preferences are on #/diet. */
 export async function render(root) {
   const [profile, targets] = await Promise.all([store.getProfile(), store.getTargets()]);
-  const rec = recommendationFor(profile);
-  const form = profileForm(profile);
-  const tcard = targetsCard(targets, rec);
-  // New users fill in the profile first; afterwards targets are what they come back for.
-  const main = profile ? [tcard, form] : [form, tcard];
-  root.replaceChildren(h('h1', { class: 'page-title' }, t('profile.title')), ...main, await dataCard());
+  const pointer = h(
+    'section',
+    { class: 'card' },
+    h('h2', {}, t('me.dietTitle')),
+    h('p', { class: 'muted small' }, t(targets ? 'me.dietBody' : 'me.dietBodyNew')),
+    h('a', { class: targets ? 'link-btn' : 'btn primary', href: '#/diet' }, `${t('me.dietLink')} →`),
+  );
+  root.replaceChildren(h('h1', { class: 'page-title' }, t('profile.title')), profileForm(profile), pointer, await dataCard());
 }
