@@ -17,6 +17,7 @@ test('macro bar: sections sized by the plan, filled like the targets', () => {
   assert.ok(Math.abs(p.share + c.share + f.share - 1) < 1e-9);
   assert.deepEqual([p.pct, c.pct, f.pct], [64, 62, 53]);
   assert.deepEqual([p.left, c.left, f.left], [54, 19, 57]);
+  assert.deepEqual([p.eaten, p.target, f.eaten, f.target], [96, 150, 64, 121]);
   assert.deepEqual([p.inside, c.inside, f.inside], [true, false, true]); // carbs is too narrow for a label
 });
 

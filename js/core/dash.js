@@ -13,6 +13,7 @@ export const MIN_LABEL_SHARE = 0.27;
  * day's plan, filled by how much of that macro's target has been eaten.
  *   sections: [{ key, share, ratio, pct, left, over, inside }]
  *     ratio   fill, 0..1          pct   eaten / target in % (can pass 100)
+ *     eaten, target  grams, rounded
  *     left    grams left, rounded; negative when over
  *     inside  true when the label fits inside the section
  *   layout: 'aligned' (labels in or under their section) or 'legend'
@@ -27,6 +28,8 @@ export function macroBar(goal, eaten) {
     const left = Math.round(target) - Math.round(have);
     return {
       key,
+      eaten: Math.round(have),
+      target: Math.round(target),
       share: shares[key],
       ratio: Math.min(1, Math.max(0, r)),
       pct: Math.round(r * 100),
