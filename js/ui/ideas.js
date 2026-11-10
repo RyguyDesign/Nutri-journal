@@ -1,4 +1,5 @@
 // Suggestions for the rest of today.
+import { macroPills } from './macros.js';
 import { h } from './dom.js';
 import { t, fmtKcal, fmtGrams, fmtNumber } from '../i18n/i18n.js';
 import { sumNutrients, remainingNutrients } from '../core/calc.js';
@@ -60,7 +61,7 @@ export function card(s) {
     'article',
     { class: 'card idea' },
     h('h3', {}, s.title),
-    h('p', { class: 'muted small num' }, t('ideas.meta', { min: s.minutes, kcal: fmtKcal(s.totals.kcal) }), ' · ', t('ideas.macros', { p: fmtGrams(s.totals.protein), c: fmtGrams(s.totals.carbs), f: fmtGrams(s.totals.fat) })),
+    h('div', { class: 'idea-meta' }, h('span', { class: 'idea-kcal num' }, h('strong', {}, fmtKcal(s.totals.kcal)), ` ${t('common.kcal')}`), h('span', { class: 'idea-time num' }, t('ideas.minutes', { min: s.minutes })), macroPills(s.totals)),
     h('ul', { class: 'ingredients' }, s.items.map((it) => h('li', {}, itemLabel(it), it.isNew ? h('span', { class: 'tag new' }, t('ideas.new')) : null))),
     h('details', { class: 'how' }, h('summary', {}, t('ideas.steps')), h('ol', {}, s.steps.map((st) => h('li', {}, st)))),
     h('button', { type: 'button', class: 'btn primary', onclick: () => addToJournal(s) }, t('ideas.add')),
@@ -84,7 +85,10 @@ export async function render(root, rerender) {
   const summary = h(
     'section',
     { class: 'card summary' },
-    h('p', { class: 'num' }, t('ideas.left', { kcal: fmtKcal(Math.max(0, remaining.kcal)), p: fmtGrams(Math.max(0, remaining.protein)), c: fmtGrams(Math.max(0, remaining.carbs)), f: fmtGrams(Math.max(0, remaining.fat)) })),
+    h('div', { class: 'left-today' },
+      h('span', { class: 'muted small' }, t('ideas.leftLabel')),
+      h('span', { class: 'idea-kcal num' }, h('strong', {}, fmtKcal(Math.max(0, remaining.kcal))), ` ${t('common.kcal')}`),
+      macroPills({ protein: Math.max(0, remaining.protein), carbs: Math.max(0, remaining.carbs), fat: Math.max(0, remaining.fat) })),
     mode === 'normal' ? h('p', { class: 'strong' }, t('ideas.next', { meal: t(`meal.${meal}`), kcal: fmtNumber(Math.round(target.kcal / 10) * 10) })) : null,
     mode === 'normal' && target.capped ? h('p', { class: 'muted small' }, t('ideas.capped', { kcal: fmtKcal(target.kcal) })) : null,
     mode === 'light' ? h('p', {}, t('ideas.light')) : null,

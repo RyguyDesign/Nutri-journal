@@ -1,3 +1,4 @@
+import { macroPills } from './macros.js';
 import { h, toast } from './dom.js';
 import { t, fmtKcal, fmtGrams, fmtNumber } from '../i18n/i18n.js';
 import { MEALS, MASS_UNITS } from '../core/entry.js';
@@ -27,12 +28,8 @@ export function entryRow(e, { showMacros = true } = {}) {
         'span',
         { class: 'log-name' },
         h('span', {}, e.name, e.prep ? h('span', { class: 'tag' }, t(`prep.${e.prep}`)) : null),
-        h(
-          'small',
-          { class: 'muted' },
-          amountText(e),
-          showMacros ? ` · ${t('journal.macros', { p: fmtGrams(e.protein), c: fmtGrams(e.carbs), f: fmtGrams(e.fat) })}` : '',
-        ),
+        h('small', { class: 'muted' }, amountText(e)),
+        showMacros ? macroPills(e, { size: 'sm' }) : null,
       ),
       h('span', { class: 'log-kcal num' }, `${fmtKcal(e.kcal)}`),
     ),
@@ -85,9 +82,10 @@ export async function render(root, rerender) {
     ...[
       dayNav(rerender),
       h(
-        'p',
-        { class: 'day-total muted num' },
-        t('journal.dayTotal', { kcal: fmtKcal(total.kcal), p: fmtGrams(total.protein), c: fmtGrams(total.carbs), f: fmtGrams(total.fat) }),
+        'div',
+        { class: 'day-total' },
+        h('span', { class: 'day-kcal num' }, h('strong', {}, fmtKcal(total.kcal)), ` ${t('common.kcal')}`),
+        macroPills(total),
       ),
       status,
       ...sections,

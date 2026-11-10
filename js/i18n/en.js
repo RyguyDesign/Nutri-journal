@@ -273,7 +273,9 @@ export default {
   'tastes.saved': 'Food preferences saved.',
   'tastes.restrictions': 'Diet, allergies and dislikes are set on the Profile tab and are always respected.',
 
-  'ideas.title': 'Suggestions',
+  'ideas.title': 'Recipes',
+  'ideas.minutes': '{min} min',
+  'ideas.leftLabel': 'Left today',
   'ideas.noTargets': 'Set your daily targets on the Profile tab first, so suggestions can fit what you have left.',
   'ideas.noTastes': 'Tell the app which foods you like, and suggestions will be built from them.',
   'ideas.noTastesAction': 'Choose foods I like',
