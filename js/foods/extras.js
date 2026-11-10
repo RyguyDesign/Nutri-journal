@@ -1,0 +1,95 @@
+// Fibre, sugar, saturated fat and salt for the built-in foods.
+//
+// TYPICAL values per 100 g (or 100 ml for drinks), rounded, from standard
+// food-composition tables (USDA FoodData Central, German BLS) and common
+// supermarket labels. Meat, fish and vegetables are unsalted as cooked at
+// home; ready meals, bread, cheese and cold cuts include their usual salt.
+//
+//   id: [fibre, sugar, saturated fat, salt]
+const T = {
+  // Meat, fish, eggs, plant protein
+  chicken: [0, 0, 1, 0.2], turkey: [0, 0, 0.3, 0.15], 'beef-mince': [0, 0, 3, 0.2], 'pork-fillet': [0, 0, 1.2, 0.15],
+  salmon: [0, 0, 2.5, 0.15], cod: [0, 0, 0.2, 0.2], tuna: [0, 0, 0.3, 0.9], shrimp: [0, 0, 0.1, 0.9],
+  eggs: [0, 0.4, 3.1, 0.35], tofu: [1.9, 0.6, 1.3, 0.03], chickpeas: [6, 0.5, 0.3, 0.5], lentils: [7.9, 1.8, 0.1, 0.01],
+  steak: [0, 0, 2.8, 0.15], 'chicken-thigh': [0, 0, 2.3, 0.25], 'turkey-mince': [0, 0, 1.3, 0.2], 'mixed-mince': [0, 0, 7.5, 0.2],
+  'pork-chop': [0, 0, 3.4, 0.15], 'beef-goulash': [0, 0, 3.5, 0.15], veal: [0, 0, 1, 0.2], lamb: [0, 0, 4.2, 0.17],
+  'lamb-chops': [0, 0, 7.5, 0.18], duck: [0, 0, 1.4, 0.2], venison: [0, 0, 1.3, 0.15], ham: [0, 1, 1.2, 2],
+  trout: [0, 0, 1.6, 0.15], mackerel: [0, 0, 5.5, 1.9], 'smoked-salmon': [0, 0, 2, 3], tempeh: [6, 0.5, 2.5, 0.02],
+  // Dairy
+  skyr: [0, 4, 0.1, 0.1], quark: [0, 4, 0.2, 0.1], yogurt: [0, 4.7, 2.1, 0.13], cottage: [0, 2.7, 2.7, 0.8],
+  milk: [0, 4.9, 1, 0.1], gouda: [0, 0, 18, 1.8], feta: [0, 0.5, 14, 2.5], mozzarella: [0, 1, 12, 0.6],
+  'cream-cheese': [0, 3.5, 13.5, 0.8], butter: [0, 0.6, 52, 0.02], 'greek-yogurt': [0, 4, 6.5, 0.1], parmesan: [0, 0, 19, 1.6],
+  halloumi: [0, 2, 16, 2.7],
+  // Starches (cooked) and bread
+  rice: [0.4, 0.1, 0.1, 0], 'brown-rice': [1.8, 0.2, 0.2, 0], pasta: [1.8, 0.6, 0.2, 0], 'wholegrain-pasta': [3.9, 0.8, 0.3, 0],
+  potatoes: [1.8, 0.8, 0, 0.01], 'sweet-potato': [3.3, 6.5, 0.1, 0.07], quinoa: [2.8, 0.9, 0.2, 0.01], couscous: [1.4, 0.1, 0, 0.01],
+  oats: [10, 1, 1.3, 0.01], 'wholemeal-bread': [7.5, 3, 0.3, 1.1], roll: [3, 2, 0.3, 1.3], wrap: [3, 2.5, 3, 1.2],
+  'rice-cakes': [3.5, 0.5, 0.6, 0.3], 'rye-bread': [8, 3, 0.2, 1.1], bulgur: [4.5, 0.1, 0, 0.01], noodles: [1.2, 0.4, 0.4, 0.02],
+  gnocchi: [1.5, 0.5, 0.2, 0.9],
+  // Vegetables
+  broccoli: [2.6, 1.7, 0.1, 0.08], spinach: [2.2, 0.4, 0.1, 0.2], peppers: [2.1, 4.2, 0.1, 0.01], tomatoes: [1.2, 2.6, 0, 0.01],
+  cucumber: [0.5, 1.7, 0, 0.01], carrots: [2.8, 4.7, 0, 0.17], zucchini: [1, 2.2, 0.1, 0.02], 'salad-leaves': [1.5, 1.2, 0, 0.05],
+  'green-beans': [3.2, 1.9, 0.1, 0.01], mushrooms: [1, 2, 0.1, 0.01], cauliflower: [2, 1.9, 0.1, 0.08], aubergine: [3, 3, 0, 0.01],
+  asparagus: [2.1, 1.9, 0, 0.01], kale: [3.6, 2.3, 0.1, 0.1], cabbage: [2.5, 3.2, 0, 0.05], leek: [1.8, 3.9, 0, 0.05],
+  peas: [5.1, 5.7, 0.1, 0.01], sweetcorn: [2.4, 4.5, 0.2, 0.01], radishes: [1.6, 1.9, 0, 0.1],
+  // Fruit
+  apple: [2.4, 10.4, 0, 0], banana: [2.6, 12.2, 0.1, 0], berries: [4, 6.5, 0, 0], orange: [2.4, 9.4, 0, 0],
+  pear: [3.1, 9.8, 0, 0], grapes: [0.9, 15.5, 0.1, 0], strawberries: [2, 4.9, 0, 0], kiwi: [3, 9, 0, 0.01],
+  mango: [1.6, 13, 0.1, 0], pineapple: [1.4, 10, 0, 0],
+  // Fats, nuts, snacks
+  'olive-oil': [0, 0, 14, 0], almonds: [12.5, 4.4, 3.8, 0], walnuts: [6.7, 2.6, 6.1, 0], 'peanut-butter': [6, 6, 10, 0.9],
+  avocado: [6.7, 0.7, 2.1, 0.02], cashews: [3.3, 5.9, 7.8, 0.03], peanuts: [8.5, 4.7, 6.8, 0.02], olives: [3.2, 0, 1.4, 3],
+  hummus: [6, 0.5, 1.4, 1], 'dark-chocolate': [10.9, 24, 24.5, 0.05],
+
+  // ---- Everyday list -------------------------------------------------------
+  'common:black-coffee': [0, 0, 0, 0], 'common:espresso': [0, 0, 0, 0], 'common:coffee-with-milk': [0, 2.4, 1, 0.05],
+  'common:cappuccino': [0, 3.2, 1.3, 0.07], 'common:cappuccino-with-oat-milk': [0.5, 3, 0.2, 0.08], 'common:latte-macchiato': [0, 3.6, 1.5, 0.08],
+  'common:flat-white': [0, 4, 1.7, 0.09], 'common:tea-no-sugar': [0, 0, 0, 0], 'common:tea-with-milk': [0, 0.7, 0.3, 0.02],
+  'common:hot-chocolate': [0.8, 10, 1.5, 0.12], 'common:water': [0, 0, 0, 0], 'common:orange-juice': [0.2, 8.5, 0, 0],
+  'common:apple-juice': [0.1, 10, 0, 0], 'common:apple-spritzer': [0, 5.8, 0, 0], 'common:cola': [0, 10.6, 0, 0],
+  'common:cola-zero-diet': [0, 0, 0, 0.02], 'common:lemonade-orange-soda': [0, 9.3, 0, 0.01], 'common:energy-drink': [0, 11, 0, 0.1],
+  'common:iced-tea': [0, 7.3, 0, 0.01], 'common:smoothie': [1, 11, 0, 0.01], 'common:whole-milk-3-5-': [0, 4.8, 2.3, 0.1],
+  'common:oat-drink': [0.8, 4, 0.2, 0.1], 'common:protein-powder-whey-': [1, 5, 3, 0.6],
+  'common:beer-lager-pils-': [0, 0.1, 0, 0], 'common:wheat-beer': [0, 0.2, 0, 0], 'common:alcohol-free-beer': [0, 2.5, 0, 0],
+  'common:red-wine': [0, 0.6, 0, 0], 'common:white-wine': [0, 1, 0, 0], 'common:sparkling-wine': [0, 1.2, 0, 0],
+  'common:aperol-spritz': [0, 5.5, 0, 0], 'common:gin-and-tonic': [0, 6, 0, 0], 'common:spirits-vodka-gin-whisky-': [0, 0, 0, 0],
+  'common:croissant': [2.5, 7, 12, 1], 'common:chocolate-croissant': [3, 14, 13, 0.8], 'common:pretzel': [3, 2, 0.5, 2.5],
+  'common:butter-pretzel': [2.7, 2, 7.5, 2.2], 'common:white-toast': [3, 4, 0.5, 1.1], 'common:bagel': [2.5, 5.5, 0.3, 1.1],
+  'common:muesli': [8, 16, 1.5, 0.1], 'common:granola': [6, 20, 5, 0.3], 'common:cornflakes': [3, 8, 0.2, 1.1],
+  'common:pancake': [1, 6, 3.5, 0.9], 'common:jam': [1, 58, 0, 0.02], 'common:honey': [0, 76, 0, 0.01],
+  'common:chocolate-hazelnut-spread': [3.4, 56, 10.6, 0.1], 'common:sugar': [0, 100, 0, 0],
+  'common:salami': [0, 1, 12, 4], 'common:bacon': [0, 1, 13, 3.5], 'common:bratwurst': [0, 0.5, 10, 2],
+  'common:frankfurter-sausage': [0, 0.5, 9.5, 2], 'common:currywurst-with-sauce': [0.5, 7, 6.5, 2], 'common:d-ner-kebab': [1.5, 2.5, 3.5, 1.3],
+  'common:pizza-margherita': [2, 3.5, 4.5, 1.2], 'common:pizza-salami': [2, 3.5, 5.5, 1.5], 'common:hamburger': [1.5, 5, 4, 1.2],
+  'common:cheeseburger': [1.5, 5.5, 5.5, 1.5], 'common:french-fries': [3.8, 0.3, 2.3, 0.8], 'common:chicken-nuggets': [1, 0.5, 3, 1.3],
+  'common:sushi-maki-': [1, 5, 0.3, 1], 'common:fried-rice': [1, 1, 1, 1.2], 'common:pad-thai': [1.2, 5, 1, 1.4],
+  'common:chicken-curry-with-rice': [1, 2, 2.5, 0.8], 'common:spaghetti-bolognese': [1.5, 2.5, 2, 0.7], 'common:lasagne': [1.2, 3, 4, 0.9],
+  'common:schnitzel': [0.7, 0.8, 2.5, 1], 'common:meatball': [0.5, 1, 6.5, 1.5], 'common:falafel': [5, 2, 2.4, 1.3],
+  'common:vegetable-soup': [1.3, 2.5, 0.2, 0.8], 'common:pumpkin-soup': [1, 3, 1.5, 0.8], 'common:pumpkin-soup-with-cream': [1, 3, 3.3, 0.8],
+  'common:tomato-soup': [0.8, 5, 0.5, 0.8], 'common:potato-soup': [1, 1.5, 1.2, 0.9], 'common:lentil-soup': [2.5, 1.5, 0.4, 0.8],
+  'common:chicken-noodle-soup': [0.4, 0.7, 0.4, 0.9], 'common:goulash-soup': [0.8, 2, 1.3, 1], 'common:minestrone': [1.5, 2.5, 0.2, 0.8],
+  'common:cream-of-mushroom-soup': [0.4, 1.5, 2.8, 0.9], 'common:miso-soup': [0.5, 1, 0.1, 1.3], 'common:ramen': [0.8, 1, 1, 1.2],
+  'common:pho': [0.4, 1, 0.5, 0.9], 'common:chili-con-carne': [3, 3, 1.8, 0.9], 'common:risotto': [0.6, 1, 2.5, 0.8],
+  'common:caesar-salad': [1.2, 1.5, 2.5, 0.9], 'common:mixed-salad-with-dressing': [1.5, 2.5, 0.5, 0.4], 'common:omelette': [0, 0.7, 4.5, 0.8],
+  'common:burrito': [3, 2, 3.5, 1.2], 'common:sandwich-ham-and-cheese-': [2, 3, 5, 1.6], 'common:kebab-plate-with-rice': [1, 1.5, 2, 1],
+  'common:potato-salad': [1.5, 2, 1, 1], 'common:mashed-potatoes': [1.3, 1.5, 2.4, 0.6], 'common:fried-potatoes': [2, 1, 1.2, 0.7],
+  'common:sp-tzle': [1.5, 0.8, 0.6, 0.6], 'common:fish-fingers': [1, 1.2, 1, 0.9],
+  'common:brownie': [2.5, 38, 9, 0.5], 'common:chocolate-cake': [2, 33, 6, 0.6], 'common:cheesecake': [0.5, 20, 12, 0.5],
+  'common:apple-cake': [1.5, 20, 5.5, 0.4], 'common:muffin': [1.5, 28, 4, 0.7], 'common:doughnut': [1.5, 19, 10, 0.7],
+  'common:cookie': [2.5, 36, 12, 0.8], 'common:milk-chocolate': [2, 55, 18, 0.25], 'common:gummy-bears': [0, 46, 0.1, 0.07],
+  'common:ice-cream': [0.5, 21, 6.5, 0.15], 'common:chocolate-pudding': [0.5, 15, 1.9, 0.12], 'common:crisps': [4.5, 0.5, 3, 1.3],
+  'common:popcorn-salted-': [10, 1, 2.5, 1.5], 'common:cereal-bar': [4, 26, 6, 0.3], 'common:protein-bar': [7, 4, 5, 0.5],
+  'common:mixed-nuts': [7, 4.5, 7, 0.01], 'common:mandarin': [1.8, 10.5, 0, 0], 'common:watermelon': [0.4, 6.2, 0, 0],
+  'common:dates': [8, 63, 0, 0.01], 'common:raisins': [4.5, 65, 0.1, 0.05], 'common:onion': [1.7, 4.2, 0, 0.01],
+  'common:kidney-beans': [6.4, 0.3, 0.1, 0.5], 'common:fruit-yogurt': [0.2, 13, 1.8, 0.12], 'common:emmental': [0, 0, 19, 0.5],
+  'common:camembert': [0, 0, 16, 1.6], 'common:whipped-cream': [0, 3.2, 19, 0.08], 'common:mayonnaise': [0, 1.5, 6, 1.2],
+  'common:ketchup': [0.5, 22, 0, 2.3], 'common:pesto': [2, 3, 7, 2.5], 'common:salad-dressing': [0.3, 5, 3, 1.8],
+};
+
+/** { fibre, sugar, satFat, salt } per 100 g/ml for a built-in food id, or null. */
+export function extrasFor(id) {
+  const v = T[id];
+  return v ? { fibre: v[0], sugar: v[1], satFat: v[2], salt: v[3] } : null;
+}
+
+export const EXTRAS_IDS = Object.keys(T);
