@@ -810,3 +810,12 @@ input[type='text'], input[type='search'], input[type='number'], input[type='time
 .page-title { letter-spacing: -0.02em; }
 .left-today { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 8px; }
 .left-today .muted { flex-basis: 100%; }
+
+/* Ring glows: drawn on the whole ring (not clipped to its square), soft,
+   and in the colour the ring actually shows (amber when over a limit). */
+.nring .ring-fill { filter: none; }
+.nring-art > svg { overflow: visible; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--c) 45%, transparent)); }
+.nring.over .nring-art > svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--over) 50%, transparent)); }
+.cal-ring > svg { overflow: visible; filter: drop-shadow(0 0 9px var(--glow)); }
+.dash-cal.over .cal-ring > svg { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--over) 45%, transparent)); }
+.nring, .dash-rings, .nrings { overflow: visible; }
