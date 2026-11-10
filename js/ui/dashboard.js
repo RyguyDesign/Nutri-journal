@@ -15,58 +15,31 @@ import { tileLayout, tileRows } from '../core/tiles.js';
 import { MEALS } from '../core/entry.js';
 
 const grams = (n) => fmtNumber(Math.abs(n), Math.abs(n) < 10 && !Number.isInteger(n) ? 1 : 0);
-const leftText = (s) => t(s.over ? 'dash.gOver' : 'dash.gLeft', { n: Math.abs(s.left) });
+// Bar labels: what you've eaten of the target, e.g. "110 / 121 g"
+const amountText = (s) => t('dash.gOf', { eaten: fmtNumber(s.eaten), target: fmtNumber(s.target) });
 
-/** One section of the calorie bar. The label is drawn twice so it stays readable across the fill edge. */
+/** One section of the calorie bar: colour only; the numbers sit underneath. */
 function section(s) {
-  const label = (cls) => h('span', { class: `mz-label ${cls}` }, h('span', { class: 'mz-name' }, t(`nutrient.short.${s.key}`)), h('span', { class: 'mz-left num' }, leftText(s)));
   return h(
     'div',
     { class: `mz mz-${s.key}${s.over ? ' over' : ''}`, style: { flex: `${Math.max(s.share, 0.03)} 1 0` } },
-    s.inside ? label('') : null,
-    h('div', { class: 'mz-fill', style: { width: `${s.ratio * 100}%` } }, s.inside ? label('on') : null),
+    h('div', { class: 'mz-fill', style: { width: `${s.ratio * 100}%` } }),
   );
 }
 
 function macroCard(goal, eaten) {
   const rem = remainingNutrients(goal, { ...eaten, kcal: Math.round(eaten.kcal) });
   const over = rem.kcal < 0;
-  const { sections, layout } = macroBar(goal, eaten);
-  const summary = sections.map((s) => `${t(`nutrient.short.${s.key}`)} ${leftText(s)}, ${s.pct}%`).join('; ');
-
-  let under;
-  if (layout === 'legend') {
-    under = h('div', { class: 'mz-legend' }, sections.map((s) => h(
-      'div',
-      { class: `ml ml-${s.key}` },
-      h('span', { class: 'ml-name' }, h('span', { class: 'dot', 'aria-hidden': 'true' }), t(`nutrient.short.${s.key}`)),
-      h('span', { class: 'num strong' }, leftText(s)),
-      h('span', { class: 'num muted' }, `${s.pct}%`),
-    )));
-  } else {
-    // Percentages under their sections; a section too narrow for its
-    // label gets it on a second line, pointing up at the section.
-    const pcts = h('div', { class: 'mz-under' }, sections.map((s) => h(
-      'div',
-      { class: 'mu', style: { flex: `${Math.max(s.share, 0.03)} 1 0` } },
-      h('span', { class: 'num' }, `${s.pct}%`),
-    )));
-    let start = 0;
-    const notes = [];
-    for (const s of sections) {
-      if (!s.inside) {
-        const mid = start + s.share / 2;
-        notes.push(h(
-          'span',
-          { class: 'mz-note num', style: mid < 0.5 ? { left: `${start * 100}%` } : { right: `${(1 - start - s.share) * 100}%` } },
-          h('span', { 'aria-hidden': 'true' }, '↑ '),
-          `${t(`nutrient.short.${s.key}`)} ${leftText(s)}`,
-        ));
-      }
-      start += s.share;
-    }
-    under = [pcts, notes.length ? h('div', { class: 'mz-notes' }, notes) : null];
-  }
+  const { sections } = macroBar(goal, eaten);
+  const summary = sections.map((s) => `${t(`nutrient.short.${s.key}`)} ${amountText(s)}, ${s.pct}%`).join('; ');
+  // One column per macro, in the same order and colours as the bar
+  const legend = h('div', { class: 'mz-legend' }, sections.map((s) => h(
+    'div',
+    { class: `ml ml-${s.key}${s.over ? ' over' : ''}` },
+    h('span', { class: 'ml-name' }, h('span', { class: 'dot', 'aria-hidden': 'true' }), t(`nutrient.short.${s.key}`)),
+    h('span', { class: 'num strong' }, amountText(s)),
+    h('span', { class: 'num muted' }, s.over ? t('dash.pctOver', { pct: s.pct }) : `${s.pct}%`),
+  )));
 
   return h(
     'section',
@@ -78,16 +51,17 @@ function macroCard(goal, eaten) {
       h('div', { class: 'muted small num' }, t('dash.of', { target: fmtKcal(goal.kcal) })),
     ),
     h('div', { class: 'mz-bar', role: 'img', 'aria-label': summary }, sections.map(section)),
-    under,
+    legend,
   );
 }
 
-function ring(r) {
+function ring(r, count) {
   const C = 2 * Math.PI * 24;
   const value = r.key === 'salt' ? fmtNumber(r.value, 1) : fmtNumber(Math.round(r.value));
   const diff = r.key === 'salt' ? fmtNumber(r.diff, 1) : grams(Math.round(r.diff));
   const sub = r.state === 'reached' ? t('dash.reached') : t(r.kind === 'max' ? `dash.${r.state}Max` : 'dash.toGo', { n: diff });
   const name = t(`nutrient.short.${r.key}`);
+  const unknown = count - r.known;
   return h(
     'div',
     { class: `nring nring-${r.key}${r.state === 'over' ? ' over' : ''}` },
@@ -104,20 +78,22 @@ function ring(r) {
       h('span', { class: 'nring-pct num', 'aria-hidden': 'true' }, `${r.pct}%`),
     ),
     h('span', { class: 'nring-name' }, name),
-    h('span', { class: 'nring-val num' }, `${value} / ${r.target} g`),
+    r.key === 'satFat' ? h('span', { class: 'nring-note' }, t('dash.partOfFat')) : null,
+    h('span', { class: 'nring-val num' }, t('dash.gOf', { eaten: value, target: fmtNumber(r.target) })),
     h('span', { class: 'nring-sub num' }, sub),
+    unknown > 0 ? h('span', { class: 'nring-unknown' }, t(unknown === 1 ? 'dash.unknown1' : 'dash.unknown', { n: unknown })) : null,
   );
 }
 
 function ringsCard(entries, goal) {
   const extras = sumExtras(entries);
   const rings = nutrientRings(extras, nutrientGoals(goal));
-  const missing = extras.count - Math.min(...rings.map((r) => r.known));
+  const anyUnknown = rings.some((r) => r.known < extras.count);
   return h(
     'section',
     { class: 'card dash-rings' },
-    h('div', { class: 'nrings' }, rings.map(ring)),
-    missing > 0 ? h('p', { class: 'muted small dash-partial' }, t('dash.partial', { n: missing, total: extras.count })) : null,
+    h('div', { class: 'nrings' }, rings.map((r) => ring(r, extras.count))),
+    anyUnknown ? h('p', { class: 'muted small dash-partial' }, t('dash.unknownHint')) : null,
   );
 }
 
@@ -213,23 +189,6 @@ function shortcut(href, icon, title, sub) {
   );
 }
 
-/**
- * Place each bar label where it reads best: inside the fill when it fits,
- * otherwise right-aligned on the empty part. Only when neither fits does it
- * stay split across the fill edge.
- */
-function placeLabels(root) {
-  for (const sec of root.querySelectorAll('.mz')) {
-    const lab = sec.querySelector(':scope > .mz-label');
-    const fill = sec.querySelector('.mz-fill');
-    if (!lab || !fill) continue;
-    sec.classList.remove('label-in', 'label-out');
-    const need = lab.offsetWidth + 14;
-    if (fill.offsetWidth >= need) sec.classList.add('label-in');
-    else if (sec.clientWidth - fill.offsetWidth >= need) sec.classList.add('label-out');
-  }
-}
-
 export async function render(root, rerender) {
   const date = getSelectedDate();
   const isToday = date === today();
@@ -288,7 +247,4 @@ export async function render(root, rerender) {
   const add = h('a', { class: 'btn primary wide add-btn', href: `#/add?date=${date}` }, `+ ${t('dash.add')}`);
 
   root.replaceChildren(...[dayNav(rerender), notice, ...rows, add, edit].filter(Boolean));
-  const place = () => (root.isConnected ? placeLabels(root) : window.removeEventListener('resize', place));
-  requestAnimationFrame(place);
-  window.addEventListener('resize', place);
 }

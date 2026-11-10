@@ -19,6 +19,7 @@
   --fibre: #8aa58c;
   --sugar: #b98a8f;
   --salt: #a3a39b;
+  --satfat: #9b87a6;
   --on-fill: #141513;
   --radius: 14px;
   --gap: 16px;
@@ -535,7 +536,7 @@ h2.gap { margin-top: 20px; }
 .dash-cal { display: flex; flex-direction: column; gap: 10px; }
 .dash-cal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .dash-cal-num { font-size: 1.9rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
-.mz-bar { display: flex; gap: 3px; height: 48px; }
+.mz-bar { display: flex; gap: 3px; height: 28px; }
 .mz { position: relative; min-width: 10px; border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--c) 26%, var(--surface)); }
 .mz-protein, .ml-protein { --c: var(--protein); }
 .mz-carbs, .ml-carbs { --c: var(--carbs); }
@@ -555,7 +556,8 @@ h2.gap { margin-top: 20px; }
 .mu span { white-space: nowrap; }
 .mz-notes { position: relative; height: 18px; margin-top: -6px; }
 .mz-note { position: absolute; top: 0; white-space: nowrap; font-size: 0.78rem; color: var(--muted); }
-.mz-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-size: 0.8rem; }
+.mz-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-size: 0.85rem; }
+.ml.over .num { color: var(--over); }
 .ml { display: flex; flex-direction: column; gap: 1px; }
 .ml-name { display: flex; align-items: center; gap: 5px; color: var(--muted); }
 .ml .dot { width: 8px; height: 8px; border-radius: 2px; background: var(--c); }
@@ -567,7 +569,7 @@ h2.gap { margin-top: 20px; }
 .nring { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
 .nring-fibre { --c: var(--fibre); }
 .nring-sugar { --c: var(--sugar); }
-.nring-satFat { --c: var(--fat); }
+.nring-satFat { --c: var(--satfat); }
 .nring-salt { --c: var(--salt); }
 .nring-art { position: relative; width: 52px; height: 52px; margin-bottom: 2px; }
 .nring-art svg { width: 52px; height: 52px; display: block; }
@@ -628,3 +630,6 @@ h2.gap { margin-top: 20px; }
 .meal-sum-kcal { margin-left: auto; font-weight: 600; }
 .tile-check input { flex: none; }
 .page-head a.icon-btn { display: inline-flex; align-items: center; justify-content: center; flex: none; color: inherit; text-decoration: none; font-size: 1.4rem; line-height: 1; }
+.nring-note { font-size: 0.62rem; color: var(--muted); margin-top: -2px; }
+.nring-unknown { font-size: 0.62rem; color: var(--over); }
+.nrings { align-items: start; }
