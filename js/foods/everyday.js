@@ -4,6 +4,7 @@
 // need their values typed in.
 import { FOODS, typicalPortion } from '../suggest/catalog.js';
 import { COMMON } from './common.js';
+import { extrasFor } from './extras.js';
 
 /**
  * Everyday food shape:
@@ -14,7 +15,7 @@ const fromCatalog = (f) => ({
   id: f.id,
   name: f.name,
   prep: f.prep,
-  per: { amount: 100, unit: 'g', ...f.per },
+  per: { amount: 100, unit: 'g', ...f.per, ...extrasFor(f.id) },
   portion: f.piece ? { g: f.piece.g, unit: 'piece', label: f.piece.unit } : { g: typicalPortion(f), unit: 'g', label: '' },
   alc: false,
   hay: `${f.name} ${f.short} ${f.id.replace(/-/g, ' ')}`.toLowerCase(),
@@ -26,7 +27,7 @@ const fromCommon = (f) => ({
   id: f.id,
   name: f.name,
   prep: '',
-  per: { amount: 100, unit: f.ml ? 'ml' : 'g', ...f.per },
+  per: { amount: 100, unit: f.ml ? 'ml' : 'g', ...f.per, ...extrasFor(f.id) },
   portion: MEASURE_OF[f.label] ? { g: f.g, unit: MEASURE_OF[f.label], label: f.label } : { g: f.g, unit: f.u, label: f.label },
   measures: MEASURE_OF[f.label] ? { [MEASURE_OF[f.label]]: f.g } : null,
   alc: f.alc,
@@ -53,4 +54,24 @@ export function searchEveryday(query, limit = 6) {
     .sort((a, b) => b.n - a.n || Number(b.f.name.toLowerCase().includes(last)) - Number(a.f.name.toLowerCase().includes(last)) || a.f.name.length - b.f.name.length)
     .slice(0, limit)
     .map((x) => ({ ...x.f, closest: true }));
+}
+
+const BY_NAME = new Map(EVERYDAY.map((f) => [f.name.toLowerCase(), f]));
+
+/**
+ * Entries saved before fibre, sugar, saturated fat and salt were tracked:
+ * when the entry is a built-in food (same name) and its weight is known,
+ * fill those values in from the typical ones. Other entries are returned
+ * unchanged.
+ */
+export function withTypicalExtras(entry) {
+  if (!entry || ['fibre', 'sugar', 'satFat', 'salt'].some((k) => Number.isFinite(entry[k]))) return entry;
+  const f = BY_NAME.get(String(entry.name || '').trim().toLowerCase());
+  if (!f) return entry;
+  const mass = entry.unit === 'g' || entry.unit === 'ml';
+  const amount = mass ? entry.quantity : entry.unitSize > 0 ? entry.quantity * entry.unitSize : NaN;
+  if (!(amount > 0)) return entry;
+  const out = { ...entry };
+  for (const k of ['fibre', 'sugar', 'satFat', 'salt']) out[k] = (f.per[k] * amount) / 100;
+  return out;
 }

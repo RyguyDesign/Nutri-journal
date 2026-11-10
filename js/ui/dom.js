@@ -16,6 +16,18 @@ export function h(tag, attrs = {}, ...children) {
   return el;
 }
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+/** Like h(), for SVG elements. */
+export function svg(tag, attrs = {}, ...children) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === undefined || v === null || v === false) continue;
+    el.setAttribute(k, v);
+  }
+  append(el, children);
+  return el;
+}
+
 function append(el, children) {
   for (const c of children.flat(Infinity)) {
     if (c === null || c === undefined || c === false) continue;

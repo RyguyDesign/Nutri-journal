@@ -20,6 +20,14 @@ const KEYS = {
 };
 const MACROS = Object.keys(KEYS);
 
+// Detail lines: read when clearly printed, never guessed
+const EXTRA_KEYS = {
+  satFat: /ges[äa]tt\w*(\s*fetts[äa]uren)?|saturate[sd]?(\s*fat(ty acids)?)?/,
+  sugar: /zucker|sugars?/,
+  fibre: /ballaststoffe?|fib(re|er)s?/,
+  salt: /salz|salt/,
+};
+
 /** Normalise OCR quirks while keeping line structure. */
 export function normalise(text) {
   return String(text || '')
@@ -199,6 +207,20 @@ export function parseLabelText(text) {
   // column (e.g. per pack) or misread.
   if (useEnergy && Math.abs(macroKcal(values) - values.kcal) > Math.max(30, values.kcal * 0.3)) uncertain.unshift('kcal');
 
+  // Fibre, sugar, saturated fat, salt: the cleanest reading that fits
+  // (sugar can't exceed carbohydrates, saturated fat can't exceed fat).
+  const extras = {};
+  const cap = { sugar: values.carbs, satFat: values.fat, fibre: 60, salt: 30 };
+  for (const [key, re] of Object.entries(EXTRA_KEYS)) {
+    if (key === 'satFat' && /unges[äa]tt|unsaturat/.test(norm) && !/(^|[^n])ges[äa]tt|(^|[^n])saturat/.test(norm)) continue;
+    const line = lines.find((l) => re.test(l) && !(key === 'satFat' && /unges[äa]tt|unsaturat/.test(l)));
+    if (!line) continue;
+    const fits = candidates(tokenAfter(line, re))
+      .filter((c) => cap[key] === undefined || c.v <= cap[key] + 0.05)
+      .sort((a, b) => a.p - b.p);
+    if (fits.length) extras[key] = Math.round(fits[0].v * 100) / 100;
+  }
+
   const missing = ['kcal', ...MACROS].filter((k) => values[k] === undefined);
-  return { basis: findBasis(norm), values, missing, uncertain, kcalFromKj: energy?.via === 'kj' };
+  return { basis: findBasis(norm), values, extras, missing, uncertain, kcalFromKj: energy?.via === 'kj' };
 }

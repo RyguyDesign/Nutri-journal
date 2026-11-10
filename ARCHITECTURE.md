@@ -93,3 +93,16 @@ Android resumes an installed web app from memory, so it would keep running an ol
 ## Diet styles and fasting
 
 `js/core/diet.js`: diet styles (Balanced, High protein, Low carb, Keto, Mediterranean, Vegetarian, Vegan) set the macro split in `recommendTargets` and steer suggestions (carb ceilings per 100 g, excluded food flags, Mediterranean preferences). Fasting plans (12:12 to 20:4, one meal a day) with an eating-window start combine with any diet. Fasts are stored in `kv/fasts` (start, end, goal); logging food ends a running fast. `kv/dietHistory` records which diet and plan applied from which day, so the journal judges each day by its own plan. The dashboard shows the fasting timer or eating window, today's diet check and streaks; the journal shows each day's check and fasts (`js/ui/diet-status.js`).
+
+## Dashboard and nutrient detail
+
+The dashboard (`js/ui/dashboard.js`) has one calorie card: "kcal left of target" above a bar split into protein, carbs and fat. Each section is as wide as that macro's share of the day's planned calories (`macroShares` in `js/core/diet.js`). It fills by how much of that macro's target has been eaten, and its label shows grams left. Percentages sit under the sections. A section too narrow for its label gets the label on its own line below (`macroBar` in `js/core/dash.js`). Labels go inside the fill when they fit, otherwise on the empty part.
+
+Below the calorie card, four rings show fibre, sugar, saturated fat and salt against guide values (`nutrientGoals`): fibre at least 30 g; sugar at most 50 g (never above the carb target); saturated fat at most 10% of calories; salt at most 6 g. Then come the fasting card, shortcut tiles (Journal, Recipes, Diet & fasting) and Add food.
+
+Fibre, sugar, saturated fat (`satFat`) and salt are optional fields, in grams, on `per`, on entries and on saved foods. A missing field means "not known", never zero.
+- They come from Open Food Facts (`off.js`; sodium × 2.5 when salt is missing), from label photos (`label-parse.js`; read only when clearly printed, and capped by carbs or fat), from built-in foods (`js/foods/extras.js`: typical values) and from recipes (summed from the main ingredients).
+- Entries saved earlier get typical values on the dashboard when their name matches a built-in food and their weight is known (`withTypicalExtras`). Stored data is not rewritten.
+- When some of the day's entries have no values, the rings card says how many.
+
+Nutrient colours are tokens in `css/app.css` (`--protein`, `--carbs`, `--fat`, `--fibre`, `--sugar`, `--salt`, `--on-fill`).
