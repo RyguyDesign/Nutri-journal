@@ -183,3 +183,18 @@ test('online search falls back to a country server', async () => {
   assert.deepEqual(calls, ['world.openfoodfacts.org', 'uk.openfoodfacts.org']);
   assert.equal(r[0].name, 'Pumpkin soup');
 });
+
+test('every recipe ingredient is a known food', async () => {
+  const { RECIPES, EXTRA } = await import('../js/suggest/recipes.js');
+  const { FOODS } = await import('../js/suggest/catalog.js');
+  const known = new Set([...FOODS.map((f) => f.id), ...Object.keys(EXTRA)]);
+  const unknown = RECIPES.flatMap((r) => r.ingredients.filter(([id]) => !known.has(id)).map(([id]) => `${r.id}: ${id}`));
+  assert.deepEqual(unknown, []);
+});
+
+test('yum cha dishes are in the everyday list', async () => {
+  const { searchEveryday } = await import('../js/foods/everyday.js');
+  assert.equal(searchEveryday('har gow', 1)[0].name, 'Har gow (prawn dumpling)');
+  assert.ok(searchEveryday('yum cha', 40).length >= 20);
+  assert.ok(searchEveryday('ente kross', 1)[0].per.salt > 0);
+});
