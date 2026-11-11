@@ -131,3 +131,7 @@ On release the slider saves `profile.deficitKcal` (an optional field) and sets t
 
 - **Barcode lookups** try `world`, then `au` (Australia), then `uk`, moving on only when a server can't be reached. A 12-digit UPC is also tried as EAN-13 with a leading 0. "Not in the database" returns null without asking more servers.
 - **Name searches** ask `world` and `au` together and interleave their results, dropping duplicate barcodes, so products sold in Australia appear next to the worldwide matches. Only if both fail do they try `uk`, `us` and `de` in turn.
+
+## Food search
+
+`searchEveryday` (`js/foods/everyday.js`) folds case, accents and umlauts (ü, ue and u match; ß = ss), knows common English/German pairs (roll/Brötchen, chicken/Hähnchen/Geflügel, cheese/Käse, …) and accepts one or two wrong letters in longer words. Exact matches rank above near matches. The everyday list includes REWE Backwaren items (`… (REWE)`) with calories and macros from REWE's labels; typing "rewe" lists them.
