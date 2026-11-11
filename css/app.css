@@ -834,3 +834,6 @@ input[type='text'], input[type='search'], input[type='number'], input[type='time
 .deficit-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 8px; }
 .deficit-scale { display: flex; justify-content: space-between; margin-top: -6px; }
 .deficit-info { margin: 0; font-weight: 600; }
+.deficit-label { font-weight: 600; }
+.slider-plain { padding-bottom: 0; margin: 4px 0 0; }
+.deficit .slider-fill { background: var(--accent); }

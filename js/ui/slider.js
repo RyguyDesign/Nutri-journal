@@ -7,7 +7,7 @@
 //   and snaps to ¼, ½, ¾, 1 … with a short vibration on each mark.
 // - A tap anywhere on the bar jumps the handle to that spot (snapping to
 //   the nearest ¼ mark when close). A touch that moves (a scroll) or is
-//   held for a long time does nothing.
+//   held for a long time does nothing. (touchRules, shared with rangeSlider)
 // - Keyboard: arrow keys move a quarter step.
 import { h } from './dom.js';
 
@@ -38,6 +38,96 @@ const buzz = () => {
     /* no vibration */
   }
 };
+
+/**
+ * Shared touch rules for sliders, to avoid accidental changes:
+ * only the handle can be dragged; a quick tap on the bar (finger not
+ * moved, short contact) jumps to the tapped spot; anything else (a scroll,
+ * a resting finger) is ignored.
+ *   handlers: { drag(clientX), end(), tap(clientX) }
+ */
+export function touchRules(track, thumb, { drag, end, tap }) {
+  let dragging = false;
+  thumb.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    dragging = true;
+    thumb.setPointerCapture?.(e.pointerId);
+    thumb.classList.add('active');
+  });
+  thumb.addEventListener('pointermove', (e) => {
+    if (dragging) drag(e.clientX);
+  });
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    thumb.releasePointerCapture?.(e.pointerId);
+    thumb.classList.remove('active');
+    end();
+  };
+  thumb.addEventListener('pointerup', endDrag);
+  thumb.addEventListener('pointercancel', endDrag);
+
+  let down = null;
+  track.addEventListener('pointerdown', (e) => {
+    if (e.target === thumb) return;
+    down = { t: performance.now(), x: e.clientX, y: e.clientY };
+  });
+  track.addEventListener('pointermove', (e) => {
+    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > TAP_MOVE_PX) down = null;
+  });
+  track.addEventListener('pointerup', (e) => {
+    const d = down;
+    down = null;
+    if (!d || e.target === thumb) return;
+    if (performance.now() - d.t >= TAP_MS) return; // held too long: ignore
+    tap(d.x);
+  });
+  track.addEventListener('pointercancel', () => (down = null));
+}
+
+/**
+ * A general slider with the same touch rules (used for the calorie
+ * deficit). opts: { min, max, step, value, label, onInput(v), onChange(v), valueText(v) }
+ */
+export function rangeSlider({ min, max, step = 1, value, label, onInput, onChange, valueText = String }) {
+  let v = value;
+  const fill = h('div', { class: 'slider-fill' });
+  const thumb = h('div', { class: 'slider-thumb', role: 'slider', tabindex: '0', 'aria-label': label, 'aria-valuemin': String(min), 'aria-valuemax': String(max) });
+  const track = h('div', { class: 'slider-track' }, fill, thumb);
+  const ratio = (x) => (max > min ? (x - min) / (max - min) : 0);
+  const paint = () => {
+    const r = ratio(v);
+    thumb.style.left = `calc(${r * 100}% - ${r * 28}px)`;
+    fill.style.width = `calc(${r * 100}% - ${r * 28}px + 14px)`;
+    thumb.setAttribute('aria-valuenow', String(v));
+    thumb.setAttribute('aria-valuetext', valueText(v));
+  };
+  const set = (x, final = false) => {
+    const next = Math.min(max, Math.max(min, Math.round((x - min) / step) * step + min));
+    if (next !== v) {
+      v = next;
+      paint();
+      onInput?.(v);
+    }
+    if (final) onChange?.(v);
+  };
+  const valueAt = (clientX) => {
+    const rect = track.getBoundingClientRect();
+    const r = Math.min(1, Math.max(0, (clientX - rect.left - 14) / (rect.width - 28)));
+    return min + r * (max - min);
+  };
+  touchRules(track, thumb, { drag: (x) => set(valueAt(x)), end: () => onChange?.(v), tap: (x) => set(valueAt(x), true) });
+  thumb.addEventListener('keydown', (e) => {
+    const dir = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    set(v + dir * step, true);
+  });
+  const el = h('div', { class: 'slider-wrap slider-plain' }, track);
+  paint();
+  return el;
+}
 
 /**
  * opts: { quantity, counted, base, onInput(quantity), onChange(quantity), label }
@@ -89,46 +179,14 @@ export function amountSlider({ quantity, counted, base = 100, onInput, onChange,
     return MIN + r * (max - MIN);
   };
 
-  // Dragging: only from the handle
-  let dragging = false;
-  thumb.addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    dragging = true;
-    thumb.setPointerCapture?.(e.pointerId);
-    thumb.classList.add('active');
+  touchRules(track, thumb, {
+    drag: (x) => set(valueAt(x)),
+    end: () => onChange?.(fromPortions(p)),
+    tap: (x) => {
+      lastMark = null;
+      set(valueAt(x), { final: true });
+    },
   });
-  thumb.addEventListener('pointermove', (e) => {
-    if (dragging) set(valueAt(e.clientX));
-  });
-  const endDrag = (e) => {
-    if (!dragging) return;
-    dragging = false;
-    thumb.releasePointerCapture?.(e.pointerId);
-    thumb.classList.remove('active');
-    onChange?.(fromPortions(p));
-  };
-  thumb.addEventListener('pointerup', endDrag);
-  thumb.addEventListener('pointercancel', endDrag);
-
-  // Taps on the bar: jump to where the finger touched
-  let tap = null;
-  track.addEventListener('pointerdown', (e) => {
-    if (e.target === thumb) return;
-    tap = { t: performance.now(), x: e.clientX, y: e.clientY };
-  });
-  track.addEventListener('pointermove', (e) => {
-    if (tap && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > TAP_MOVE_PX) tap = null;
-  });
-  track.addEventListener('pointerup', (e) => {
-    const t0 = tap;
-    tap = null;
-    if (!t0 || e.target === thumb) return;
-    if (performance.now() - t0.t >= TAP_MS) return; // held too long: ignore
-    lastMark = null;
-    set(valueAt(t0.x), { final: true });
-  });
-  track.addEventListener('pointercancel', () => (tap = null));
 
   thumb.addEventListener('keydown', (e) => {
     const dir = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
