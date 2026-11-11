@@ -888,4 +888,10 @@ export async function render(root, rerender, params = {}) {
     }
   }
   update();
+
+  // Opened from the "Photo of label" tile: go straight to the camera
+  if (!editing && params.query?.photo === '1') {
+    history.replaceState(null, '', location.href.replace(/[?&]photo=1/, (m) => (m[0] === '?' ? '?' : '')).replace('?&', '?').replace(/\?$/, ''));
+    $.file.click();
+  }
 }
