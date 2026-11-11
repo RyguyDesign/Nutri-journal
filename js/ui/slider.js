@@ -5,13 +5,14 @@
 // Touch rules (to avoid accidental changes while scrolling):
 // - Only the round handle can be dragged. Dragging moves in small steps
 //   and snaps to ¼, ½, ¾, 1 … with a short vibration on each mark.
-// - A quick tap on the bar (contact under 100 ms, finger not moved) moves
-//   one quarter step towards the tap. Longer touches on the bar do nothing.
+// - A tap anywhere on the bar jumps the handle to that spot (snapping to
+//   the nearest ¼ mark when close). A touch that moves (a scroll) or is
+//   held for a long time does nothing.
 // - Keyboard: arrow keys move a quarter step.
 import { h } from './dom.js';
 
 const SNAP = 0.07; // how close (in portions) counts as "on" a quarter mark
-const TAP_MS = 100; // longest contact that counts as a tap on the bar
+const TAP_MS = 250; // longest contact that counts as a tap on the bar
 const TAP_MOVE_PX = 10; // more movement than this is a scroll, not a tap
 const MIN = 0.05;
 const LABELS = { 0.25: '¼', 0.5: '½', 1: '1', 1.5: '1½', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6' };
@@ -110,7 +111,7 @@ export function amountSlider({ quantity, counted, base = 100, onInput, onChange,
   thumb.addEventListener('pointerup', endDrag);
   thumb.addEventListener('pointercancel', endDrag);
 
-  // Taps on the bar: one quarter step towards the tap, only if quick
+  // Taps on the bar: jump to where the finger touched
   let tap = null;
   track.addEventListener('pointerdown', (e) => {
     if (e.target === thumb) return;
@@ -124,11 +125,8 @@ export function amountSlider({ quantity, counted, base = 100, onInput, onChange,
     tap = null;
     if (!t0 || e.target === thumb) return;
     if (performance.now() - t0.t >= TAP_MS) return; // held too long: ignore
-    const thumbRect = thumb.getBoundingClientRect();
-    const dir = e.clientX < thumbRect.left + thumbRect.width / 2 ? -1 : 1;
-    const v = nextMark(p, dir, max);
     lastMark = null;
-    set(v, { final: true });
+    set(valueAt(t0.x), { final: true });
   });
   track.addEventListener('pointercancel', () => (tap = null));
 
