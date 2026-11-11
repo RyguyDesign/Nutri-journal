@@ -837,3 +837,69 @@ input[type='text'], input[type='search'], input[type='number'], input[type='time
 .deficit-label { font-weight: 600; }
 .slider-plain { padding-bottom: 0; margin: 4px 0 0; }
 .deficit .slider-fill { background: var(--accent); }
+
+/* ==== Add food: big action tiles ==== */
+.add-head { display: flex; align-items: center; gap: 12px; }
+.add-back-icon, .plate-remove-icon, .add-when-chev { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.add-head-text { flex: 1; min-width: 0; }
+.add-head .page-title { margin: 0; font-size: 1.25rem; font-weight: 800; }
+.add-when {
+  display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: -10px 0 -8px; max-width: 100%;
+  padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 0.75rem; text-align: left; cursor: pointer;
+}
+.add-when span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.add-when .add-when-chev { width: 16px; height: 16px; flex: 0 0 auto; transition: transform 0.15s; }
+.add-when[aria-expanded='true'] .add-when-chev { transform: rotate(180deg); }
+.add-when.over { color: var(--over); }
+.add-when-fields[hidden], .add-panel[hidden] { display: none; }
+
+.add-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.card.add-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  min-height: 104px; padding: 10px 6px; border-radius: var(--radius-lg);
+  color: var(--ink); font: inherit; font-size: 0.8125rem; font-weight: 600; text-align: center; cursor: pointer;
+}
+.card.add-tile:active { transform: translateY(1px); }
+.add-tile-icon { width: 30px; height: 30px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.card.add-tile[aria-pressed='true'] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 18px var(--glow); }
+.add-tile-title { line-height: 1.2; }
+
+.add-panel { border-radius: var(--radius-lg); }
+.add-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.add-panel-head h2 { margin: 0; font-size: 1rem; }
+.add-panel-head .icon-btn { font-size: 1.3rem; }
+.add-panel .meal-results { margin: 10px 0 0; }
+.pick-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.pick-list li + li { border-top: 1px solid var(--line); }
+.add-kcal .btn { width: 100%; }
+
+.card.plate { border-radius: var(--radius-lg); padding: 6px 16px 4px; }
+.plate-head { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; }
+.plate-head h2 { margin: 0; font-size: 1rem; font-weight: 800; }
+.plate-kcal { color: var(--accent); font-weight: 800; }
+.plate .meal-items ul { gap: 0; }
+.plate .meal-item { border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 12px 0; background: none; }
+.plate .meal-items .empty { border-top: 1px solid var(--line); margin: 0; padding: 14px 0; }
+.plate-toggle {
+  flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 10px;
+  padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+}
+.plate-toggle .meal-item-name { display: flex; flex-direction: column; }
+.plate-toggle .meal-item-name strong { font-weight: 700; }
+.plate-amount { font-size: 0.75rem; }
+.plate .meal-item .kcal { font-weight: 800; }
+.plate .kcal-unit { font-size: 0.6875rem; font-weight: 500; color: var(--muted); }
+.plate .meal-item.incomplete .kcal { color: var(--over); }
+.plate .meal-item.open .meal-item-amount { margin-top: 10px; }
+.plate .kcal-only { margin-top: 10px; }
+.plate-remove {
+  flex: 0 0 auto; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--muted); cursor: pointer;
+}
+.plate-remove-icon { width: 16px; height: 16px; }
+.plate .save-meal-row { padding: 10px 0; border-top: 1px solid var(--line); }
+.plate .save-meal-row[hidden] { display: none; }
+.add-detail { margin: 0; text-align: center; }
+.add-detail .link-btn { display: inline-flex; align-items: center; min-height: 44px; }
+.add-actions { background: linear-gradient(180deg, transparent, var(--bg) 30%); padding-top: 14px; }
+.btn.primary.add-save { width: 100%; min-height: 58px; border-radius: 999px; font-size: 1.0625rem; font-weight: 800; }
