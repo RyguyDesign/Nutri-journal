@@ -151,7 +151,8 @@ export async function render(root) {
   const off = store.onChange(async () => {
     if (!root.isConnected) return off?.();
     const [p, tg] = await Promise.all([store.getProfile(), store.getTargets()]);
-    if (targetsHolder.contains(document.activeElement)) return; // don't redraw under the finger
+    // don't redraw while a target value is being typed
+    if (targetsHolder.contains(document.activeElement) && document.activeElement.matches('input')) return;
     targetsHolder.replaceChildren(targetsCard(tg, recommendationFor(p), p));
   });
   root.replaceChildren(
