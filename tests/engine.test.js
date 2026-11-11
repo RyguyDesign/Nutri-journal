@@ -253,3 +253,13 @@ test('food search: umlauts, English/German names, typos and REWE bakery items', 
   assert.equal(top('poppy seed'), 'Mohnschnecke (REWE)');
   assert.ok(searchEveryday('rewe', 50).length >= 35);
 });
+
+test('evening with lots left: dinner recipes, not only snacks', async () => {
+  const { nextMeal, suggest } = await import('../js/suggest/engine.js');
+  assert.equal(nextMeal({ now: '20:20', loggedMeals: ['breakfast', 'lunch', 'dinner'], kcalLeft: 1206 }).meal, 'dinner');
+  assert.equal(nextMeal({ now: '20:20', loggedMeals: ['breakfast', 'lunch', 'dinner'], kcalLeft: 300 }).meal, 'snacks');
+  assert.equal(nextMeal({ now: '21:30', loggedMeals: ['dinner'], kcalLeft: 1206 }).meal, 'snacks');
+  const r = suggest({ remaining: { kcal: 1206, protein: 105, carbs: 120, fat: 61 }, now: '20:20', loggedMeals: ['breakfast', 'lunch', 'dinner'], seed: 'eve' });
+  assert.equal(r.meal, 'dinner');
+  assert.ok(r.groups.regular.length > 0);
+});
