@@ -164,20 +164,41 @@ export function streak(checksByDate, today) {
 }
 
 /**
- * Daily guide values for fibre, sugar, saturated fat and salt, in grams.
- *   fibre      aim for at least 30 g (DGE)
- *   sugar      at most 50 g, and never more than the carbohydrate target
- *   satFat     at most 10% of calories (WHO)
- *   salt       at most 6 g (DGE)
+ * Daily guide values for fibre, sugar, saturated fat and salt, in grams,
+ * depending on the diet style.
+ *
+ *              fibre (aim)  sugar (max)            saturated fat (max)        salt (max)
+ *   default        30       50, ≤ carb target      10% of calories (WHO)          6
+ *   mediterranean  35       50, ≤ carb target       8% of calories                6
+ *   vegan          35       50, ≤ carb target       8% of calories                6
+ *   lowcarb        25       25, ≤ carb target      12% of calories                6
+ *   keto           20       15, ≤ carb target      a third of the fat target      6
+ *
+ * Fibre 30 g and salt 6 g follow the DGE, saturated fat 10% the WHO. The
+ * low-carb and keto values are practical limits for those diets (more of
+ * the day's calories come from fat, fewer carbs leave less room for sugar
+ * and fibre), not official guidelines.
  * kind 'min' is a goal to reach; 'max' is a limit to stay under.
  */
-export function nutrientGoals(targets) {
-  const kcal = targets?.kcal > 0 ? targets.kcal : 2000;
-  const carbs = targets?.carbs > 0 ? targets.carbs : 50;
+const NUTRIENT_RULES = {
+  default: { fibre: 30, sugar: 50, satFat: (t) => (t.kcal * 0.1) / 9 },
+  mediterranean: { fibre: 35, sugar: 50, satFat: (t) => (t.kcal * 0.08) / 9 },
+  vegan: { fibre: 35, sugar: 50, satFat: (t) => (t.kcal * 0.08) / 9 },
+  lowcarb: { fibre: 25, sugar: 25, satFat: (t) => (t.kcal * 0.12) / 9 },
+  keto: { fibre: 20, sugar: 15, satFat: (t) => t.fat / 3 },
+};
+
+export function nutrientGoals(targets, dietStyle) {
+  const t = {
+    kcal: targets?.kcal > 0 ? targets.kcal : 2000,
+    carbs: targets?.carbs > 0 ? targets.carbs : 50,
+    fat: targets?.fat > 0 ? targets.fat : ((targets?.kcal > 0 ? targets.kcal : 2000) * 0.3) / 9,
+  };
+  const rule = NUTRIENT_RULES[dietStyle] || NUTRIENT_RULES.default;
   return {
-    fibre: { target: 30, kind: 'min' },
-    sugar: { target: Math.min(50, carbs), kind: 'max' },
-    satFat: { target: Math.round((kcal * 0.1) / 9), kind: 'max' },
+    fibre: { target: rule.fibre, kind: 'min' },
+    sugar: { target: Math.min(rule.sugar, Math.round(t.carbs)), kind: 'max' },
+    satFat: { target: Math.round(rule.satFat(t)), kind: 'max' },
     salt: { target: 6, kind: 'max' },
   };
 }

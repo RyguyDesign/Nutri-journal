@@ -98,7 +98,9 @@ Android resumes an installed web app from memory, so it would keep running an ol
 
 The dashboard (`js/ui/dashboard.js`) has one calorie card: "kcal left of target" above a bar split into protein, carbs and fat. Each section is as wide as that macro's share of the day's planned calories (`macroShares` in `js/core/diet.js`). It fills by how much of that macro's target has been eaten, and its label shows grams left. Percentages sit under the sections. A section too narrow for its label gets the label on its own line below (`macroBar` in `js/core/dash.js`). Labels go inside the fill when they fit, otherwise on the empty part.
 
-Below the calorie card, four rings show fibre, sugar, saturated fat and salt against guide values (`nutrientGoals`): fibre at least 30 g; sugar at most 50 g (never above the carb target); saturated fat at most 10% of calories; salt at most 6 g. Then come the fasting card, shortcut tiles (Journal, Recipes, Diet & fasting) and Add food.
+Below the calorie card, four rings show fibre, sugar, saturated fat and salt against guide values (`nutrientGoals(targets, dietStyle)`). The values depend on the diet style. By default: fibre at least 30 g, sugar at most 50 g (never above the carb target), saturated fat at most 10% of calories, salt at most 6 g. Mediterranean and vegan: fibre 35 g and saturated fat 8%. Low carb: fibre 25 g, sugar 25 g, saturated fat 12%. Keto: fibre 20 g, sugar 15 g, saturated fat a third of the fat target.
+
+Saving a new diet on Diet & fasting updates every target that came from a recommendation; targets the person typed in (`source: 'manual'`) are kept. Then come the fasting card, shortcut tiles (Journal, Recipes, Diet & fasting) and Add food.
 
 Fibre, sugar, saturated fat (`satFat`) and salt are optional fields, in grams, on `per`, on entries and on saved foods. A missing field means "not known", never zero.
 - They come from Open Food Facts (`off.js`; sodium × 2.5 when salt is missing), from label photos (`label-parse.js`; read only when clearly printed, and capped by carbs or fat), from built-in foods (`js/foods/extras.js`: typical values) and from recipes (summed from the main ingredients).

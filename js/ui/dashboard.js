@@ -107,9 +107,9 @@ function ring(r, count) {
   );
 }
 
-function ringsCard(entries, goal) {
+function ringsCard(entries, goal, dietStyle) {
   const extras = sumExtras(entries);
-  const rings = nutrientRings(extras, nutrientGoals(goal));
+  const rings = nutrientRings(extras, nutrientGoals(goal, dietStyle));
   const anyUnknown = rings.some((r) => r.known < extras.count);
   return h(
     'section',
@@ -120,9 +120,9 @@ function ringsCard(entries, goal) {
 }
 
 /** Eaten, target and left for every tracked nutrient. */
-function tableCard(entries, eaten, goal) {
+function tableCard(entries, eaten, goal, dietStyle) {
   const extras = sumExtras(entries);
-  const goals = nutrientGoals(goal);
+  const goals = nutrientGoals(goal, dietStyle);
   const fmt = (k, v) => (v == null ? '–' : k === 'kcal' ? fmtKcal(v) : fmtNumber(v, k === 'salt' ? 1 : 0));
   const rows = [
     ...['kcal', 'protein', 'carbs', 'fat'].map((k) => ({ k, eaten: eaten[k], target: goal?.[k], kind: 'target' })),
@@ -240,8 +240,8 @@ export async function render(root, rerender) {
             entries.length ? h('p', { class: 'muted' }, t('dash.eatenOnly', { eaten: fmtKcal(eaten.kcal) })) : null,
             h('a', { class: 'btn primary', href: '#/profile' }, t('dash.noTargetsAction')),
           ),
-    nutrients: () => ringsCard(entries, goal),
-    table: () => tableCard(entries, eaten, goal),
+    nutrients: () => ringsCard(entries, goal, diet),
+    table: () => tableCard(entries, eaten, goal, diet),
     meals: () => mealsCard(entries),
     fasting: () => (isToday ? dashboardStatus(rerender) : null),
     idea: () => (goal && isToday ? ideaCard() : null),
