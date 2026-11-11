@@ -102,7 +102,9 @@ const round10 = (n) => Math.round(n / 10) * 10;
 export function recommendTargets(p) {
   const b = bmr(p);
   const t = tdee(b, p.activity);
-  const adj = dailyAdjustment(p.goal, p.rateKgPerWeek);
+  // A daily deficit chosen on the Daily targets slider wins over the
+  // weekly rate picked on Me.
+  const adj = Number.isFinite(p.deficitKcal) ? -Math.max(0, p.deficitKcal) : dailyAdjustment(p.goal, p.rateKgPerWeek);
 
   let calories = round10(t + adj);
   const floor = Math.ceil(b / 10) * 10;
@@ -207,3 +209,24 @@ export function progress(consumed, target) {
 export function macroCalories({ protein = 0, carbs = 0, fat = 0 }) {
   return protein * KCAL_PER_GRAM.protein + carbs * KCAL_PER_GRAM.carbs + fat * KCAL_PER_GRAM.fat;
 }
+
+// Daily deficit slider: 0 to 1000 kcal below maintenance, in 25 kcal steps.
+export const DEFICIT_MAX = 1000;
+export const DEFICIT_STEP = 25;
+
+/** Largest deficit that keeps the calorie target at or above BMR. */
+export function maxDeficit(p) {
+  const b = bmr(p);
+  const t = tdee(b, p.activity);
+  const floor = Math.ceil(b / 10) * 10;
+  return Math.max(0, Math.min(DEFICIT_MAX, Math.floor((t - floor) / DEFICIT_STEP) * DEFICIT_STEP));
+}
+
+/** The deficit in use: the slider's value, or what the goal and weekly rate imply. */
+export function currentDeficit(p) {
+  if (Number.isFinite(p?.deficitKcal)) return Math.max(0, p.deficitKcal);
+  return Math.max(0, -dailyAdjustment(p?.goal, p?.rateKgPerWeek));
+}
+
+/** Weight change per week for a daily deficit, in kg. */
+export const kgPerWeek = (deficit) => (deficit * 7) / KCAL_PER_KG;

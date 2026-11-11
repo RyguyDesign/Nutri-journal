@@ -1,6 +1,7 @@
 import { h, toast } from './dom.js';
 import { t, fmtKcal, fmtNumber } from '../i18n/i18n.js';
-import { ACTIVITY_LEVELS, GOALS, RATES, validateProfile } from '../core/calc.js';
+import { ACTIVITY_LEVELS, GOALS, RATES, validateProfile, maxDeficit, currentDeficit, kgPerWeek, DEFICIT_STEP } from '../core/calc.js';
+import { applyRecommendation } from './targets-compare.js';
 import * as store from '../data/store.js';
 import { FASTING_IDS, eatingWindow } from '../core/diet.js';
 
@@ -108,6 +109,8 @@ function profileForm(profile) {
       rateKgPerWeek: Number(v('rateKgPerWeek')),
     };
     delete next.updatedAt;
+    // A new goal or weekly rate here replaces the deficit set on the slider
+    if (next.goal !== saved.goal || next.rateKgPerWeek !== saved.rateKgPerWeek) delete next.deficitKcal;
     const { errors, warnings, valid } = validateProfile(next);
     form.querySelectorAll('.field').forEach((f) => f.classList.remove('invalid'));
     form.querySelectorAll('.err').forEach((el) => (el.textContent = ''));
@@ -135,12 +138,59 @@ function profileForm(profile) {
 
 // ---------------------------------------------------------------------------
 
-export function targetsCard(targets, rec) {
+/**
+ * Daily calorie deficit slider (0–1000 kcal below maintenance). Shows the
+ * resulting calorie target and weekly weight change while dragging; on
+ * release it saves the deficit and updates the recommended targets.
+ */
+function deficitSlider(profile, rec) {
+  const d = rec.detail;
+  const max = maxDeficit(profile);
+  const start = Math.min(max, Math.round(currentDeficit(profile) / DEFICIT_STEP) * DEFICIT_STEP);
+  const input = h('input', { type: 'range', id: 'deficit', min: 0, max, step: DEFICIT_STEP, value: start, class: 'deficit-range' });
+  const value = h('span', { class: 'deficit-value num' });
+  const info = h('p', { class: 'deficit-info num', 'aria-live': 'polite' });
+  const draw = () => {
+    const def = Number(input.value);
+    const target = Math.round((d.tdee - def) / 10) * 10;
+    value.textContent = t('deficit.value', { n: fmtKcal(def) });
+    info.textContent = def === 0
+      ? t('deficit.none', { kcal: fmtKcal(target) })
+      : t('deficit.info', { kcal: fmtKcal(target), kg: fmtNumber(kgPerWeek(def), 2) });
+    input.style.setProperty('--pct', `${max ? (def / max) * 100 : 0}%`);
+    input.setAttribute('aria-valuetext', info.textContent);
+  };
+  input.addEventListener('input', draw);
+  input.addEventListener('change', async () => {
+    const saved = (await store.getProfile()) || {};
+    const def = Number(input.value);
+    const next = { ...saved, deficitKcal: def, goal: def > 0 ? 'lose' : saved.goal === 'gain' ? 'gain' : 'maintain' };
+    if (next.goal === 'lose' && !RATES.lose.includes(next.rateKgPerWeek)) next.rateKgPerWeek = RATES.lose[0];
+    if (next.goal === 'maintain') next.rateKgPerWeek = 0;
+    delete next.updatedAt;
+    await store.saveProfile(next);
+    const { updated, kept } = await applyRecommendation(next);
+    toast(updated ? t(kept ? 'deficit.savedKept' : 'deficit.saved') : t('deficit.savedSame'));
+  });
+  draw();
+  return h(
+    'div',
+    { class: 'deficit' },
+    h('div', { class: 'deficit-head' }, h('label', { for: 'deficit' }, t('deficit.label')), value),
+    input,
+    h('div', { class: 'deficit-scale muted small', 'aria-hidden': 'true' }, h('span', {}, '0'), h('span', {}, fmtKcal(max))),
+    info,
+    max < 1000 ? h('p', { class: 'muted small' }, t('deficit.capped', { kcal: fmtKcal(Math.ceil(d.bmr / 10) * 10) })) : null,
+  );
+}
+
+export function targetsCard(targets, rec, profile) {
   const card = h('section', { class: 'card', id: 'targets' }, h('h2', {}, t('targets.title')));
   if (!rec && !targets) {
     card.append(h('p', { class: 'muted' }, t('targets.needProfile')));
     return card;
   }
+  if (rec && profile) card.append(deficitSlider(profile, rec));
 
   const useValues = async (keys) => {
     const next = { ...(targets || {}) };

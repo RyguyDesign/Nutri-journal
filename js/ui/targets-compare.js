@@ -18,3 +18,30 @@ export function estimatedTargetsOutdated(targets, rec) {
   if (!targets || !rec) return false;
   return TARGET_KEYS.some((k) => targets[k]?.source === 'estimated' && targets[k].value !== rec[k]);
 }
+
+/**
+ * Make every target that came from a recommendation follow the current
+ * recommendation; targets the person typed in themselves are kept.
+ * Returns { updated, kept }.
+ */
+export async function applyRecommendation(profile) {
+  const store = await import('../data/store.js');
+  const rec = recommendationFor(profile);
+  if (!rec) return { updated: false, kept: false };
+  const targets = await store.getTargets();
+  const out = {};
+  let updated = false;
+  let kept = false;
+  for (const k of store.TARGET_KEYS) {
+    const cur = targets?.[k];
+    if (cur?.source === 'manual') {
+      out[k] = cur;
+      kept = true;
+    } else {
+      out[k] = { value: rec[k], source: 'estimated' };
+      if (cur?.value !== rec[k]) updated = true;
+    }
+  }
+  if (updated) await store.saveTargets(out);
+  return { updated, kept };
+}
