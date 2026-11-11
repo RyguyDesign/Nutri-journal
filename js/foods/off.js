@@ -54,19 +54,33 @@ export function mapOffProduct(json, code) {
   };
 }
 
-/** Look up a barcode. Resolves to a food, or null if unknown. Throws on network problems. */
-export async function lookupBarcode(code, { fetchImpl = globalThis.fetch, timeoutMs = 10000 } = {}) {
-  if (!isValidBarcode(code)) throw new Error('invalidBarcode');
+// Open Food Facts is one shared database; the country servers answer for
+// the same products, and a country server's search lists what is sold in
+// that country. Australian products are searched alongside the worldwide
+// list so they aren't crowded out by European ones.
+const BARCODE_HOSTS = ['world', 'au', 'uk'];
+const SEARCH_FIRST = ['world', 'au']; // asked together, results interleaved
+const SEARCH_FALLBACK = ['uk', 'us', 'de']; // only if both of those fail
+
+/** Same product, other ways of writing its barcode (UPC-A ↔ EAN-13 with a leading 0). */
+function barcodeVariants(code) {
+  const out = [code];
+  if (code.length === 12) out.push(`0${code}`);
+  if (code.length === 13 && code.startsWith('0')) out.push(code.slice(1));
+  return out;
+}
+
+async function fetchJson(url, fetchImpl, timeoutMs) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetchImpl(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${FIELDS}`, { signal: ctrl.signal });
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`http${res.status}`);
-    return mapOffProduct(await res.json(), code);
+    const res = await fetchImpl(url, { signal: ctrl.signal });
+    if (res.status === 404) return { status: 404 };
+    if (!res.ok) throw new Error(res.status === 429 || res.status === 503 ? 'busy' : `http${res.status}`);
+    return { status: 200, json: await res.json() };
   } catch (err) {
     if (err.name === 'AbortError') throw new Error('timeout');
-    if (err instanceof TypeError) throw new Error('offline');
+    if (err instanceof TypeError) throw new Error(globalThis.navigator?.onLine === false ? 'offline' : 'busy');
     throw err;
   } finally {
     clearTimeout(timer);
@@ -74,39 +88,75 @@ export async function lookupBarcode(code, { fetchImpl = globalThis.fetch, timeou
 }
 
 /**
+ * Look up a barcode. Resolves to a food, or null if unknown. Throws on
+ * network problems. When the main server can't be reached it asks the
+ * Australian and UK servers; a 12-digit UPC is also tried as EAN-13.
+ */
+export async function lookupBarcode(code, { fetchImpl = globalThis.fetch, timeoutMs = 10000 } = {}) {
+  if (!isValidBarcode(code)) throw new Error('invalidBarcode');
+  let lastErr = null;
+  for (const host of BARCODE_HOSTS) {
+    try {
+      for (const variant of barcodeVariants(code)) {
+        const r = await fetchJson(`https://${host}.openfoodfacts.org/api/v2/product/${variant}.json?fields=${FIELDS}`, fetchImpl, timeoutMs);
+        const food = r.status === 200 ? mapOffProduct(r.json, code) : null;
+        if (food) return food;
+      }
+      return null; // the server answered: the product isn't in the database
+    } catch (err) {
+      lastErr = err;
+      if (err.message === 'offline') break;
+    }
+  }
+  throw lastErr;
+}
+
+const searchUrl = (host, q) =>
+  `https://${host}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}`;
+
+/** Alternate between lists, dropping repeats (same barcode). */
+function interleave(lists, limit) {
+  const out = [];
+  const seen = new Set();
+  for (let i = 0; out.length < limit && lists.some((l) => i < l.length); i++) {
+    for (const l of lists) {
+      const f = l[i];
+      if (!f || seen.has(f.barcode)) continue;
+      seen.add(f.barcode);
+      out.push(f);
+      if (out.length >= limit) break;
+    }
+  }
+  return out;
+}
+
+/**
  * Search Open Food Facts by name. Free, no key; limited to about 10
  * searches a minute, so it runs only when the person taps "Search online".
+ * Asks the worldwide and Australian servers together and mixes their
+ * results; if neither answers, tries the UK, US and German servers in turn.
  * Resolves to foods with at least calories per 100 g/ml, best matches first.
  */
 export async function searchProducts(query, { fetchImpl = globalThis.fetch, timeoutMs = 12000, limit = 8 } = {}) {
   const q = String(query || '').trim();
   if (q.length < 2) return [];
-  // The main server sometimes refuses search requests from a browser while
-  // the country servers answer the same search, so try them in turn:
-  // English-speaking ones first.
-  const hosts = ['world', 'uk', 'us', 'de'];
-  let lastErr;
-  for (const host of hosts) {
-    const url = `https://${host}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}`;
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const run = async (host) => mapSearchResults((await fetchJson(searchUrl(host, q), fetchImpl, timeoutMs)).json || {}, 20, { preferEnglish: true });
+
+  const first = await Promise.allSettled(SEARCH_FIRST.map(run));
+  const ok = first.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+  if (ok.length) return interleave(ok, limit);
+
+  let lastErr = first.find((r) => r.status === 'rejected')?.reason;
+  if (lastErr?.message === 'offline') throw lastErr;
+  for (const host of SEARCH_FALLBACK) {
     try {
-      const res = await fetchImpl(url, { signal: ctrl.signal });
-      if (!res.ok) throw new Error(res.status === 429 || res.status === 503 ? 'busy' : `http${res.status}`);
-      const found = mapSearchResults(await res.json(), limit, { preferEnglish: true });
-      if (found.length || host === hosts[hosts.length - 1]) return found;
-      lastErr = null; // empty here: a country server may still have matches
+      return (await run(host)).slice(0, limit);
     } catch (err) {
-      if (err.name === 'AbortError') lastErr = new Error('timeout');
-      else if (err instanceof TypeError) lastErr = new Error(globalThis.navigator?.onLine === false ? 'offline' : 'busy');
-      else lastErr = err;
-      if (lastErr.message === 'offline') break;
-    } finally {
-      clearTimeout(timer);
+      lastErr = err;
+      if (err.message === 'offline') break;
     }
   }
-  if (lastErr) throw lastErr;
-  return [];
+  throw lastErr;
 }
 
 /** Map a search response: keep named products with calories, drop duplicates. */

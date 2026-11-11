@@ -171,17 +171,59 @@ test('everyday list: values add up, names unique, common foods found', async () 
   assert.equal(searchEveryday('brezel')[0].name, 'Pretzel');
 });
 
-test('online search falls back to a country server', async () => {
+test('online search asks the worldwide and Australian servers and mixes results', async () => {
+  const { searchProducts } = await import('../js/foods/off.js');
+  const p = (code, name) => ({ code, product_name: name, brands: 'X', nutriments: { 'energy-kcal_100g': 50, proteins_100g: 1, carbohydrates_100g: 6, fat_100g: 2 } });
+  const calls = [];
+  const fetchImpl = async (url) => {
+    const host = new URL(url).host;
+    calls.push(host);
+    const products = host.startsWith('au.') ? [p('9300000000001', 'Pumpkin soup AU'), p('1', 'Pumpkin soup')] : [p('1', 'Pumpkin soup'), p('2', 'Pumpkin soup DE')];
+    return { ok: true, status: 200, json: async () => ({ products }) };
+  };
+  const r = await searchProducts('pumpkin soup', { fetchImpl });
+  assert.deepEqual(calls.sort(), ['au.openfoodfacts.org', 'world.openfoodfacts.org']);
+  assert.deepEqual(r.map((f) => f.barcode), ['1', '9300000000001', '2']); // interleaved, no repeats
+});
+
+test('online search falls back to other servers when both fail', async () => {
   const { searchProducts } = await import('../js/foods/off.js');
   const calls = [];
   const fetchImpl = async (url) => {
-    calls.push(new URL(url).host);
-    if (url.startsWith('https://world.')) throw new TypeError('Failed to fetch');
-    return { ok: true, status: 200, json: async () => ({ products: [{ code: '1', product_name: 'Pumpkin soup', brands: 'X', nutriments: { 'energy-kcal_100g': 50, proteins_100g: 1, carbohydrates_100g: 6, fat_100g: 2 } }] }) };
+    const host = new URL(url).host;
+    calls.push(host);
+    if (host.startsWith('world.') || host.startsWith('au.')) throw new TypeError('Failed to fetch');
+    return { ok: true, status: 200, json: async () => ({ products: [{ code: '1', product_name: 'Pumpkin soup', nutriments: { 'energy-kcal_100g': 50 } }] }) };
   };
   const r = await searchProducts('pumpkin soup', { fetchImpl });
-  assert.deepEqual(calls, ['world.openfoodfacts.org', 'uk.openfoodfacts.org']);
+  assert.equal(calls.at(-1), 'uk.openfoodfacts.org');
   assert.equal(r[0].name, 'Pumpkin soup');
+});
+
+test('barcode lookup tries the Australian server and the EAN-13 form', async () => {
+  const { lookupBarcode } = await import('../js/foods/off.js');
+  const calls = [];
+  const fetchImpl = async (url) => {
+    const path = url.replace(/\?.*/, '');
+    calls.push(path);
+    if (url.startsWith('https://world.')) throw new TypeError('Failed to fetch'); // main server unreachable
+    if (path.endsWith('/0930012345678.json')) {
+      return { ok: true, status: 200, json: async () => ({ status: 1, product: { code: '0930012345678', product_name: 'Vegemite', nutriments: { 'energy-kcal_100g': 180, proteins_100g: 25, carbohydrates_100g: 18, fat_100g: 1 } } }) };
+    }
+    return { ok: true, status: 200, json: async () => ({ status: 0 }) };
+  };
+  const f = await lookupBarcode('930012345678', { fetchImpl }); // 12-digit form
+  assert.equal(f.name, 'Vegemite');
+  assert.deepEqual(calls, [
+    'https://world.openfoodfacts.org/api/v2/product/930012345678.json',
+    'https://au.openfoodfacts.org/api/v2/product/930012345678.json',
+    'https://au.openfoodfacts.org/api/v2/product/0930012345678.json',
+  ]);
+  // Not in the database at all: null, without asking more servers
+  calls.length = 0;
+  const none = await lookupBarcode('9300000000000', { fetchImpl: async (u) => (calls.push(u), { ok: true, status: 200, json: async () => ({ status: 0 }) }) });
+  assert.equal(none, null);
+  assert.equal(calls.length, 1);
 });
 
 test('every recipe ingredient is a known food', async () => {
