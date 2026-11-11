@@ -106,8 +106,28 @@ function dietForm(profile) {
     delete next.updatedAt;
     try {
       await store.saveProfile(next);
-      const changed = saved.dietStyle !== next.dietStyle;
-      toast(t(changed && recommendationFor(next) ? 'dietPage.savedCheckTargets' : 'dietPage.saved'));
+      // Targets that came from a recommendation follow the new diet straight
+      // away; targets the person typed in themselves are left alone.
+      const rec = recommendationFor(next);
+      const targets = await store.getTargets();
+      let updated = false;
+      let kept = false;
+      if (rec) {
+        const out = {};
+        for (const k of store.TARGET_KEYS) {
+          const cur = targets?.[k];
+          if (cur?.source === 'manual') {
+            out[k] = cur;
+            kept = true;
+          } else {
+            out[k] = { value: rec[k], source: 'estimated' };
+            if (cur?.value !== rec[k]) updated = true;
+          }
+        }
+        if (updated) await store.saveTargets(out);
+      }
+      const diet = t(`diet.short.${next.dietStyle}`);
+      toast(updated ? t(kept ? 'dietPage.savedTargetsKept' : 'dietPage.savedTargets', { diet }) : t('dietPage.saved'));
     } catch (err) {
       toast(t('err.generic', { msg: err.message }), 'error');
     }

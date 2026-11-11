@@ -37,7 +37,13 @@ test('guide values and rings', () => {
   const g = nutrientGoals(goal);
   assert.deepEqual(g.sugar, { target: 50, kind: 'max' });
   assert.equal(g.satFat.target, 20);
-  assert.equal(nutrientGoals({ kcal: 1800, carbs: 25 }).sugar.target, 25); // keto: sugar can't exceed carbs
+  assert.equal(nutrientGoals({ kcal: 1800, carbs: 20 }).sugar.target, 20); // sugar can't exceed the carb target
+  // The diet style changes the limits
+  const t1600 = { kcal: 1600, protein: 150, carbs: 25, fat: 125 };
+  assert.deepEqual(Object.values(nutrientGoals(t1600, 'balanced')).map((x) => x.target), [30, 25, 18, 6]);
+  assert.deepEqual(Object.values(nutrientGoals(t1600, 'keto')).map((x) => x.target), [20, 15, 42, 6]);
+  assert.deepEqual(Object.values(nutrientGoals({ ...t1600, carbs: 50 }, 'lowcarb')).map((x) => x.target), [25, 25, 21, 6]);
+  assert.equal(nutrientGoals(t1600, 'mediterranean').satFat.target, 14);
   const extras = sumExtras([{ fibre: 10, sugar: 12, satFat: 22, salt: 3.1 }, { fibre: 4 }, {}]);
   assert.equal(extras.count, 3);
   assert.deepEqual(extras.fibre, { value: 14, known: 2 });
