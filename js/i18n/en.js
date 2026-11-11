@@ -512,4 +512,12 @@ export default {
   'tile.scan.desc': 'Shortcut: straight to the scanner',
   'tile.likes': 'Foods I like',
   'tile.likes.desc': 'Shortcut: edit your favourite foods',
+  'deficit.label': 'Daily calorie deficit',
+  'deficit.value': '−{n} kcal',
+  'deficit.info': 'Calorie target {kcal} kcal · about {kg} kg a week',
+  'deficit.none': 'No deficit: {kcal} kcal keeps your weight steady',
+  'deficit.capped': 'The slider stops where your target would drop below your basal metabolism ({kcal} kcal).',
+  'deficit.saved': 'Deficit saved. Your daily targets are updated.',
+  'deficit.savedKept': 'Deficit saved. Targets updated; the ones you set yourself were kept.',
+  'deficit.savedSame': 'Deficit saved.',
 };

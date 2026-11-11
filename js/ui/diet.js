@@ -5,7 +5,7 @@ import { t } from '../i18n/i18n.js';
 import { DIET_STYLES } from '../core/calc.js';
 import { FASTING_IDS, eatingWindow } from '../core/diet.js';
 import * as store from '../data/store.js';
-import { recommendationFor } from './targets-compare.js';
+import { recommendationFor, applyRecommendation } from './targets-compare.js';
 import { field, splitList, targetsCard } from './profile.js';
 import { dayLabel } from './daynav.js';
 
@@ -108,24 +108,7 @@ function dietForm(profile) {
       await store.saveProfile(next);
       // Targets that came from a recommendation follow the new diet straight
       // away; targets the person typed in themselves are left alone.
-      const rec = recommendationFor(next);
-      const targets = await store.getTargets();
-      let updated = false;
-      let kept = false;
-      if (rec) {
-        const out = {};
-        for (const k of store.TARGET_KEYS) {
-          const cur = targets?.[k];
-          if (cur?.source === 'manual') {
-            out[k] = cur;
-            kept = true;
-          } else {
-            out[k] = { value: rec[k], source: 'estimated' };
-            if (cur?.value !== rec[k]) updated = true;
-          }
-        }
-        if (updated) await store.saveTargets(out);
-      }
+      const { updated, kept } = await applyRecommendation(next);
       const diet = t(`diet.short.${next.dietStyle}`);
       toast(updated ? t(kept ? 'dietPage.savedTargetsKept' : 'dietPage.savedTargets', { diet }) : t('dietPage.saved'));
     } catch (err) {
@@ -162,13 +145,14 @@ export const live = false;
 export async function render(root) {
   const [profile, targets, tastes, history] = await Promise.all([store.getProfile(), store.getTargets(), store.getTastes(), store.getDietHistory()]);
   const rec = recommendationFor(profile);
-  const targetsHolder = h('div', {}, targetsCard(targets, rec));
+  const targetsHolder = h('div', {}, targetsCard(targets, rec, profile));
   // Targets change when a diet style is saved or a target is used/typed:
   // refresh just that card so the form keeps its state.
   const off = store.onChange(async () => {
     if (!root.isConnected) return off?.();
     const [p, tg] = await Promise.all([store.getProfile(), store.getTargets()]);
-    targetsHolder.replaceChildren(targetsCard(tg, recommendationFor(p)));
+    if (targetsHolder.contains(document.activeElement)) return; // don't redraw under the finger
+    targetsHolder.replaceChildren(targetsCard(tg, recommendationFor(p), p));
   });
   root.replaceChildren(
     h('h1', { class: 'page-title' }, t('dietPage.title')),

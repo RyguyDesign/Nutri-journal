@@ -120,3 +120,9 @@ The tab bar is Dashboard, Journal, Recipes, Diet, Me.
   - `tileLayout` repairs saved data: unknown ids are dropped, and tiles added later appear at the end with their default on/off.
   - Wide tiles take a row each; neighbouring small tiles (shortcuts) share a row, three at most.
   - Tiles: calories and macros bar, nutrient rings, nutrient table, meals today, fasting and diet check, recipe idea, and the shortcuts Journal, Recipes, Diet & fasting, Scan barcode (`#/add?scan=1` opens the camera) and Foods I like.
+
+## Daily calorie deficit
+
+Daily targets (on Diet & fasting) starts with a deficit slider: 0–1,000 kcal a day below maintenance (TDEE), in 25 kcal steps. It stops where the target would drop below BMR (`maxDeficit`). While you drag, it shows the resulting calorie target and the weekly weight change (`kgPerWeek`, 7,700 kcal per kg).
+
+On release the slider saves `profile.deficitKcal` (an optional field) and sets the goal to lose, or to maintain at 0. It then applies the new recommendation to the recommended targets (`applyRecommendation`); manual targets are kept. `recommendTargets` uses `deficitKcal` when set, otherwise the goal and weekly rate. Saving a different goal or weekly rate on Me clears `deficitKcal`.

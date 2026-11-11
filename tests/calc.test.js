@@ -97,3 +97,19 @@ test('dates use local calendar days', () => {
   assert.equal(addDays('2026-01-01', -1), '2025-12-31');
   assert.throws(() => parseISODate('2026-02-30'));
 });
+
+test('daily deficit slider overrides the weekly rate', async () => {
+  const { recommendTargets, maxDeficit, currentDeficit, kgPerWeek } = await import('../js/core/calc.js');
+  const p = { age: 40, sex: 'male', heightCm: 180, weightKg: 85, targetWeightKg: 80, activity: 'light', goal: 'lose', rateKgPerWeek: 0.25, dietStyle: 'balanced' };
+  const base = recommendTargets(p);
+  assert.equal(currentDeficit(p), 275);
+  const r500 = recommendTargets({ ...p, deficitKcal: 500 });
+  assert.equal(r500.calories, Math.round((base.tdee - 500) / 10) * 10);
+  assert.equal(recommendTargets({ ...p, deficitKcal: 0 }).calories, Math.round(base.tdee / 10) * 10);
+  // never below BMR
+  const huge = recommendTargets({ ...p, deficitKcal: 5000 });
+  assert.equal(huge.calories, Math.ceil(base.bmr / 10) * 10);
+  assert.ok(maxDeficit(p) <= 1000 && maxDeficit(p) % 25 === 0);
+  assert.ok(base.tdee - maxDeficit(p) >= Math.ceil(base.bmr / 10) * 10);
+  assert.equal(Math.round(kgPerWeek(550) * 100) / 100, 0.5);
+});
