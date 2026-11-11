@@ -135,3 +135,5 @@ On release the slider saves `profile.deficitKcal` (an optional field) and sets t
 ## Food search
 
 `searchEveryday` (`js/foods/everyday.js`) folds case, accents and umlauts (ü, ue and u match; ß = ss), knows common English/German pairs (roll/Brötchen, chicken/Hähnchen/Geflügel, cheese/Käse, …) and accepts one or two wrong letters in longer words. Exact matches rank above near matches. The everyday list includes REWE Backwaren items (`… (REWE)`) with calories and macros from REWE's labels; typing "rewe" lists them.
+
+Recipe ideas follow the time of day and skip meals that already have entries. If that leaves no meal before 21:00 but 500 kcal or more is still left, the current meal stays open (for example dinner after a small dinner), so the Recipes screen offers meals, not only snacks.

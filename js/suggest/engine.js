@@ -27,6 +27,8 @@ const ORDER = ['breakfast', 'lunch', 'snacks', 'dinner'];
 export const COOK_LIMITS = { quick: 15, medium: 30, any: Infinity };
 export const MAX_MEAL_KCAL = 900;
 export const MAX_SNACK_KCAL = 400;
+/** Calories still left that are worth a meal rather than a snack. */
+export const BIG_LEFT = 500;
 
 // ---- Exclusions ------------------------------------------------------------
 
@@ -101,7 +103,7 @@ export function isAllowed(food, ex) {
  * The next meal and its share of what's left today.
  * loggedMeals: meals that already have entries today.
  */
-export function nextMeal({ now = '12:00', plan = '3+1', loggedMeals = [] }) {
+export function nextMeal({ now = '12:00', plan = '3+1', loggedMeals = [], kcalLeft = 0 }) {
   const weights = MEAL_PLANS[plan] || MEAL_PLANS['3+1'];
   const order = ORDER.filter((m) => m in weights);
   let current = defaultMeal(now);
@@ -111,7 +113,11 @@ export function nextMeal({ now = '12:00', plan = '3+1', loggedMeals = [] }) {
   if (start < 0) start = order.findIndex((m) => ORDER.indexOf(m) > ORDER.indexOf(current));
   const late = now >= '21:00' || now < '04:00';
   let open = start < 0 || late ? [] : order.slice(start).filter((m) => !loggedMeals.includes(m) || (m === 'snacks' && plan === '3+2'));
-  if (!open.length) open = ['snacks']; // evening, or everything logged
+  // A meal that already has an entry but still leaves a lot of the day's
+  // calories (a small dinner, or one food logged so far) stays open: offer
+  // proper meals, not only snacks, until late evening.
+  if (!open.length && !late && start >= 0 && kcalLeft >= BIG_LEFT) open = [order[start]];
+  if (!open.length) open = ['snacks']; // late evening, or everything logged
   const meal = open[0];
   const total = open.reduce((s, m) => s + (weights[m] || 0.15), 0);
   const share = (weights[meal] || 0.15) / total;
@@ -318,7 +324,7 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
     usedRecipes: new Set(),
   };
   const maxMinutes = COOK_LIMITS[tastes.cookTime] ?? Infinity;
-  const { meal, share } = nextMeal({ now, plan: tastes.plan, loggedMeals });
+  const { meal, share } = nextMeal({ now, plan: tastes.plan, loggedMeals, kcalLeft: remaining?.kcal ?? 0 });
 
   const rem = Object.fromEntries(NUTRIENTS.map((k) => [k, Math.max(0, remaining?.[k] ?? 0)]));
   const mode = (remaining?.kcal ?? 0) <= 0 ? 'over' : rem.kcal < 250 ? 'light' : 'normal';
