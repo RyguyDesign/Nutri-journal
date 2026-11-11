@@ -226,7 +226,7 @@ export async function render(root, rerender, params = {}) {
     }
     if (text.length >= 2) {
       const saved = new Set(foods.map((f) => f.name.toLowerCase()));
-      const typical = searchEveryday(text, 5).filter((c) => !saved.has(c.name.toLowerCase()));
+      const typical = searchEveryday(text, 8).filter((c) => !saved.has(c.name.toLowerCase()));
       if (typical.length) {
         sections.push(section(typical[0].closest ? t('entry.typicalClosest') : t('entry.typicalHead'), typical.map((c) => pick(c.name, c.portion.unit !== 'g'
           ? t('entry.typicalPiece', { kcal: fmtKcal((c.per.kcal * c.portion.g) / 100), label: c.portion.label, g: c.portion.g, unit: c.per.unit })

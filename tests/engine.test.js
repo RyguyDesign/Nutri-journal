@@ -240,3 +240,16 @@ test('yum cha dishes are in the everyday list', async () => {
   assert.ok(searchEveryday('yum cha', 40).length >= 20);
   assert.ok(searchEveryday('ente kross', 1)[0].per.salt > 0);
 });
+
+test('food search: umlauts, English/German names, typos and REWE bakery items', async () => {
+  const { searchEveryday } = await import('../js/foods/everyday.js');
+  const top = (q) => searchEveryday(q)[0]?.name;
+  assert.equal(top('geflügel roll'), 'Geflügelrolle (REWE)');
+  assert.equal(top('gefluegelrolle'), 'Geflügelrolle (REWE)');
+  assert.equal(top('chicken roll'), 'Geflügelrolle (REWE)');
+  assert.ok(searchEveryday('pain au chocolate').some((f) => f.name === 'Pain au chocolat (REWE)'));
+  assert.ok(searchEveryday('croisant').some((f) => f.name === 'Croissant'));
+  assert.equal(top('kase stange'), 'Käselaugenstange (REWE)');
+  assert.equal(top('poppy seed'), 'Mohnschnecke (REWE)');
+  assert.ok(searchEveryday('rewe', 50).length >= 35);
+});

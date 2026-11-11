@@ -169,6 +169,20 @@ const T = {
   'common:beef-in-satay-sauce': [1, 4, 3.5, 1.0],
   'common:braised-beef-tendon': [0, 0.5, 1, 0.6],
   'common:beef-brisket-cooked-': [0, 0, 6, 0.15],
+  // REWE Backwaren: sugar, saturated fat and salt from REWE labels; fibre typical
+  'common:gefl-gelrolle-rewe-': [1.5, 1.9, 8.7, 1.7], 'common:pain-au-chocolat-rewe-': [2.5, 11, 13, 1], 'common:laugencroissant-rewe-': [2, 4.3, 10.6, 1.14],
+  'common:butter-croissant-rewe-': [2, 4.9, 13, 1], 'common:nut-nougat-croissant-rewe-': [2.2, 14, 11, 0.84], 'common:mozart-croissant-rewe-': [2, 10.8, 11.1, 0.9],
+  'common:ham-and-cheese-croissant-rewe-': [1.8, 4.2, 11.3, 1.5], 'common:cheese-and-bacon-croissant-rewe-': [1.5, 5.2, 15, 1.6], 'common:k-selaugenstange-rewe-': [2.5, 1, 1.5, 1.8],
+  'common:laugenstange-rewe-': [2.5, 1, 0.5, 1.8], 'common:laugenbrezel-rewe-': [2.5, 0.7, 0.5, 1.8], 'common:tomato-cheese-pretzel-rewe-': [2, 3.3, 4.6, 1.5],
+  'common:laugeneck-rewe-': [2, 3.15, 10.4, 0.98], 'common:j-gerstange-rewe-': [2.8, 3, 3.9, 1.9], 'common:schinkenstange-rewe-': [1.5, 1, 6.8, 1.38],
+  'common:cheese-and-bacon-pretzel-stick-rewe-': [2, 5.4, 4.6, 2], 'common:spinach-cheese-stick-rewe-': [1.5, 1, 9.8, 1], 'common:chickensticks-4-cheese-rewe-': [1.5, 6.2, 2.3, 1.8],
+  'common:pizzaschnecke-margherita-rewe-': [2, 6.1, 7.9, 1.7], 'common:pizzasnack-sucuk-rewe-': [1.8, 3.7, 4.6, 1.2], 'common:k-seschnecke-rewe-': [1.5, 2, 8, 1.2],
+  'common:hot-dog-klassik-rewe-': [1.5, 6.6, 2, 1.26], 'common:hot-dog-curry-rewe-': [1.5, 8.5, 2.3, 1.7], 'common:wiener-im-bl-tterteig-rewe-': [1, 4.3, 12.6, 1.53],
+  'common:w-rstchendog-rewe-': [1.1, 2.7, 11.6, 1.54], 'common:franzbr-tchen-rewe-': [2, 15, 8.5, 0.83], 'common:quarktasche-rewe-': [1.5, 9.9, 5.5, 0.65],
+  'common:kirschtasche-rewe-': [1.5, 19, 8.4, 0.9], 'common:apfeldreieck-rewe-': [1.5, 12, 8, 0.5], 'common:berliner-rewe-': [1.5, 17.8, 7.1, 0.7],
+  'common:schokokrapfen-rewe-': [1.5, 19.7, 10.6, 0.65], 'common:chocolate-donut-rewe-': [1.5, 22, 11, 0.8], 'common:nut-donut-rewe-': [2, 27.9, 12.6, 0.88],
+  'common:nussecke-rewe-': [3, 29.1, 11.6, 0.3], 'common:mohnschnecke-rewe-': [3, 18, 9.7, 0.8], 'common:streuselschnecke-rewe-': [1.5, 28.2, 0.8, 0.6],
+  'common:vanillestange-rewe-': [1, 8.9, 10, 0.6], 'common:puddingf-cher-rewe-': [1, 14.1, 2.8, 0.93],
 };
 
 /** { fibre, sugar, satFat, salt } per 100 g/ml for a built-in food id, or null. */
