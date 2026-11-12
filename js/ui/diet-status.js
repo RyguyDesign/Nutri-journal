@@ -2,6 +2,7 @@
 // check line in the journal. Uses the diet history so past days are judged
 // by the diet and fasting plan that applied then.
 import { h, bar, toast, svg } from './dom.js';
+import { icon } from './icons.js';
 import { t, fmtGrams } from '../i18n/i18n.js';
 import * as store from '../data/store.js';
 import { addDays, today } from '../core/dates.js';
@@ -144,7 +145,7 @@ export async function dashboardStatus(rerender) {
       const startIn = h('input', { type: 'time', id: 'fast-start', value: clock(now), 'aria-label': t('fast.startedAt') });
       const startBtn = h('button', {
             type: 'button',
-            class: 'btn primary fast-btn',
+            class: 'outline-yellow fast-btn',
             onclick: async () => {
               const [hh, mm] = startIn.value.split(':').map(Number);
               const start = new Date();
@@ -159,10 +160,10 @@ export async function dashboardStatus(rerender) {
         h(
           'div',
           { class: 'fast-head' },
-          svg('svg', { viewBox: '0 0 24 24', class: 'fast-bolt', 'aria-hidden': 'true' }, svg('path', { d: 'M13 2L4 14h7l-1 8 9-12h-7z' })),
-          h('div', { class: 'fast-text' },
-            h('h2', { class: 'fast-plan' }, t('fast.windowTitle', { plan: t(`profile.fasting.${plan}`) })),
-            h('p', { class: 'fast-state' }, t(open ? 'fast.windowOpen' : 'fast.windowClosed', { start: win.start, end: win.end }))),
+          h('div', { class: 'fasting-icon' }, icon('zap', 'ic-fast')),
+          h('div', { class: 'fasting-info' },
+            h('h2', {}, t(open ? 'fast.headOpen' : 'fast.headClosed', { plan: t(`profile.fasting.${plan}`) })),
+            h('p', {}, t(open ? 'fast.subOpen' : 'fast.subClosed', { start: win.start, end: win.end }))),
           startBtn,
         ),
         h('div', { class: 'fast-start-row' }, h('label', { for: 'fast-start' }, t('fast.startedAt')), startIn),

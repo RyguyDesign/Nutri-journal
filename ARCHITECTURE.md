@@ -141,3 +141,7 @@ Recipe ideas follow the time of day and skip meals that already have entries. If
 On Add food, when nothing saved or built-in matches (3+ letters), the online search (Open Food Facts) starts by itself after a short pause.
 
 Regional dishes in `js/foods/common.js` come from non-US sources where possible: Bahrain Food Composition Tables (Gulf/Levant dishes), measurements of Singapore hawker meals (Yeo et al., Foods 2021), German averages and German product labels, and the Swiss food composition database (meat, fish, cheese, dairy). Fibre, sugar, saturated fat and salt are stored only where the source gives them (`null` = unknown; `extrasFor` leaves unknown nutrients out rather than zero). Search ranks foods whose own name contains the typed words (or their English/German twin) above matches on other names.
+
+## Look (dark mode)
+
+Blue glass from the owner's ChatGPT design (App.jsx/App.css, Nov 2026): navy gradient background with two blurred blue lights, glass cards (`.card`), Inter font, accent #48baff, protein #ff647d, carbs #39baff, fat #ffb52e, fibre #00d99a. Icons are Lucide shapes in `js/ui/icons.js`. The dashboard header shows the date, the day title with ‹ › to change day, and a round + button whose menu offers Add food and Scan barcode. Light mode keeps its own colours.
