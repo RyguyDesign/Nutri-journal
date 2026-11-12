@@ -2,8 +2,9 @@
 // logged by name without a label: pick, set the amount, save.
 //
 // Values per 100 g (or per 100 ml for drinks), rounded, from standard
-// food-composition tables (USDA FoodData Central, German BLS) and common
-// German products. Brands and recipes vary; entries are labelled
+// food-composition tables (USDA FoodData Central, German BLS, Swiss food
+// composition database, Bahrain FCT, Singapore measurements) and common
+// German products; each section names its source. Brands and recipes vary; entries are labelled
 // "Typical values (estimate)" and stay editable.
 //
 // Fields: name, kcal, protein, carbs, fat, and options:
@@ -196,7 +197,7 @@ export const COMMON = [
   c('Lasagne', 165, 8, 14, 8.5, { g: 350, label: 'portion' }),
   c('Schnitzel', 230, 20, 12, 11, { u: 'piece', g: 180, label: 'schnitzel', aka: 'breaded escalope' }),
   c('Meatball', 240, 15, 8, 16.5, { u: 'piece', g: 80, label: 'meatball', aka: 'frikadelle bulette' }),
-  c('Falafel', 333, 13, 32, 18, { u: 'piece', g: 20, label: 'ball' }),
+  c('Falafel', 339, 13.3, 31.3, 15.6, { u: 'piece', g: 20, label: 'ball' }),
   c('Vegetable soup', 40, 1.5, 6, 1, { g: 300, label: 'bowl', aka: 'suppe gemüsesuppe' }),
   c('Pumpkin soup', 55, 1, 6, 3, { g: 300, label: 'bowl', aka: 'kürbissuppe squash butternut' }),
   c('Pumpkin soup with cream', 80, 1.2, 6.5, 5.5, { g: 300, label: 'bowl', aka: 'kürbiscremesuppe' }),
@@ -286,22 +287,145 @@ export const COMMON = [
   c('Puddingfächer (REWE)', 228, 5.9, 36.8, 5.9, { u: 'piece', g: 100, label: 'piece', aka: 'custard pastry vanilla pudding faecher puddingbrezel rewe backwaren backstation' }),
 
   // ---- Middle Eastern -------------------------------------------------------
-  // USDA FoodData Central where it has the dish (tabbouleh, baklava,
-  // basbousa, stuffed vine leaves, pita, tahini), otherwise common
-  // nutrition databases. Home recipes vary a lot, mainly in the oil.
-  c('Tabbouleh', 127, 1.6, 9.7, 9.7, { g: 150, label: 'portion', aka: 'tabouli tabouleh taboule tabbouli tabule taboulé parsley bulgur salad' }),
-  c('Fattoush', 158, 2.4, 15, 10, { g: 200, label: 'portion', aka: 'fatoush fattush bread salad' }),
+  // Bahrain Food Composition Tables (tabbouleh, fattoush, ful, falafel,
+  // shawarma, kunafa), Food Standards Australia NZ (baklava); stuffed vine
+  // leaves, basbousa, pita and tahini still from USDA, koshari and baba
+  // ganoush from nutrition databases. Recipes vary, mainly in the oil.
+  c('Tabbouleh', 53, 1.9, 6.1, 2.3, { g: 150, label: 'portion', aka: 'tabouli tabouleh taboule tabbouli tabule taboulé parsley bulgur salad' }),
+  c('Fattoush', 52, 1.6, 6, 1.9, { g: 200, label: 'portion', aka: 'fatoush fattush bread salad' }),
   c('Baba ganoush', 167, 4.1, 11.4, 13.2, { g: 60, label: 'portion', aka: 'baba ghanoush ghanouj ganouj mutabal moutabal eggplant aubergine dip' }),
   c('Labneh', 165, 8.8, 4.4, 13, { g: 30, label: 'portion', aka: 'labne labaneh strained yogurt' }),
   c('Tahini', 595, 17, 21.2, 53.8, { g: 15, label: 'tablespoon', aka: 'tahina sesame paste sesame butter' }),
   c('Pita bread', 275, 9.1, 55.7, 1.2, { u: 'piece', g: 60, label: 'pita', aka: 'pitta khobz khubz arabic bread flatbread fladenbrot' }),
-  c('Chicken shawarma wrap', 150, 13.2, 12.5, 5.4, { u: 'piece', g: 280, label: 'wrap', aka: 'shawarma shawerma shwarma chicken wrap dürüm durum' }),
+  c('Chicken shawarma wrap', 195, 27.8, 12.3, 4.3, { u: 'piece', g: 280, label: 'wrap', aka: 'shawarma shawerma shwarma chicken wrap dürüm durum' }),
   c('Stuffed vine leaves', 163, 2.3, 13.9, 11.6, { u: 'piece', g: 25, label: 'piece', aka: 'dolma dolmades dolmas warak enab warak inab stuffed grape leaves' }),
   c('Koshari', 93, 3.3, 16.7, 2, { g: 400, label: 'plate', aka: 'kushari koshary kosheri egyptian rice lentils pasta' }),
-  c('Ful medames', 87, 4.1, 11.6, 3.3, { g: 250, label: 'bowl', aka: 'foul medames fool mudammas ful mudammas fava beans broad beans' }),
-  c('Baklava', 440, 6.6, 37.5, 29.3, { u: 'piece', g: 30, label: 'piece', aka: 'baklawa baklavas' }),
-  c('Kunafa', 355, 6.1, 45.8, 17.1, { g: 100, label: 'piece', aka: 'knafeh kanafeh kunefe künefe konafa kadayif' }),
+  c('Ful medames', 116, 4.2, 14.2, 5.3, { g: 250, label: 'bowl', aka: 'foul medames fool mudammas ful mudammas fava beans broad beans' }),
+  c('Baklava', 465, 9, 39, 30, { u: 'piece', g: 30, label: 'piece', aka: 'baklawa baklavas' }),
+  c('Kunafa', 386, 5.6, 49, 17.6, { g: 100, label: 'piece', aka: 'knafeh kanafeh kunefe künefe konafa kadayif' }),
   c('Basbousa', 282, 4.8, 43.8, 9.9, { u: 'piece', g: 80, label: 'piece', aka: 'hareeseh revani namoura semolina cake' }),
+
+  // ---- Arabian Gulf and Levant ----------------------------------------------
+  // Bahrain Food Composition Tables (Ministry of Health, 2025): lab values
+  // for dishes as cooked in the Gulf. Only rows whose numbers add up.
+  c('Khubz (Arabic tanoor bread)', 299, 10.2, 62, 1.8, { u: 'piece', g: 90, label: 'bread', aka: 'khubz tanoor tannour arabic bread flatbread fladenbrot khobz' }),
+  c('Khubz mahyawa', 243, 7.9, 50, 1.95, { u: 'piece', g: 90, label: 'bread', aka: 'mahyawa bread fish sauce bread' }),
+  c('Chapati', 259, 8.8, 57, 1.2, { u: 'piece', g: 45, label: 'chapati', aka: 'chapatti roti flatbread' }),
+  c('Karak tea', 50, 1.1, 9, 1.33, { ml: true, g: 200, label: 'cup', aka: 'karak chai milk tea masala chai' }),
+  c('Mahalabia', 153, 3.2, 22, 5.8, { g: 150, label: 'bowl', aka: 'muhallebi mahallebi muhallabia milk pudding' }),
+  c('Chicken machboos', 168, 12.4, 15, 7.3, { g: 400, label: 'plate', aka: 'machboos dajaj majboos kabsa chicken rice kabsah bukhari' }),
+  c('Oven chicken with potatoes (dajaj bil forn)', 144, 12.3, 12.7, 6.1, { g: 350, label: 'plate', aka: 'dajaj belfren bil forn baked chicken' }),
+  c('Chicken saloona', 92, 8.7, 6.1, 3.6, { g: 300, label: 'bowl', aka: 'saloona dajaj salona chicken stew curry' }),
+  c('Chicken harees', 83, 3.3, 14.3, 1.4, { g: 300, label: 'bowl', aka: 'harees hareesa harissa wheat porridge' }),
+  c('Masli dajaj', 131, 7.9, 19, 3.1, { g: 400, label: 'plate', aka: 'chicken rice masli' }),
+  c('Qouzi (lamb with rice)', 288, 10.8, 24.3, 15.4, { g: 450, label: 'plate', aka: 'ghouzi ouzi quzi stuffed lamb rice' }),
+  c('Meat harees', 81, 3.3, 11.1, 2.6, { g: 300, label: 'bowl', aka: 'harees lamb harissa' }),
+  c('Okra stew (bamia)', 84, 2.2, 6.3, 5.4, { g: 300, label: 'bowl', aka: 'marag bamiah bamya bamiya okra' }),
+  c('Herb stew (marag shabzi)', 107, 6, 6, 7.1, { g: 300, label: 'bowl', aka: 'qormeh sabzi ghormeh sabzi' }),
+  c('Macaroni bechamel', 149, 3.7, 13.8, 7.5, { g: 300, label: 'portion', aka: 'macarona bechamel makarona pasta bake' }),
+  c('Kofta', 170, 18.1, 4.5, 10.8, { g: 150, label: 'portion', aka: 'kofte kufta köfte meatballs grilled minced meat kebab' }),
+  c('Stuffed courgettes (mahshi koosa)', 86, 1.5, 4.9, 6.8, { g: 300, label: 'portion', aka: 'mahshi kousa koosa stuffed zucchini' }),
+  c('Stuffed cabbage rolls (malfouf)', 75, 1.3, 12.1, 2.1, { g: 250, label: 'portion', aka: 'malfouf mahshi cabbage rolls' }),
+  c('Shrimp rice (muhammar rubyan)', 117, 8.3, 17.5, 1.8, { g: 400, label: 'plate', aka: 'momawash rubyan shrimp rice prawn rice' }),
+  c('Fish saneya', 105, 11.8, 6, 3.7, { g: 350, label: 'portion', aka: 'fish tray bake sayadieh' }),
+  c('Fish saloona', 83, 4.6, 1.9, 5.9, { g: 300, label: 'bowl', aka: 'saloona shuri fish stew' }),
+  c('Fatayer with cheese', 281, 8.5, 42.3, 8.6, { u: 'piece', g: 80, label: 'piece', aka: 'fatira fatayer jibneh cheese pie' }),
+  c('Fatayer with zaatar', 362, 5.8, 46.6, 14.1, { u: 'piece', g: 80, label: 'piece', aka: 'fatira zaatar manakish manaeesh manousheh za atar' }),
+  c('Fatayer with spinach', 311, 5.3, 27.2, 20.1, { u: 'piece', g: 80, label: 'piece', aka: 'fatira spinach sabanekh' }),
+  c('Cheese sambousa', 391, 9.1, 42.3, 20.6, { u: 'piece', g: 30, label: 'piece', aka: 'sambusa samosa cheese' }),
+  c('Meat shawarma sandwich', 197, 17.5, 4.9, 11, { u: 'piece', g: 250, label: 'sandwich', aka: 'shawarma lahme beef lamb wrap' }),
+  c('Luqaimat', 301, 5.3, 52.3, 7.9, { g: 100, label: 'portion', aka: 'gemat lokma loukoumades awameh dumplings' }),
+  c('Balaleet', 212, 6.6, 35.6, 4.7, { g: 200, label: 'portion', aka: 'balalit sweet vermicelli egg' }),
+  c('Rahash', 534, 14.3, 53.3, 29.3, { g: 50, label: 'piece', aka: 'tahini halva rahash halawa' }),
+  c('Ghraiba', 522, 7.3, 61.7, 27.8, { u: 'piece', g: 20, label: 'cookie', aka: 'guraiba ghraybeh shortbread' }),
+  c('Sweet sambousa', 443, 12.4, 48, 24.6, { u: 'piece', g: 30, label: 'piece', aka: 'sambousa helwa sweet samosa' }),
+  c('Simsimia', 270, 7.7, 54.9, 2.2, { g: 40, label: 'piece', aka: 'sesame brittle simsimiya' }),
+  c('Kunafa with cream (ashta)', 260, 10.5, 40.5, 4.3, { g: 150, label: 'portion', aka: 'kounafa kashta knafeh ashta kunefe' }),
+  c('Tamrea', 358, 3.1, 73.9, 6.9, { g: 50, label: 'portion', aka: 'date sweet tamriya' }),
+  c('Rangina', 372, 4.8, 63.3, 8.5, { g: 80, label: 'portion', aka: 'date dessert ranginak' }),
+
+  // ---- Singapore / Malaysian hawker food -------------------------------------
+  // Measured in Singapore (Yeo et al., Foods 2021): per 100 g, portion as served
+  c('Steamed chicken rice', 189, 9.3, 21.2, 7.4, { g: 412, label: 'plate', aka: 'hainanese chicken rice ji fan poached chicken rice' }),
+  c('Roasted chicken rice', 184, 8.3, 23.4, 6.3, { g: 285, label: 'plate', aka: 'roast chicken rice siew ji fan' }),
+  c('Char kway teow', 182, 4, 27.4, 6.3, { g: 362, label: 'plate', aka: 'char kuey teow fried flat rice noodles ckt' }),
+  c('Yang Zhou fried rice', 178, 5.8, 27.7, 4.9, { g: 388, label: 'plate', aka: 'yangzhou fried rice egg fried rice chao fan' }),
+  c('Fried carrot cake (chai tow kway)', 175, 9, 8.9, 11.5, { g: 271, label: 'plate', aka: 'chai tow kway radish cake fried' }),
+  c('Sin chew bee hoon', 165, 6.6, 22.7, 5.2, { g: 386, label: 'plate', aka: 'singapore fried vermicelli rice noodles' }),
+  c('Bak chor mee (minced meat noodles)', 162, 8.3, 16.6, 6.9, { g: 383, label: 'bowl', aka: 'mee pok minced pork noodles' }),
+  c('Mee goreng', 162, 3.5, 31.9, 2.2, { g: 350, label: 'plate', aka: 'fried noodles mi goreng economical' }),
+  c('Laksa', 153, 8, 18.3, 5.3, { g: 577, label: 'bowl', aka: 'curry laksa coconut noodle soup' }),
+  c('Ban mian (dry)', 148, 6.7, 21.3, 4, { g: 311, label: 'bowl', aka: 'pan mee handmade noodles' }),
+  c('Steamed chicken noodles', 143, 10.8, 17.4, 3.3, { g: 367, label: 'bowl', aka: 'chicken noodle' }),
+  c('Fried Hokkien mee', 136, 5.5, 25.1, 1.5, { g: 328, label: 'plate', aka: 'hokkien prawn mee' }),
+  c('Char siu wonton noodles', 120, 7.9, 18.4, 1.6, { g: 335, label: 'bowl', aka: 'wanton mee char siew' }),
+  c('Dumpling noodle soup', 119, 5.5, 18.2, 2.6, { g: 761, label: 'bowl', aka: 'dumpling you mian noodles' }),
+  c('Ayam penyet', 203, 8.9, 21.7, 9, { g: 425, label: 'plate', aka: 'smashed fried chicken rice sambal' }),
+  c('Nasi goreng kampung', 191, 7.1, 24.6, 7.1, { g: 405, label: 'plate', aka: 'village fried rice' }),
+  c('Nasi lemak', 188, 9.2, 17.7, 9, { g: 395, label: 'plate', aka: 'coconut rice sambal' }),
+  c('Ikan penyet', 183, 7.8, 22.2, 7, { g: 274, label: 'plate', aka: 'smashed fried fish rice' }),
+  c('Nasi ambeng', 175, 9.2, 18.3, 7.2, { g: 630, label: 'plate', aka: 'nasi ambang platter rice' }),
+  c('Goreng pisang', 175, 0.4, 30.9, 5.6, { g: 100, label: 'portion', aka: 'banana fritters pisang goreng' }),
+  c('Tahu goreng', 165, 10.3, 8.8, 9.9, { g: 402, label: 'plate', aka: 'fried tofu peanut sauce' }),
+  c('Mee soto', 153, 9.2, 20.3, 2.9, { g: 281, label: 'bowl', aka: 'soto noodles' }),
+  c('Mee bandung', 149, 7.5, 18.1, 5.2, { g: 466, label: 'bowl', aka: 'mi bandung' }),
+  c('Mee bakso', 146, 5.7, 25.9, 2.2, { g: 435, label: 'bowl', aka: 'meatball noodle soup bakso' }),
+  c('Lontong', 142, 8.2, 12.4, 6.6, { g: 269, label: 'plate', aka: 'rice cake sayur lodeh' }),
+  c('Mee siam', 141, 4.9, 24.3, 2.7, { g: 566, label: 'bowl', aka: 'mi siam' }),
+  c('Soto ayam', 115, 6.2, 19.1, 1.5, { g: 693, label: 'bowl', aka: 'chicken soto soup' }),
+  c('Mee rebus', 113, 3.7, 19, 2.4, { g: 582, label: 'bowl', aka: 'mi rebus' }),
+  c('Appam', 249, 2.9, 47.1, 5.4, { g: 344, label: 'portion', aka: 'hoppers aapam' }),
+  c('Roti prata', 208, 2.5, 35.5, 6.2, { g: 246, label: 'portion', aka: 'roti canai paratha prata' }),
+  c('Egg prata with chicken curry', 187, 7.7, 23.1, 7.1, { g: 477, label: 'plate', aka: 'roti telur curry' }),
+  c('Mutton biryani', 174, 8.7, 14.7, 8.9, { g: 459, label: 'plate', aka: 'biriyani lamb' }),
+  c('Vegetable biryani', 142, 4.2, 18.8, 5.6, { g: 640, label: 'plate', aka: 'veg biriyani' }),
+  c('Masala dosa', 171, 7, 20.2, 6.9, { g: 569, label: 'plate', aka: 'thosai masala dosai' }),
+  c('Egg dosa', 149, 7.5, 17, 5.7, { g: 325, label: 'plate', aka: 'egg thosai' }),
+  c('Idli with sambar', 153, 6.1, 17.4, 6.5, { g: 389, label: 'plate', aka: 'idli set' }),
+  c('Poori with curry', 171, 6.6, 21, 6.8, { g: 474, label: 'plate', aka: 'puri set' }),
+  c('Putu mayam', 162, 1.8, 32.8, 2.6, { g: 193, label: 'portion', aka: 'string hoppers idiyappam' }),
+
+  // ---- German home cooking --------------------------------------------------
+  // German averages and German products' labels (wikifit.de, K-Classic, Poté, Dreistern…)
+  c('Sauerbraten', 113, 7.8, 3.5, 7.2, { g: 200, label: 'portion', aka: 'marinated pot roast rheinischer' }),
+  c('Rinderroulade in sauce', 76, 7.6, 4.5, 2.9, { g: 250, label: 'portion', aka: 'rouladen roulade beef rolls rindsroulade' }),
+  c('Königsberger Klopse', 114, 5.7, 3.5, 7.8, { g: 250, label: 'portion', aka: 'koenigsberger meatballs caper sauce klopse' }),
+  c('Königsberger Klopse with potatoes', 99, 3.8, 6.8, 6, { g: 400, label: 'plate', aka: 'koenigsberger klopse kartoffeln' }),
+  c('Leberkäse', 277, 12.1, 0.7, 25, { u: 'piece', g: 100, label: 'slice', aka: 'leberkas fleischkäse fleischkaese meatloaf leberkässemmel' }),
+  c('Maultaschen', 183, 8.1, 21.8, 7.1, { u: 'piece', g: 60, label: 'piece', aka: 'swabian ravioli dumplings' }),
+  c('Kohlrouladen', 84, 3.2, 5.1, 5, { g: 300, label: 'portion', aka: 'cabbage rolls krautwickel' }),
+  c('Labskaus', 132, 6.3, 8.5, 8.2, { g: 350, label: 'plate', aka: 'lobscouse corned beef hash' }),
+  c('Zwiebelkuchen', 205, 5.7, 18.1, 12, { u: 'piece', g: 150, label: 'slice', aka: 'onion tart' }),
+  c('Backfisch (oven-baked)', 163, 11.3, 17.4, 5.2, { u: 'piece', g: 120, label: 'piece', aka: 'battered fish fried fish fischfilet' }),
+  c('Kaiserschmarrn', 242, 6.6, 39.4, 6.2, { g: 250, label: 'portion', aka: 'shredded pancake schmarrn' }),
+  c('Apfelstrudel', 233, 3.1, 29, 11.9, { u: 'piece', g: 150, label: 'slice', aka: 'apple strudel' }),
+  c('Semmelknödel', 131, 4.4, 26, 0.7, { u: 'piece', g: 90, label: 'dumpling', aka: 'bread dumpling knödel kloß semmelknoedel' }),
+  c('Kartoffelknödel', 144, 6, 23, 2.4, { u: 'piece', g: 90, label: 'dumpling', aka: 'potato dumpling kloß klöße knödel halb und halb' }),
+  c('Sauerkraut', 21, 1.5, 0.8, 0.5, { g: 150, label: 'portion', aka: 'fermented cabbage' }),
+  c('Beef goulash (in sauce)', 131, 16.6, 4.1, 5.1, { g: 250, label: 'portion', aka: 'gulasch rindergulasch goulash stew' }),
+
+  // ---- Meat, fish, cheese and dairy (Swiss food composition database) --------
+  c('Rösti', 150, 2.7, 20.7, 5.7, { g: 200, label: 'portion', aka: 'roesti hash browns potato cake kartoffelpuffer reibekuchen' }),
+  c('Weißwurst', 223, 12.7, 0.6, 18.9, { u: 'piece', g: 80, label: 'sausage', aka: 'weisswurst white sausage munich' }),
+  c('Fleischwurst (Lyoner)', 244, 11.5, 0.5, 21.8, { g: 50, label: 'portion', aka: 'lyoner fleischwurst bologna' }),
+  c('Leberwurst', 257, 20.8, 0.5, 19.1, { g: 30, label: 'portion', aka: 'liver sausage liverwurst pate' }),
+  c('Bierwurst', 296, 16.8, 0, 25.4, { g: 30, label: 'portion', aka: 'beer sausage cold cut aufschnitt' }),
+  c('Cured raw ham', 229, 31, 0.3, 11.5, { g: 30, label: 'portion', aka: 'rohschinken schwarzwälder schinken prosciutto serrano' }),
+  c('Buttermilk', 34, 3.4, 4, 0.5, { ml: true, g: 250, label: 'glass', aka: 'buttermilch' }),
+  c('Crème fraîche', 336, 2.4, 2.8, 35, { g: 30, label: 'portion', aka: 'creme fraiche sour cream schmand' }),
+  c('Mascarpone', 440, 4.5, 4.1, 44.5, { g: 30, label: 'portion' }),
+  c('Ricotta', 122, 10.9, 3.3, 7.2, { g: 50, label: 'portion' }),
+  c('Gorgonzola', 357, 19, 0.1, 31.2, { g: 30, label: 'portion', aka: 'blue cheese blauschimmelkäse' }),
+  c('Raclette cheese', 357, 25.9, 0, 27.9, { g: 50, label: 'portion', aka: 'raclettekäse' }),
+  c('Tilsiter', 351, 24.1, 0, 28, { g: 30, label: 'slice', aka: 'tilsit cheese' }),
+  c('Gruyère', 396, 26.4, 0, 32, { g: 30, label: 'portion', aka: 'gruyere greyerzer' }),
+  c('Appenzeller', 384, 24.3, 0, 31.7, { g: 30, label: 'slice', aka: 'appenzell cheese' }),
+  c('Tuna (fresh)', 149, 23.4, 0, 6.2, { g: 150, label: 'portion', aka: 'thunfisch tuna steak raw' }),
+  c('Perch', 79, 18, 0, 0.7, { g: 150, label: 'portion', aka: 'barsch egli zander fillet' }),
+  c('Surimi (crab sticks)', 125, 8.3, 11.8, 4.9, { g: 60, label: 'portion', aka: 'crab sticks seafood sticks kani' }),
+  c('Beef fillet', 105, 21.9, 0, 2, { g: 180, label: 'portion', aka: 'rinderfilet tenderloin filet steak' }),
+  c('Entrecôte (rib-eye)', 133, 23.2, 0, 4.5, { g: 200, label: 'portion', aka: 'entrecote ribeye rib eye steak' }),
+  c('Rabbit', 150, 20.5, 0, 7.5, { g: 200, label: 'portion', aka: 'kaninchen hase' }),
 
   // ---- Fruit and vegetables --------------------------------------------------
   c('Mandarin', 53, 0.8, 11.5, 0.3, { u: 'piece', g: 75, label: 'mandarin', aka: 'clementine' }),

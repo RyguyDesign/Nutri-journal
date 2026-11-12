@@ -64,7 +64,7 @@ const T = {
   'common:cheeseburger': [1.5, 5.5, 5.5, 1.5], 'common:french-fries': [3.8, 0.3, 2.3, 0.8], 'common:chicken-nuggets': [1, 0.5, 3, 1.3],
   'common:sushi-maki-': [1, 5, 0.3, 1], 'common:fried-rice': [1, 1, 1, 1.2], 'common:pad-thai': [1.2, 5, 1, 1.4],
   'common:chicken-curry-with-rice': [1, 2, 2.5, 0.8], 'common:spaghetti-bolognese': [1.5, 2.5, 2, 0.7], 'common:lasagne': [1.2, 3, 4, 0.9],
-  'common:schnitzel': [0.7, 0.8, 2.5, 1], 'common:meatball': [0.5, 1, 6.5, 1.5], 'common:falafel': [5, 2, 2.4, 1.3],
+  'common:schnitzel': [0.7, 0.8, 2.5, 1], 'common:meatball': [0.5, 1, 6.5, 1.5],
   'common:vegetable-soup': [1.3, 2.5, 0.2, 0.8], 'common:pumpkin-soup': [1, 3, 1.5, 0.8], 'common:pumpkin-soup-with-cream': [1, 3, 3.3, 0.8],
   'common:tomato-soup': [0.8, 5, 0.5, 0.8], 'common:potato-soup': [1, 1.5, 1.2, 0.9], 'common:lentil-soup': [2.5, 1.5, 0.4, 0.8],
   'common:chicken-noodle-soup': [0.4, 0.7, 0.4, 0.9], 'common:goulash-soup': [0.8, 2, 1.3, 1], 'common:minestrone': [1.5, 2.5, 0.2, 0.8],
@@ -183,18 +183,35 @@ const T = {
   'common:schokokrapfen-rewe-': [1.5, 19.7, 10.6, 0.65], 'common:chocolate-donut-rewe-': [1.5, 22, 11, 0.8], 'common:nut-donut-rewe-': [2, 27.9, 12.6, 0.88],
   'common:nussecke-rewe-': [3, 29.1, 11.6, 0.3], 'common:mohnschnecke-rewe-': [3, 18, 9.7, 0.8], 'common:streuselschnecke-rewe-': [1.5, 28.2, 0.8, 0.6],
   'common:vanillestange-rewe-': [1, 8.9, 10, 0.6], 'common:puddingf-cher-rewe-': [1, 14.1, 2.8, 0.93],
-  // Middle Eastern: USDA / nutrition databases; fibre and sugar partly typical
-  'common:tabbouleh': [1.8, 1.3, 2, 1.24], 'common:fattoush': [2, 3, 1.5, 0.8], 'common:baba-ganoush': [3, 3, 1.85, 0.55],
-  'common:labneh': [0, 4.4, 8.1, 0.36], 'common:tahini': [9.3, 0.5, 7.5, 0.29], 'common:pita-bread': [2.2, 1.3, 0.2, 1.34],
-  'common:chicken-shawarma-wrap': [1.5, 2, 1.5, 1.2], 'common:stuffed-vine-leaves': [2, 1.5, 1.6, 1], 'common:koshari': [2.7, 1.3, 0.3, 0.5],
-  'common:ful-medames': [2.9, 0.8, 0.5, 0.6], 'common:baklava': [2.5, 12.8, 11, 0.78], 'common:kunafa': [1, 25, 7.1, 0.5],
+  // Middle Eastern: USDA / nutrition databases; fibre and sugar partly typical 'common:baba-ganoush': [3, 3, 1.85, 0.55],
+  'common:labneh': [0, 4.4, 8.1, 0.36], 'common:tahini': [9.3, 0.5, 7.5, 0.29], 'common:pita-bread': [2.2, 1.3, 0.2, 1.34], 'common:stuffed-vine-leaves': [2, 1.5, 1.6, 1], 'common:koshari': [2.7, 1.3, 0.3, 0.5],
   'common:basbousa': [0.8, 29.8, 2, 0.2],
+  // Regional dishes: only values the sources give (null = unknown)
+  'common:khubz-arabic-tanoor-bread-': [2.09, 2.4, null, null], 'common:khubz-mahyawa': [3.31, 1.5, 0.26, null], 'common:karak-tea': [1, 7.3, null, null],
+  'common:mahalabia': [0, null, 1.26, null], 'common:chicken-machboos': [2.94, 1, 2.31, null], 'common:oven-chicken-with-potatoes-dajaj-bil-forn-': [2.63, null, 1.98, null],
+  'common:chicken-saloona': [null, null, 1.23, null], 'common:masli-dajaj': [1.92, null, 1.13, null], 'common:sauerbraten': [0.2, 0.1, null, 0.7],
+  'common:rinderroulade-in-sauce': [1, 1.5, null, 1.6], 'common:k-nigsberger-klopse': [null, 0.5, null, 1.3], 'common:k-nigsberger-klopse-with-potatoes': [1.3, 0.2, null, 1.25],
+  'common:leberk-se': [null, 0.5, null, null], 'common:maultaschen': [null, 1.7, null, null], 'common:labskaus': [null, 0.6, null, 1.1],
+  'common:zwiebelkuchen': [null, 2.6, null, 0.88], 'common:backfisch-oven-baked-': [0.9, 1.6, null, null], 'common:apfelstrudel': [2, null, null, null],
+  'common:sauerkraut': [null, 0.8, null, null], 'common:beef-goulash-in-sauce-': [0.5, 1.4, null, 0.91], 'common:r-sti': [2.7, 0.9, 0.4, null],
+  'common:wei-wurst': [0, 0.6, 7.3, null], 'common:fleischwurst-lyoner-': [0, 0.5, 8.2, null], 'common:leberwurst': [0.1, 0.3, 7.2, null],
+  'common:bierwurst': [0, 0, 9.4, null], 'common:cured-raw-ham': [0, 0.3, 4.3, null], 'common:buttermilk': [0, 4, 0.3, null],
+  'common:cr-me-fra-che': [0, 2.8, 21, null], 'common:mascarpone': [0, 4.1, 29.5, null], 'common:ricotta': [0, 3.3, 4.3, null],
+  'common:gorgonzola': [0, 0.1, 18.7, null], 'common:raclette-cheese': [0, 0, 16.7, null], 'common:tilsiter': [0, 0, 16.8, null],
+  'common:gruy-re': [0, 0, 19.2, null], 'common:appenzeller': [0, 0, 19, null], 'common:tuna-fresh-': [0, 0, 1.8, null],
+  'common:perch': [0, 0, 0.1, null], 'common:surimi-crab-sticks-': [0, 2.1, 0.5, null], 'common:beef-fillet': [0, 0, 0.9, null],
+  'common:entrec-te-rib-eye-': [0, 0, 2.2, null], 'common:rabbit': [0, 0, 2.5, null], 'common:baklava': [3, 20, 6, 0.68],
 };
 
 /** { fibre, sugar, satFat, salt } per 100 g/ml for a built-in food id, or null. */
+const EXTRA_KEYS = ['fibre', 'sugar', 'satFat', 'salt'];
+
 export function extrasFor(id) {
   const v = T[id];
-  return v ? { fibre: v[0], sugar: v[1], satFat: v[2], salt: v[3] } : null;
+  if (!v) return null;
+  const out = {};
+  EXTRA_KEYS.forEach((k, i) => { if (Number.isFinite(v[i])) out[k] = v[i]; });
+  return out;
 }
 
 export const EXTRAS_IDS = Object.keys(T);

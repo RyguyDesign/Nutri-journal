@@ -270,3 +270,17 @@ test('Middle Eastern dishes found under common spellings', async () => {
     assert.ok(searchEveryday(q).length, q);
   assert.equal(searchEveryday('tabouli')[0].name, 'Tabbouleh');
 });
+
+test('regional dishes: Gulf, Singapore/Malay, German; partial extras stay partial', async () => {
+  const { searchEveryday, EVERYDAY } = await import('../js/foods/everyday.js');
+  const top = (q) => searchEveryday(q)[0]?.name;
+  assert.equal(top('kabsa'), 'Chicken machboos');
+  assert.equal(top('nasi lemak'), 'Nasi lemak');
+  assert.equal(top('chicken rice'), 'Steamed chicken rice');
+  assert.ok(searchEveryday('rouladen').slice(0, 2).some((f) => f.name === 'Rinderroulade in sauce'));
+  assert.equal(top('fleischkäse'), 'Leberkäse');
+  const k = EVERYDAY.find((f) => f.name === 'Karak tea');
+  assert.equal(k.per.unit, 'ml');
+  assert.equal(k.per.sugar, 7.3);
+  assert.ok(!('satFat' in k.per)); // unknown, not zero
+});

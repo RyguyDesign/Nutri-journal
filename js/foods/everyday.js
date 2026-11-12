@@ -112,7 +112,18 @@ export function searchEveryday(query, limit = 6) {
   const words = fold(query).trim().split(/[^a-z0-9]+/).filter(Boolean).map(stem);
   if (!words.length) return [];
   const first = words[0];
-  const rank = (x) => (fold(x.f.name).startsWith(first) ? 0 : x.tokens.some((tk) => tk.startsWith(first)) ? 1 : 2);
+  const phrase = words.join(' ');
+  const rank = (x) => {
+    const name = fold(x.f.name);
+    const forms = (w) => [w, ...(SYNONYMS[w] || [])];
+    // typed words (or their English/German twin) in the name itself, not only in another name
+    const all = words.every((w) => forms(w).some((x) => name.includes(x)));
+    const starts = forms(first).some((x) => name.startsWith(x));
+    if (words.length > 1 && name.includes(phrase)) return name.startsWith(phrase) ? 0 : 1; // "chicken rice"
+    if (all) return starts ? 2 : 3; // "brezel": Pretzel before Laugenbrezel
+    if (starts) return 4;
+    return x.tokens.some((tk) => tk.startsWith(first)) ? 5 : 6;
+  };
   const scored = SEARCHABLE.map((x) => ({ x, m: words.map((w) => wordMatch(x, w)) }));
   const exact = scored.filter((s) => s.m.every((v) => v > 0))
     .sort((a, b) => b.m.reduce((n, v) => n + v, 0) - a.m.reduce((n, v) => n + v, 0) || rank(a.x) - rank(b.x) || a.x.f.name.length - b.x.f.name.length);
