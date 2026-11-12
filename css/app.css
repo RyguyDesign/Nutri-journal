@@ -1296,3 +1296,87 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ==== Lights, round 2: outside neon lines, edge trails, ambient light, background streaks ==== */
+.lit { position: relative; isolation: isolate; }
+.lit > .ambient, .lit > .neon-lines { display: none; }
+@media (prefers-color-scheme: dark) {
+  /* Thin light trails running along each glass card's edge */
+  :root:not([data-theme='light']) .card::after,
+  :root:not([data-theme='light']) .diet-status::after,
+  :root:not([data-theme='light']) .nutrient-card::after,
+  :root:not([data-theme='light']) .quick-action::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 1;
+    background: linear-gradient(135deg, rgba(175, 228, 255, 0.75), rgba(72, 186, 255, 0.15) 18%, transparent 30% 66%, rgba(72, 186, 255, 0.25) 82%, rgba(110, 205, 255, 0.85));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  }
+  :root:not([data-theme='light']) .nutrient-card::after,
+  :root:not([data-theme='light']) .quick-action::after { opacity: 0.55; }
+  :root:not([data-theme='light']) .calorie-card::after { background: linear-gradient(135deg, rgba(190, 235, 255, 0.9), rgba(72, 186, 255, 0.2) 20%, transparent 32% 60%, rgba(72, 186, 255, 0.35) 78%, rgba(120, 210, 255, 1)); }
+
+  /* Blue light sources behind selected cards */
+  :root:not([data-theme='light']) .lit > .ambient {
+    display: block; position: absolute; z-index: -1; pointer-events: none; border-radius: 50%; filter: blur(34px);
+    background: radial-gradient(circle, rgba(40, 140, 255, 0.55), rgba(40, 140, 255, 0) 70%);
+  }
+  :root:not([data-theme='light']) .lit-calorie > .ambient { width: 75%; height: 85%; right: -12%; bottom: -14%; }
+  :root:not([data-theme='light']) .lit-fasting > .ambient { width: 55%; height: 90%; right: -10%; top: -20%; opacity: 0.7; }
+  :root:not([data-theme='light']) .lit-recipe > .ambient { width: 60%; height: 85%; left: -12%; bottom: -16%; opacity: 0.8; }
+
+  /* Neon SVG lines wrapping around the outside of the cards */
+  :root:not([data-theme='light']) .lit > .neon-lines {
+    display: block; position: absolute; left: -16px; top: -16px; z-index: 2; pointer-events: none; overflow: visible;
+    filter: drop-shadow(0 0 3px rgba(80, 190, 255, 0.95)) drop-shadow(0 0 10px rgba(50, 150, 255, 0.55));
+    animation: neonPulse 6s ease-in-out infinite;
+  }
+
+  /* Light streaks and flowing lines through the background */
+  :root:not([data-theme='light']) body::after {
+    display: block; content: ''; position: fixed; inset: 0; width: auto; height: auto; left: 0; right: 0; top: 0; bottom: 0;
+    border: 0; border-radius: 0; box-shadow: none; filter: none; opacity: 1; transform: none; z-index: 0; pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 844' preserveAspectRatio='xMidYMid slice'%3E %3Cdefs%3E %3ClinearGradient id='s' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%2348baff' stop-opacity='0'/%3E%3Cstop offset='.55' stop-color='%238fdcff' stop-opacity='.9'/%3E%3Cstop offset='1' stop-color='%232f8cff' stop-opacity='0'/%3E%3C/linearGradient%3E %3Cfilter id='g' x='-20%25' y='-50%25' width='140%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='3'/%3E%3C/filter%3E %3C/defs%3E %3Cg fill='none' stroke='%235f8fd8' stroke-opacity='.10' stroke-width='.8'%3E %3Cpath d='M-10 300 C 80 260 160 330 250 290 S 380 250 400 270'/%3E %3Cpath d='M-10 318 C 80 278 160 348 250 308 S 380 268 400 288'/%3E %3Cpath d='M-10 336 C 80 296 160 366 250 326 S 380 286 400 306'/%3E %3Cpath d='M-10 640 C 90 600 180 680 270 630 S 380 600 400 610'/%3E %3Cpath d='M-10 658 C 90 618 180 698 270 648 S 380 618 400 628'/%3E %3C/g%3E %3Cg fill='none' stroke='url%28%23s%29' stroke-linecap='round'%3E %3Cpath d='M-20 470 C 110 430 250 440 410 350' stroke-width='3' opacity='.35' filter='url%28%23g%29'/%3E %3Cpath d='M-20 470 C 110 430 250 440 410 350' stroke-width='1' opacity='.75'/%3E %3Cpath d='M-20 790 C 140 730 280 750 410 660' stroke-width='3' opacity='.3' filter='url%28%23g%29'/%3E %3Cpath d='M-20 790 C 140 730 280 750 410 660' stroke-width='1' opacity='.65'/%3E %3Cpath d='M-20 160 C 60 130 120 120 210 70' stroke-width='.8' opacity='.45'/%3E %3C/g%3E %3C/svg%3E") center / cover no-repeat;
+  }
+
+  /* Each macro glows in its own colour: icon and bar */
+  :root:not([data-theme='light']) .mc-protein .macro-icon { filter: drop-shadow(0 0 5px rgba(255, 100, 125, 0.8)); }
+  :root:not([data-theme='light']) .mc-carbs .macro-icon { filter: drop-shadow(0 0 5px rgba(57, 186, 255, 0.8)); }
+  :root:not([data-theme='light']) .mc-fat .macro-icon { filter: drop-shadow(0 0 5px rgba(255, 181, 46, 0.8)); }
+  :root:not([data-theme='light']) .macro-card .progress-track { overflow: visible; }
+  :root:not([data-theme='light']) .nutrient-icon { filter: drop-shadow(0 0 5px currentColor); }
+}
+
+.main { overflow-x: clip; }
+@media (prefers-color-scheme: dark) {
+  /* Edge trails: clear the old corner-swoosh geometry that leaked into these pseudo-elements */
+  :root:not([data-theme='light']) .card::after,
+  :root:not([data-theme='light']) .diet-status::after,
+  :root:not([data-theme='light']) .nutrient-card::after,
+  :root:not([data-theme='light']) .quick-action::after {
+    width: auto; height: auto; right: 0; bottom: 0; transform: none; border: 0; box-shadow: none;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+  }
+  /* Reflective surfaces: a visible glossy sheen across the top of every glass surface,
+     a bright specular line on the top edge, and a diagonal reflection */
+  :root:not([data-theme='light']) .card::before,
+  :root:not([data-theme='light']) .diet-status::before,
+  :root:not([data-theme='light']) .nutrient-card::before,
+  :root:not([data-theme='light']) .quick-action::before {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.035) 22%, transparent 42%),
+      linear-gradient(118deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 14%, transparent 15.5%, transparent 24%, rgba(255, 255, 255, 0.04) 25%, transparent 31%),
+      linear-gradient(125deg, transparent 75%, rgba(72, 186, 255, 0.07) 100%);
+  }
+  :root:not([data-theme='light']) .calorie-card::before,
+  :root:not([data-theme='light']) .recipe-card::before {
+    background:
+      linear-gradient(110deg, transparent 15%, rgba(255, 255, 255, 0.035) 35%, rgba(72, 186, 255, 0.12) 50%, transparent 65%) 0 0 / 250% 100%,
+      linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.035) 22%, transparent 42%),
+      linear-gradient(118deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 14%, transparent 15.5%, transparent 24%, rgba(255, 255, 255, 0.04) 25%, transparent 31%);
+  }
+  :root:not([data-theme='light']) .card,
+  :root:not([data-theme='light']) .diet-status,
+  :root:not([data-theme='light']) .nutrient-card,
+  :root:not([data-theme='light']) .quick-action,
+  :root:not([data-theme='light']) .tabbar { border-top-color: rgba(220, 238, 255, 0.42); }
+}

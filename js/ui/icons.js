@@ -38,21 +38,3 @@ export function icon(name, cls = 'ic') {
 
 export const ICON_NAMES = Object.keys(ICONS);
 
-// Curved neon lines that wrap around the outside of a card. Each card gets its own shape.
-const NEON_PATHS = {
-  calorie: ['M60 103 C 74 92, 88 86, 103 84', 'M74 103 C 84 97, 94 94, 103 93'],
-  fasting: ['M62 103 C 76 80, 90 66, 103 60'],
-  recipe: ['M50 103 C 66 88, 84 80, 103 77', 'M-3 18 C 6 8, 16 2, 30 -3'],
-};
-
-export function neonEdge(kind) {
-  const paths = NEON_PATHS[kind];
-  if (!paths) return null;
-  const id = `neon-${kind}`;
-  return svg('svg', { class: `neon-edge neon-${kind}`, viewBox: '0 0 100 100', preserveAspectRatio: 'none', 'aria-hidden': 'true' },
-    svg('defs', {}, svg('linearGradient', { id, x1: '0', y1: '1', x2: '1', y2: '0' },
-      svg('stop', { offset: '0', 'stop-color': '#48baff', 'stop-opacity': '0' }),
-      svg('stop', { offset: '0.45', 'stop-color': '#7fd3ff', 'stop-opacity': '0.95' }),
-      svg('stop', { offset: '1', 'stop-color': '#2f8cff', 'stop-opacity': '0.15' }))),
-    paths.map((d, i) => svg('path', { d, fill: 'none', stroke: `url(#${id})`, 'stroke-width': i ? 1 : 1.6, 'stroke-linecap': 'round', 'vector-effect': 'non-scaling-stroke', class: i ? 'neon-faint' : 'neon-main' })));
-}
