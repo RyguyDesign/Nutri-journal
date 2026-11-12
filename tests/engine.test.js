@@ -274,7 +274,8 @@ test('Middle Eastern dishes found under common spellings', async () => {
 test('regional dishes: Gulf, Singapore/Malay, German; partial extras stay partial', async () => {
   const { searchEveryday, EVERYDAY } = await import('../js/foods/everyday.js');
   const top = (q) => searchEveryday(q)[0]?.name;
-  assert.equal(top('kabsa'), 'Chicken machboos');
+  assert.ok(searchEveryday('machboos').slice(0, 2).some((f) => f.name === 'Chicken machboos'));
+  assert.equal(top('chicken machboos'), 'Chicken machboos');
   assert.equal(top('nasi lemak'), 'Nasi lemak');
   assert.equal(top('chicken rice'), 'Steamed chicken rice');
   assert.ok(searchEveryday('rouladen').slice(0, 2).some((f) => f.name === 'Rinderroulade in sauce'));
@@ -283,4 +284,36 @@ test('regional dishes: Gulf, Singapore/Malay, German; partial extras stay partia
   assert.equal(k.per.unit, 'ml');
   assert.equal(k.per.sugar, 7.3);
   assert.ok(!('satFat' in k.per)); // unknown, not zero
+});
+
+test('Arab dishes: shawarma meat, shawarma hummus and regional classics are found, values add up', async () => {
+  const { searchEveryday } = await import('../js/foods/everyday.js');
+  const { COMMON } = await import('../js/foods/common.js');
+  const top = (q) => searchEveryday(q, 3).map((f) => f.name);
+  assert.equal(top('shawarma meat')[0], 'Chicken shawarma meat');
+  assert.ok(top('shawarma meat').includes('Beef/lamb shawarma meat'));
+  assert.equal(top('shawarma hummus')[0], 'Hummus with shawarma (meat)');
+  assert.equal(top('hummus shawarma')[0], 'Hummus with shawarma (meat)');
+  for (const [q, want] of [['mansaf', 'Mansaf'], ['kabsa', 'Meat kabsa'], ['kibbeh', 'Baked kibbeh (kibbeh bil sanieh)'], ['molokhia', 'Molokhia stew'],
+    ['mujaddara', 'Mujaddara'], ['hawawshi', 'Hawawshi'], ['tajine', 'Lamb tajine'], ['maamoul', 'Maamoul with dates'], ['knafeh', 'Knafeh with cheese'],
+    ['lahmacun', 'Lahm bi ajeen'], ['taameya', 'Taameya (Egyptian falafel)'], ['fatteh', 'Fatteh with hummus'], ['pita kebab', 'Pita kebab with salad and sauce']]) {
+    assert.equal(top(q)[0], want, q);
+  }
+  // every Arab-section food adds up: 4 kcal/g protein and carbs, 9 kcal/g fat, within 10 %
+  const start = COMMON.findIndex((f) => f.name === 'Chicken shawarma meat');
+  const end = COMMON.findIndex((f) => f.name === 'Znoud el sit');
+  assert.ok(start > 0 && end > start);
+  for (const f of COMMON.slice(start, end + 1)) {
+    const { kcal, protein, carbs, fat } = f.per;
+    const calc = 4 * protein + 4 * carbs + 9 * fat;
+    assert.ok(Math.abs(calc - kcal) / kcal <= 0.1, `${f.name}: ${calc} vs ${kcal}`);
+  }
+});
+
+test('fixed swaps: shawarma wrap and ful medames have protein/carbs/fat in the right fields', async () => {
+  const { COMMON } = await import('../js/foods/common.js');
+  const get = (n) => COMMON.find((f) => f.name === n).per;
+  assert.deepEqual(get('Chicken shawarma wrap'), { kcal: 195, protein: 12.3, carbs: 27.8, fat: 4.3 });
+  assert.deepEqual(get('Ful medames'), { kcal: 116, protein: 5.3, carbs: 14.2, fat: 4.2 });
+  assert.equal(get('Baba ganoush').kcal, 39);
 });

@@ -158,7 +158,7 @@ export const FOODS = [
   f('olives', 'Olives', 'fats', 115, 0.8, 1, 11, { min: 20, max: 60, step: 10 }),
 
   // Snacks
-  f('hummus', 'Hummus', 'snacks', 166, 7.9, 8.3, 9.6, { min: 40, max: 100, step: 10, flags: ['sesame'], tags: ['dip', 'spread'] }),
+  f('hummus', 'Hummus', 'snacks', 146, 7.5, 17.2, 5.2, { min: 40, max: 100, step: 10, flags: ['sesame'], tags: ['dip', 'spread'] }),
   f('dark-chocolate', 'Dark chocolate (70%)', 'snacks', 598, 7.8, 35, 43, { short: 'Dark chocolate', min: 10, max: 30, step: 10, tags: ['treat'] }),
 ];
 
