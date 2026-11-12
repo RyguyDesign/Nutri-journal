@@ -1540,3 +1540,9 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
     background: radial-gradient(120% 80% at 0% 0%, rgba(37, 70, 119, 0.7), transparent 55%), rgba(4, 11, 28, 0.97);
   }
 }
+
+/* Calorie card corner swoosh (lights.js): inside the card, behind its content */
+.card-swoosh { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .card-swoosh { display: block; position: absolute; left: 0; top: 0; z-index: -1; pointer-events: none; }
+}

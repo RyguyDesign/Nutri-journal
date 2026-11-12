@@ -9,8 +9,6 @@ const PAD = 16; // room outside the card for the lines and their glow
 // along each side (as a share of that side).
 const LINES = {
   calorie: [
-    { corner: 'br', off: 6, a: 0.55, b: 0.6, w: 1.6 },
-    { corner: 'br', off: 12, a: 0.3, b: 0.35, w: 1, faint: true },
     { corner: 'tl', off: 6, a: 0.25, b: 0.3, w: 1.2 },
   ],
   fasting: [
@@ -53,14 +51,9 @@ function draw(wrap, card, kind) {
       svg('path', { d: cornerPath(W, H, R, l), fill: 'none', stroke: `url(#${g})`, 'stroke-width': l.w, 'stroke-linecap': 'round' }),
     ];
   });
-  // Owner's CSS: a 230px glowing ring sitting in the calorie card's bottom-right corner
-  // (right -150px, bottom -170px), clipped to the card.
-  const ring = kind === 'calorie' ? [
-    svg('clipPath', { id: `${id}-clip` }, svg('rect', { x: PAD, y: PAD, width: W, height: H, rx: R })),
-    svg('circle', { class: 'corner-ring', cx: PAD + W + 35, cy: PAD + H + 55, r: 115, fill: 'none', stroke: 'rgba(65,185,255,0.8)', 'stroke-width': 2, 'clip-path': `url(#${id}-clip)` }),
-  ] : [];
   const el = svg('svg', { class: 'neon-lines', width: W + PAD * 2, height: H + PAD * 2, viewBox: `0 0 ${W + PAD * 2} ${H + PAD * 2}`, 'aria-hidden': 'true' },
-    svg('defs', {}, lines.map((x) => x[0]), ring[0] || null), ring[1] || null, lines.map((x) => x[1]));
+    svg('defs', {}, lines.map((x) => x[0])), lines.map((x) => x[1]));
+  if (kind === 'calorie') drawSwoosh(card, W, H, R, id);
   if (old) old.replaceWith(el); else wrap.append(el);
 }
 
@@ -72,6 +65,35 @@ function ends(W, H, R, { corner, off, a, b }) {
   const v = Number(last.slice(1));
   const end = last[0] === 'H' ? { x2: v, y2: corner[0] === 'b' ? PAD + H + off : PAD - off } : { x2: corner[1] === 'r' ? PAD + W + off : PAD - off, y2: v };
   return { x1, y1, ...end };
+}
+
+// The light swoosh in the calorie card's bottom-right corner, as in the owner's picture:
+// a thin cyan-white curve, a blue haze on the inner side, and a darker corner beyond it.
+// Drawn inside the card, behind its content.
+function drawSwoosh(card, W, H, R, id) {
+  const x0 = W * 0.8, y0 = H, x1 = W, y1 = H * 0.77, cx = W * 0.87, cy = H * 0.85;
+  const curve = `M${x0} ${y0} Q${cx} ${cy} ${x1} ${y1}`;
+  const el = svg('svg', { class: 'card-swoosh', width: W, height: H, viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' },
+    svg('defs', {},
+      svg('clipPath', { id: `${id}-c` }, svg('rect', { x: 0, y: 0, width: W, height: H, rx: R })),
+      svg('filter', { id: `${id}-b`, x: '-50%', y: '-50%', width: '200%', height: '200%' }, svg('feGaussianBlur', { stdDeviation: 9 })),
+      svg('filter', { id: `${id}-s`, x: '-50%', y: '-50%', width: '200%', height: '200%' }, svg('feGaussianBlur', { stdDeviation: 2 })),
+      svg('linearGradient', { id: `${id}-g`, gradientUnits: 'userSpaceOnUse', x1: x0, y1: y0, x2: x1, y2: y1 },
+        svg('stop', { offset: '0', 'stop-color': '#3aa0ff', 'stop-opacity': '0' }),
+        svg('stop', { offset: '0.35', 'stop-color': '#7fd0ff', 'stop-opacity': '0.9' }),
+        svg('stop', { offset: '0.7', 'stop-color': '#e6f6ff', 'stop-opacity': '1' }),
+        svg('stop', { offset: '1', 'stop-color': '#9fdcff', 'stop-opacity': '0.85' }))),
+    svg('g', { 'clip-path': `url(#${id}-c)` },
+      // darker corner beyond the curve
+      svg('path', { d: `${curve} L${W} ${H} Z`, fill: 'rgba(1, 6, 18, 0.55)' }),
+      // blue haze on the inner side, pushed slightly into the card
+      svg('path', { d: curve, fill: 'none', stroke: 'rgba(40, 140, 255, 0.55)', 'stroke-width': 26, filter: `url(#${id}-b)`, transform: 'translate(-9 -9)' }),
+      // soft bloom right on the line
+      svg('path', { d: curve, fill: 'none', stroke: 'rgba(90, 185, 255, 0.8)', 'stroke-width': 4, filter: `url(#${id}-s)` }),
+      // the thin bright line
+      svg('path', { d: curve, fill: 'none', stroke: `url(#${id}-g)`, 'stroke-width': 1.6, 'stroke-linecap': 'round' })));
+  const old = card.querySelector(':scope > .card-swoosh');
+  if (old) old.replaceWith(el); else card.append(el);
 }
 
 export function withLights(card, kind) {
