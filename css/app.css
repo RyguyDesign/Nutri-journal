@@ -907,7 +907,7 @@ input[type='text'], input[type='search'], input[type='number'], input[type='time
 /* ==== Blue glass (ChatGPT design, Nov 2026) ==== */
 /* Structure works in light and dark; colours below are the dark theme. */
 body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-.ic, .ic-sm, .ic-xs, .ic-add, .ic-fast, .ic-recipe, .macro-icon, .nutrient-icon, .qa-icon, .action-arrow, .cal-flame, .tab-icon {
+.ic, .ic-sm, .ic-xs, .ic-add, .ic-fast, .ic-recipe, .macro-icon, .nutrient-icon, .qa-icon, .action-arrow, .cal-flame, .tab-icon, .stat-icon, .shortcut-icon {
   fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none;
 }
 .ic-sm { width: 18px; height: 18px; }
@@ -1095,4 +1095,98 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
   :root:not([data-theme='light']) .tabbar a[aria-current='page'] .tab-icon { stroke-width: 2.5; }
   :root:not([data-theme='light']) .tabbar a[aria-current='page']::after { bottom: -9px; width: 27px; height: 4px; border-radius: 10px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
   :root:not([data-theme='light']) .main { padding-bottom: calc(var(--tabbar-h) + 60px + env(safe-area-inset-bottom)); }
+}
+
+/* ==== Blue glass, matched to the ChatGPT picture ==== */
+.date-today { color: var(--accent); }
+.calorie-card, .macro-card, .recipe-card, .diet-status { position: relative; overflow: hidden; }
+.calorie-main { gap: 14px; padding-bottom: 0; }
+.calorie-stats { gap: 18px; max-width: none; padding-left: 16px; border-left: 1px solid var(--line); align-self: stretch; justify-content: center; }
+.stat-row { display: flex; align-items: center; gap: 12px; }
+.stat-row > div { display: flex; flex-direction: column; gap: 2px; }
+.stat-icon { width: 22px; height: 22px; color: var(--muted); flex: none; }
+.macro-card { padding: 18px 14px; }
+.macro-card .macro-grid { border-top: 0; padding-top: 0; gap: 0; }
+.macro-card .macro-item { padding: 0 10px; }
+.macro-card .macro-item + .macro-item { border-left: 1px solid var(--line); }
+.macro-card .macro-item:first-child { padding-left: 2px; }
+.macro-card .macro-item:last-child { padding-right: 2px; }
+.mini-bar { display: block; width: 46px; height: 5px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.mini-bar span { display: block; height: 100%; border-radius: 3px; background: var(--c); }
+.nutrient-card.over-limit .mini-bar span { background: var(--over); }
+.nutrient-card { min-height: 0; justify-content: flex-start; gap: 8px; padding: 12px 4px 14px; }
+.quick-action { min-height: 118px; align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 14px 6px; }
+.qa-title { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; }
+.quick-action .action-arrow { position: static; width: 16px; height: 16px; margin: 0; color: var(--ink); }
+.quick-action small { margin-top: -6px; }
+.recipe-label { justify-content: flex-start; }
+.recipe-label span { flex: 1; }
+.recipe-more { width: 44px; height: 44px; margin: -14px -12px -14px 0; display: grid; place-items: center; color: var(--muted); }
+.fasting-icon { border-radius: 50%; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) body {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='320' viewBox='0 0 420 320' fill='none' stroke='%23638bd0' stroke-opacity='.16' stroke-width='1.2'%3E%3Cpath d='M160 0c40 60 120 70 160 40s80-30 100 0'/%3E%3Cpath d='M140 0c40 80 140 95 185 55s70-35 95-5'/%3E%3Cpath d='M120 0c40 100 160 120 210 70s60-40 90-10'/%3E%3Cpath d='M100 0c40 120 180 145 235 85s50-45 85-15'/%3E%3Cpath d='M210 0c20 30 70 35 100 18s70-15 110 2'/%3E%3Cpath d='M250 0c15 15 45 18 70 8s60-8 100 5'/%3E%3C/svg%3E") top right / 420px 320px no-repeat,
+      radial-gradient(ellipse at 85% 0%, rgba(37, 120, 225, 0.22), transparent 35%),
+      radial-gradient(ellipse at 20% 75%, rgba(23, 111, 180, 0.12), transparent 30%),
+      linear-gradient(170deg, #07132d 0%, #030b1b 55%, #020714 100%);
+    background-attachment: scroll, fixed, fixed, fixed;
+  }
+  /* Bottom light streak above the menu bar */
+  :root:not([data-theme='light']) body::after {
+    background: none; filter: none; opacity: 1; border-radius: 50%;
+    width: 520px; height: 260px; left: auto; right: -170px; bottom: 40px;
+    border-top: 2px solid rgba(70, 160, 255, 0.55);
+    box-shadow: 0 -10px 40px rgba(30, 120, 255, 0.35);
+    transform: rotate(-12deg);
+  }
+  :root:not([data-theme='light']) .card,
+  :root:not([data-theme='light']) .diet-status,
+  :root:not([data-theme='light']) .nutrient-card,
+  :root:not([data-theme='light']) .quick-action {
+    background: linear-gradient(160deg, rgba(24, 44, 84, 0.78) 0%, rgba(9, 19, 42, 0.9) 55%, rgba(5, 12, 30, 0.95) 100%);
+    border: 1px solid rgba(110, 170, 255, 0.24);
+    box-shadow: inset 0 1px 0 rgba(170, 210, 255, 0.22), inset 0 -1px 0 rgba(60, 130, 255, 0.12), 0 18px 40px rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  }
+  /* Curved light in the bottom-right corner of the big cards */
+  :root:not([data-theme='light']) .calorie-card::after,
+  :root:not([data-theme='light']) .recipe-card::after,
+  :root:not([data-theme='light']) .diet-status::after {
+    content: ''; position: absolute; right: -90px; bottom: -120px; width: 300px; height: 200px; border-radius: 50%;
+    border-top: 2px solid rgba(90, 175, 255, 0.75);
+    box-shadow: 0 -8px 26px rgba(40, 140, 255, 0.45), inset 0 10px 30px rgba(40, 140, 255, 0.18);
+    transform: rotate(-28deg); pointer-events: none;
+  }
+  :root:not([data-theme='light']) .diet-status::after { right: -150px; bottom: -150px; transform: rotate(-60deg); }
+  :root:not([data-theme='light']) .calorie-ring .ring-track { stroke: rgba(80, 110, 170, 0.22); }
+  :root:not([data-theme='light']) .calorie-ring .ring-fill { filter: drop-shadow(0 0 10px rgba(60, 170, 255, 0.8)); }
+  :root:not([data-theme='light']) .calorie-card.over .calorie-ring .ring-fill { stroke: var(--over); }
+  :root:not([data-theme='light']) .fasting-icon { background: radial-gradient(circle, rgba(255, 181, 46, 0.18), rgba(255, 181, 46, 0.06)); box-shadow: inset 0 0 0 1px rgba(255, 181, 46, 0.15); }
+  :root:not([data-theme='light']) .outline-yellow { box-shadow: 0 0 14px rgba(255, 181, 46, 0.25); background: rgba(255, 181, 46, 0.06); }
+  :root:not([data-theme='light']) .add-button { background: radial-gradient(circle at 35% 30%, #a6e3ff, #3aa8ff 60%, #1f7fe8); box-shadow: 0 0 30px rgba(57, 173, 255, 0.7), 0 0 0 1px rgba(170, 220, 255, 0.5) inset; }
+  :root:not([data-theme='light']) .add-journal { border-color: #48baff; box-shadow: 0 0 14px rgba(72, 186, 255, 0.35); background: rgba(72, 186, 255, 0.06); }
+  :root:not([data-theme='light']) .recipe-image { border-radius: 50%; background: radial-gradient(circle at 50% 45%, rgba(255, 190, 90, 0.45), rgba(255, 150, 40, 0.12) 55%, transparent 70%), radial-gradient(circle, #2a3448 0 60%, transparent 61%); }
+  :root:not([data-theme='light']) .tabbar {
+    border: 1px solid rgba(120, 180, 255, 0.35);
+    background: linear-gradient(180deg, rgba(20, 34, 64, 0.88), rgba(8, 16, 36, 0.94));
+    box-shadow: inset 0 1px 0 rgba(170, 210, 255, 0.25), 0 0 24px rgba(40, 130, 255, 0.25), 0 10px 35px rgba(0, 0, 0, 0.5);
+  }
+}
+.calorie-stats .stat-row { flex-direction: row; align-items: center; gap: 10px; }
+.calorie-stats strong { font-size: 21px; line-height: 1.1; }
+.calorie-stats span { font-size: 13px; }
+.fasting-info h2 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fasting-info p { font-size: 13px; }
+.qa-title { display: block; line-height: 1.25; }
+.qa-title .action-arrow { display: inline-block; vertical-align: -3px; margin-left: 2px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) body::before { opacity: .5; }
+  :root:not([data-theme='light']) body::after { right: -260px; bottom: 70px; opacity: .55; }
+}
+.fasting-info h2 { white-space: normal; overflow: visible; font-size: 15px; line-height: 1.25; }
+.fasting-head .fast-btn, .diet-status .fast-btn { padding: 0 14px; min-height: 44px; font-size: 14px; white-space: nowrap; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) body::after { display: none; }
 }
