@@ -139,3 +139,5 @@ On release the slider saves `profile.deficitKcal` (an optional field) and sets t
 Recipe ideas follow the time of day and skip meals that already have entries. If that leaves no meal before 21:00 but 500 kcal or more is still left, the current meal stays open (for example dinner after a small dinner), so the Recipes screen offers meals, not only snacks.
 
 On Add food, when nothing saved or built-in matches (3+ letters), the online search (Open Food Facts) starts by itself after a short pause.
+
+Regional dishes in `js/foods/common.js` come from non-US sources where possible: Bahrain Food Composition Tables (Gulf/Levant dishes), measurements of Singapore hawker meals (Yeo et al., Foods 2021), German averages and German product labels, and the Swiss food composition database (meat, fish, cheese, dairy). Fibre, sugar, saturated fat and salt are stored only where the source gives them (`null` = unknown; `extrasFor` leaves unknown nutrients out rather than zero). Search ranks foods whose own name contains the typed words (or their English/German twin) above matches on other names.
