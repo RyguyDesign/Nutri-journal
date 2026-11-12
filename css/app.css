@@ -1029,25 +1029,31 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #030b1c;
-    --surface: #111e39;
-    --surface-solid: #111e39;
+    --bg: #010818;
+    --surface: #071228;
+    --surface-solid: #071228;
     --ink: #f3f6ff;
-    --muted: #9baccb;
-    --line: rgba(174, 200, 255, 0.18);
-    --accent: #48baff;
-    --accent-ink: #06152b;
-    --accent-soft: rgba(72, 186, 255, 0.1);
-    --track: rgba(133, 160, 210, 0.17);
-    --glow: rgba(57, 173, 255, 0.45);
+    --muted: #8e9fbf;
+    --line: rgba(60, 95, 160, 0.32);
+    --accent: #33b3f5;
+    --accent-ink: #021026;
+    --accent-soft: rgba(51, 179, 245, 0.1);
+    --track: rgba(40, 62, 105, 0.45);
+    --glow: rgba(34, 170, 255, 0.55);
     --over: #ffb52e;
-    --protein: #ff647d;
-    --carbs: #39baff;
-    --fat: #ffb52e;
-    --fibre: #00d99a;
-    --sugar: #ff647d;
-    --satfat: #ffb52e;
-    --salt: #39baff;
+    --protein: #f64f67;
+    --carbs: #3a7fe0;
+    --fat: #f9c00e;
+    --fibre: #19c46f;
+    --sugar: #ea3b58;
+    --satfat: #f89512;
+    --salt: #16adf9;
+    /* Lighting palette sampled from the owner's picture */
+    --lit-edge: #2a86d7;
+    --lit-edge-bright: #4fb4ff;
+    --lit-corner: rgba(37, 70, 119, 0.9);
+    --lit-glow: rgba(30, 110, 255, 0.55);
+    --card-deep: #050d21;
     --fasting: #ffb52e;
   }
   :root:not([data-theme='light']) { background-color: #020714; }
@@ -1379,4 +1385,89 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
   :root:not([data-theme='light']) .nutrient-card,
   :root:not([data-theme='light']) .quick-action,
   :root:not([data-theme='light']) .tabbar { border-top-color: rgba(220, 238, 255, 0.42); }
+}
+
+/* ==== Intensity pass: colours and gradients sampled from the owner's picture ==== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) { background-color: #00030e; }
+  :root:not([data-theme='light']) body {
+    background:
+      radial-gradient(ellipse 60% 30% at 95% 0%, rgba(25, 95, 210, 0.28), transparent 70%),
+      radial-gradient(ellipse 70% 25% at 100% 92%, rgba(25, 95, 210, 0.22), transparent 70%),
+      linear-gradient(180deg, #010818 0%, #020a1c 45%, #00030e 100%);
+    background-attachment: fixed;
+  }
+
+  /* Dark glass; light lives in the corners: lit top-left, blue glow bottom-right */
+  :root:not([data-theme='light']) .card,
+  :root:not([data-theme='light']) .diet-status,
+  :root:not([data-theme='light']) .nutrient-card,
+  :root:not([data-theme='light']) .quick-action {
+    background:
+      radial-gradient(120% 80% at 0% 0%, var(--lit-corner), rgba(16, 34, 68, 0.55) 30%, transparent 58%),
+      radial-gradient(90% 70% at 100% 100%, rgba(28, 82, 165, 0.5), rgba(14, 40, 90, 0.2) 40%, transparent 65%),
+      rgba(5, 13, 33, 0.9);
+    border: 1px solid rgba(30, 52, 98, 0.75);
+    box-shadow: inset 0 1px 0 rgba(120, 170, 240, 0.18), 0 18px 40px rgba(0, 0, 0, 0.55);
+  }
+  :root:not([data-theme='light']) .macro-card { background: radial-gradient(100% 90% at 0% 0%, rgba(26, 46, 82, 0.6), transparent 55%), rgba(10, 18, 34, 0.92); }
+  :root:not([data-theme='light']) .quick-action { background: linear-gradient(180deg, rgba(20, 52, 100, 0.85) 0%, rgba(8, 22, 48, 0.9) 45%, rgba(5, 13, 33, 0.95) 100%); }
+  :root:not([data-theme='light']) .nutrient-card { background: radial-gradient(120% 60% at 0% 0%, rgba(30, 56, 100, 0.7), transparent 55%), rgba(6, 17, 39, 0.92); }
+
+  /* Reflections: a blue-tinted sheen on the lit corner, not a white wash */
+  :root:not([data-theme='light']) .card::before,
+  :root:not([data-theme='light']) .diet-status::before,
+  :root:not([data-theme='light']) .nutrient-card::before,
+  :root:not([data-theme='light']) .quick-action::before {
+    background: linear-gradient(125deg, rgba(150, 200, 255, 0.16) 0%, rgba(120, 180, 255, 0.05) 14%, transparent 26%);
+  }
+  :root:not([data-theme='light']) .calorie-card::before,
+  :root:not([data-theme='light']) .recipe-card::before {
+    background:
+      linear-gradient(110deg, transparent 20%, rgba(60, 150, 255, 0.10) 50%, transparent 70%) 0 0 / 250% 100%,
+      linear-gradient(125deg, rgba(150, 200, 255, 0.16) 0%, rgba(120, 180, 255, 0.05) 14%, transparent 26%);
+  }
+
+  /* Edge lighting: dim edge, electric blue where the light hits (right and bottom-right) */
+  :root:not([data-theme='light']) .card::after,
+  :root:not([data-theme='light']) .diet-status::after,
+  :root:not([data-theme='light']) .nutrient-card::after,
+  :root:not([data-theme='light']) .quick-action::after {
+    opacity: 1;
+    background: linear-gradient(135deg, rgba(110, 160, 230, 0.55) 0%, rgba(40, 70, 120, 0.2) 22%, transparent 40% 58%, rgba(42, 134, 215, 0.6) 78%, var(--lit-edge-bright) 100%);
+  }
+  :root:not([data-theme='light']) .nutrient-card::after,
+  :root:not([data-theme='light']) .quick-action::after,
+  :root:not([data-theme='light']) .macro-card::after { opacity: 0.6; }
+  :root:not([data-theme='light']) .diet-status::after { background: linear-gradient(100deg, rgba(110, 160, 230, 0.45) 0%, transparent 25% 60%, var(--lit-edge) 85%, var(--lit-edge-bright) 100%); }
+
+  /* Blue bloom behind the lit cards, saturated */
+  :root:not([data-theme='light']) .lit > .ambient { background: radial-gradient(circle, rgba(30, 110, 255, 0.75), rgba(30, 110, 255, 0) 70%); filter: blur(30px); }
+  :root:not([data-theme='light']) .lit-fasting > .ambient { width: 40%; height: 120%; right: -14%; top: -10%; opacity: 0.9; }
+  :root:not([data-theme='light']) .lit-calorie > .ambient { width: 60%; height: 70%; right: -14%; bottom: -16%; opacity: 0.9; }
+  :root:not([data-theme='light']) .lit-recipe > .ambient { width: 50%; height: 70%; right: -12%; left: auto; bottom: -16%; opacity: 0.75; }
+
+  /* Neon lines: white-hot core with a saturated blue bloom */
+  :root:not([data-theme='light']) .lit > .neon-lines { filter: drop-shadow(0 0 2px #7fd0ff) drop-shadow(0 0 8px rgba(30, 130, 255, 0.95)) drop-shadow(0 0 22px rgba(30, 110, 255, 0.6)); }
+  :root:not([data-theme='light']) .corner-ring { stroke: #4fb4ff; fill: rgba(28, 90, 190, 0.18); }
+
+  /* Calorie ring: cyan to blue, strong bloom, near-invisible track */
+  :root:not([data-theme='light']) .calorie-ring .ring-track { stroke: #061433; }
+  :root:not([data-theme='light']) .calorie-ring .ring-fill { filter: drop-shadow(0 0 6px rgba(34, 201, 252, 0.9)) drop-shadow(0 0 18px rgba(30, 140, 255, 0.6)); }
+  :root:not([data-theme='light']) .calorie-ring { border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(60, 100, 170, 0.25); }
+
+  /* Saturated nutrient rings and bars with a tight glow */
+  :root:not([data-theme='light']) .nutrient-card .ring-track { stroke: #12244a; }
+  :root:not([data-theme='light']) .nutrient-card .ring-fill { filter: drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 10px var(--c)); }
+
+  /* Buttons */
+  :root:not([data-theme='light']) .add-button { background: radial-gradient(circle at 40% 35%, #8fd8ff, #32affc 55%, #1a7fe0); box-shadow: 0 0 18px rgba(50, 175, 252, 0.8), 0 0 50px rgba(30, 130, 255, 0.5), inset 0 1px 3px rgba(255, 255, 255, 0.55); }
+  :root:not([data-theme='light']) .add-journal { border-color: #33b3f5; box-shadow: 0 0 10px rgba(51, 179, 245, 0.45), inset 0 0 10px rgba(51, 179, 245, 0.15); background: rgba(2, 10, 28, 0.6); }
+
+  /* Bottom menu: near black glass, dim rim, lit left edge, blue glow behind */
+  :root:not([data-theme='light']) .tabbar {
+    background: radial-gradient(60% 120% at 0% 50%, rgba(20, 60, 130, 0.45), transparent 60%), rgba(1, 5, 16, 0.94);
+    border: 1px solid rgba(30, 55, 105, 0.8); border-left-color: rgba(60, 150, 240, 0.7);
+    box-shadow: inset 0 1px 0 rgba(120, 170, 240, 0.15), -6px 0 24px rgba(30, 110, 255, 0.35), 0 10px 40px rgba(0, 0, 0, 0.6);
+  }
 }
