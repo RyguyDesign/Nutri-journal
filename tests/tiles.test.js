@@ -8,7 +8,7 @@ const on = (l) => l.filter((t) => t.on).map((t) => t.id);
 test('defaults when nothing is saved', () => {
   const l = tileLayout(null);
   assert.deepEqual(ids(l), TILES.map((t) => t.id));
-  assert.deepEqual(on(l), ['calories', 'nutrients', 'fasting', 'journal', 'recipes', 'diet']);
+  assert.deepEqual(on(l), ['calories', 'nutrients', 'fasting', 'water', 'workout', 'journal', 'recipes', 'diet']);
 });
 
 test('saved order and choices are kept; bad data is repaired', () => {
@@ -35,7 +35,7 @@ test('toggle, move and round trip', () => {
 test('rows: wide tiles alone, small tiles up to three per row', () => {
   let l = tileLayout(null);
   l = toggleTile(toggleTile(l, 'scan'), 'likes');
-  assert.deepEqual(tileRows(l).map((r) => r.map((t) => t.id)), [['calories'], ['nutrients'], ['fasting'], ['journal', 'recipes', 'diet'], ['scan', 'likes']]);
+  assert.deepEqual(tileRows(l).map((r) => r.map((t) => t.id)), [['calories'], ['nutrients'], ['fasting'], ['water'], ['workout'], ['journal', 'recipes', 'diet'], ['scan', 'likes']]);
   l = moveTile(l, 'recipes', 1); // journal, diet, recipes
   l = moveTile(l, 'fasting', 1); // fasting now after idea (off) -> still before shortcuts
   assert.deepEqual(tileRows(tileLayout({ order: ['journal', 'calories', 'recipes'], off: [] })).slice(0, 3).map((r) => r.map((t) => t.id)), [['journal'], ['calories'], ['recipes']]);
@@ -66,4 +66,11 @@ test('placeTile moves a tile before another, after the last shown, or to the end
   assert.equal(h.find((t) => t.id === 'nutrients').on, false);
   // round trip through the saved shape
   assert.deepEqual(saveShape(tileLayout(saveShape(h))), saveShape(h));
+});
+
+test('people with a saved layout get the new water and workout cards at the end, switched on', () => {
+  const saved = { order: ['calories', 'nutrients', 'table', 'meals', 'fasting', 'idea', 'journal', 'recipes', 'diet', 'scan', 'likes'], off: ['table', 'meals', 'idea', 'scan', 'likes'] };
+  const l = tileLayout(saved);
+  assert.deepEqual(ids(l).slice(-2), ['water', 'workout']);
+  assert.deepEqual(on(l).slice(-2), ['water', 'workout']);
 });

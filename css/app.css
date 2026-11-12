@@ -19,6 +19,8 @@
   --fibre: #8aa58c;
   --sugar: #b98a8f;
   --salt: #a3a39b;
+  --water: #2b7fc4;
+  --workout: #2f8a57;
   --satfat: #9b87a6;
   --on-fill: #141513;
   --radius: 14px;
@@ -58,6 +60,8 @@
     --sugar: #ff6b78;
     --satfat: #ffb53d;
     --salt: #5ab4ff;
+    --water: #5ab4ff;
+    --workout: #2fe08a;
     --fasting: #f2d23c;
     color-scheme: dark;
   }
@@ -1048,6 +1052,8 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
     --sugar: #ea3b58;
     --satfat: #f89512;
     --salt: #16adf9;
+    --water: #33b3f5;
+    --workout: #19c46f;
     /* Lighting palette sampled from the owner's picture */
     --lit-edge: #2a86d7;
     --lit-edge-bright: #4fb4ff;
@@ -1600,3 +1606,48 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
 @media (prefers-reduced-motion: reduce) { .edit-slot { animation: none; } }
 .edit-slot.dragging { animation: none; }
 .edit-bar { margin: 0 calc(var(--gap) * -1); padding: 12px var(--gap); background: color-mix(in srgb, var(--bg) 98%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
+
+/* ==== Water and workout cards ==== */
+.act-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.act-head h2 { flex: 1; margin: 0; font-size: 17px; }
+.act-icon { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+.act-icon .ic { width: 22px; height: 22px; }
+.act-value { margin: 0; white-space: nowrap; }
+.act-value strong { font-size: 22px; font-weight: 800; }
+.act-value small { color: var(--muted); font-size: 14px; }
+.water-card { --c: var(--water); }
+.workout-card { --c: var(--workout); }
+.water-card .progress-track { height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; }
+.water-card .progress-fill { height: 100%; border-radius: 5px; background: var(--water); transition: width .35s ease; }
+.water-card.done .act-value strong { color: var(--water); }
+.act-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.act-foot p { margin: 0; font-size: 13.5px; }
+.act-buttons { display: flex; gap: 8px; flex: none; }
+.act-minus, .act-plus { min-height: 44px; border-radius: 22px; border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); background: color-mix(in srgb, var(--c) 10%, transparent); color: var(--ink); font: inherit; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+.act-minus { width: 44px; padding: 0; }
+.act-plus { padding: 0 16px; }
+.act-plus .ic-sm, .act-minus .ic-sm { color: var(--c); }
+.act-minus:disabled { opacity: .35; cursor: default; }
+.act-plus:active, .act-minus:active { transform: scale(.95); }
+.workout-list { list-style: none; margin: 0 0 8px; padding: 0; }
+.workout-list li + li { border-top: 1px solid var(--line); }
+.workout-list a { display: flex; align-items: center; gap: 10px; min-height: 48px; color: var(--ink); text-decoration: none; }
+.wl-name { font-weight: 600; flex: 1; }
+.wl-meta { color: var(--muted); font-size: 14px; }
+.workout-list .ic-sm { color: var(--muted); }
+.workout-burn { margin: 4px 0 12px; }
+.act-add { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; border-color: color-mix(in srgb, var(--c) 55%, transparent); }
+.act-add .ic-sm { color: var(--c); }
+@media (max-width: 350px) { .act-foot { flex-direction: column; align-items: stretch; } .act-buttons { justify-content: flex-end; } }
+
+/* Workout page */
+.workout-form p.label { font-weight: 600; font-size: 0.9rem; margin: 0 0 8px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.workout-note { display: flex; align-items: center; gap: 6px; margin: 4px 0 16px; }
+.workout-form .btn + .btn { margin-top: 10px; }
+#w-kcal-hint { display: block; margin: -8px 0 10px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .water-card .progress-fill { box-shadow: 0 0 8px var(--water), 0 0 18px rgba(51, 179, 245, 0.45); }
+  :root:not([data-theme='light']) .act-icon { box-shadow: 0 0 14px color-mix(in srgb, var(--c) 35%, transparent); }
+  :root:not([data-theme='light']) .act-icon .ic { filter: drop-shadow(0 0 5px var(--c)); }
+}

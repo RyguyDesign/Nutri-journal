@@ -12,6 +12,7 @@ import * as tastes from './ui/tastes.js';
 import * as mealView from './ui/meal.js';
 import * as dietView from './ui/diet.js';
 import * as tilesView from './ui/tiles.js';
+import * as workoutView from './ui/workout.js';
 import { getSelectedDate, setSelectedDate, noteNavigation } from './ui/state.js';
 import { icon } from './ui/icons.js';
 
@@ -28,6 +29,7 @@ const ROUTES = [
   { pattern: /^\/profile$/, view: profile, tab: '/profile', label: 'nav.profile', icon: ICONS.profile },
   { pattern: /^\/tiles$/, view: tilesView },
   { pattern: /^\/tastes$/, view: tastes },
+  { pattern: /^\/workout$/, view: workoutView },
   { pattern: /^\/add$/, view: mealView },
   { pattern: /^\/add\/detail$/, view: entryForm },
   { pattern: /^\/edit\/([\w-]+)$/, view: entryForm, params: (m) => ({ id: m[1] }) },

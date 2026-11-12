@@ -12,6 +12,7 @@ import { macroBar, nutrientRings } from '../core/dash.js';
 import { withTypicalExtras } from '../foods/everyday.js';
 import { tileLayout, tileRows, saveShape, placeTile, showTile, hideTile } from '../core/tiles.js';
 import { dragSort, keyMove } from './drag-sort.js';
+import { waterOn, fmtWater, workoutsOn, WATER_GOAL_ML, WATER_STEP_ML } from '../core/activity.js';
 import { MEALS } from '../core/entry.js';
 import { icon } from './icons.js';
 import { withLights } from './lights.js';
@@ -280,7 +281,7 @@ function header(date, rerender) {
 export async function render(root, rerender) {
   const date = getSelectedDate();
   const isToday = date === today();
-  const [targets, profile, stored, settings] = await Promise.all([store.getTargets(), store.getProfile(), store.getEntriesForDate(date), store.getSettings()]);
+  const [targets, profile, stored, settings, water, workouts] = await Promise.all([store.getTargets(), store.getProfile(), store.getEntriesForDate(date), store.getSettings(), store.getWater(), store.getWorkouts()]);
   const entries = stored.map(withTypicalExtras);
   const goal = store.targetValues(targets);
   const eaten = sumNutrients(entries);
@@ -321,6 +322,8 @@ export async function render(root, rerender) {
     },
     diet: () => shortcut('#/diet', 'diet', t('dash.dietFasting'), [t(`diet.short.${diet}`), fasting].filter(Boolean).join(' · ')),
     scan: () => shortcut(`#/add?date=${date}&scan=1`, 'scan', t('tile.scan'), null),
+    water: () => waterCard(date, waterOn(water, date)),
+    workout: () => workoutCard(date, workoutsOn(workouts, date)),
     likes: () => shortcut('#/tastes', 'likes', t('tastes.title'), null),
   };
 
@@ -349,6 +352,49 @@ export async function render(root, rerender) {
   root.replaceChildren(...view);
   // Long-press any card to start rearranging
   longPressToEdit(root, rerender);
+}
+
+// ---- Water and workouts ---------------------------------------------------
+
+function waterCard(date, ml) {
+  const goal = WATER_GOAL_ML;
+  const pct = Math.round((ml / goal) * 100);
+  const glasses = Math.round(ml / WATER_STEP_ML);
+  return h(
+    'section',
+    { class: `card glass water-card${ml >= goal ? ' done' : ''}` },
+    h('div', { class: 'act-head' },
+      h('span', { class: 'act-icon' }, icon('glass', 'ic')),
+      h('h2', {}, t('water.title')),
+      h('p', { class: 'act-value' }, h('strong', {}, fmtWater(ml)), h('small', {}, ` / ${fmtWater(goal)}`))),
+    h('div', { class: 'progress-track', role: 'progressbar', 'aria-label': t('water.title'), 'aria-valuemin': '0', 'aria-valuemax': String(goal), 'aria-valuenow': String(ml), 'aria-valuetext': `${fmtWater(ml)} / ${fmtWater(goal)}` },
+      h('div', { class: 'progress-fill', style: { width: `${Math.min(100, pct)}%` } })),
+    h('div', { class: 'act-foot' },
+      h('p', { class: 'muted' }, ml >= goal ? t('water.reached', { n: glasses }) : t('water.progress', { pct, n: glasses, left: fmtWater(goal - ml) })),
+      h('div', { class: 'act-buttons' },
+        h('button', { type: 'button', class: 'act-minus', disabled: ml <= 0, 'aria-label': t('water.remove', { ml: WATER_STEP_ML }), onclick: () => store.addWaterMl(date, -WATER_STEP_ML) }, icon('minus', 'ic-sm')),
+        h('button', { type: 'button', class: 'act-plus', onclick: () => { navigator.vibrate?.(8); store.addWaterMl(date, WATER_STEP_ML); } }, icon('plus', 'ic-sm'), `${WATER_STEP_ML} ml`))),
+  );
+}
+
+function workoutCard(date, { items, minutes, kcal }) {
+  return h(
+    'section',
+    { class: 'card glass workout-card' },
+    h('div', { class: 'act-head' },
+      h('span', { class: 'act-icon' }, icon('dumbbell', 'ic')),
+      h('h2', {}, t('workout.cardTitle')),
+      items.length ? h('p', { class: 'act-value' }, h('strong', {}, `${minutes}`), h('small', {}, ` ${t('workout.min')}`)) : null),
+    items.length
+      ? h('ul', { class: 'workout-list' }, items.map((w) => h('li', {},
+          h('a', { href: `#/workout?id=${w.id}`, 'aria-label': t('workout.editOne', { name: t(`workout.type.${w.type}`) }) },
+            h('span', { class: 'wl-name' }, t(`workout.type.${w.type}`)),
+            h('span', { class: 'wl-meta' }, [`${w.minutes} ${t('workout.min')}`, Number.isFinite(w.kcal) ? `${w.kcalAuto === false ? '' : '~'}${w.kcal} ${t('common.kcal')}` : null].filter(Boolean).join(' · ')),
+            icon('chevronRight', 'ic-sm')))))
+      : h('p', { class: 'muted' }, t('workout.none')),
+    items.length && kcal ? h('p', { class: 'muted small workout-burn' }, t('workout.burned', { n: kcal })) : null,
+    h('a', { class: 'btn act-add', href: `#/workout?date=${date}` }, icon('plus', 'ic-sm'), t('workout.add')),
+  );
 }
 
 // ---- Edit mode: rearrange the dashboard in place --------------------------
