@@ -285,6 +285,24 @@ export const COMMON = [
   c('Vanillestange (REWE)', 289, 4, 28, 18, { u: 'piece', g: 100, label: 'piece', aka: 'vanilla custard pastry vanille stange pudding rewe backwaren backstation' }),
   c('Puddingfächer (REWE)', 228, 5.9, 36.8, 5.9, { u: 'piece', g: 100, label: 'piece', aka: 'custard pastry vanilla pudding faecher puddingbrezel rewe backwaren backstation' }),
 
+  // ---- Middle Eastern -------------------------------------------------------
+  // USDA FoodData Central where it has the dish (tabbouleh, baklava,
+  // basbousa, stuffed vine leaves, pita, tahini), otherwise common
+  // nutrition databases. Home recipes vary a lot, mainly in the oil.
+  c('Tabbouleh', 127, 1.6, 9.7, 9.7, { g: 150, label: 'portion', aka: 'tabouli tabouleh taboule tabbouli tabule taboulé parsley bulgur salad' }),
+  c('Fattoush', 158, 2.4, 15, 10, { g: 200, label: 'portion', aka: 'fatoush fattush bread salad' }),
+  c('Baba ganoush', 167, 4.1, 11.4, 13.2, { g: 60, label: 'portion', aka: 'baba ghanoush ghanouj ganouj mutabal moutabal eggplant aubergine dip' }),
+  c('Labneh', 165, 8.8, 4.4, 13, { g: 30, label: 'portion', aka: 'labne labaneh strained yogurt' }),
+  c('Tahini', 595, 17, 21.2, 53.8, { g: 15, label: 'tablespoon', aka: 'tahina sesame paste sesame butter' }),
+  c('Pita bread', 275, 9.1, 55.7, 1.2, { u: 'piece', g: 60, label: 'pita', aka: 'pitta khobz khubz arabic bread flatbread fladenbrot' }),
+  c('Chicken shawarma wrap', 150, 13.2, 12.5, 5.4, { u: 'piece', g: 280, label: 'wrap', aka: 'shawarma shawerma shwarma chicken wrap dürüm durum' }),
+  c('Stuffed vine leaves', 163, 2.3, 13.9, 11.6, { u: 'piece', g: 25, label: 'piece', aka: 'dolma dolmades dolmas warak enab warak inab stuffed grape leaves' }),
+  c('Koshari', 93, 3.3, 16.7, 2, { g: 400, label: 'plate', aka: 'kushari koshary kosheri egyptian rice lentils pasta' }),
+  c('Ful medames', 87, 4.1, 11.6, 3.3, { g: 250, label: 'bowl', aka: 'foul medames fool mudammas ful mudammas fava beans broad beans' }),
+  c('Baklava', 440, 6.6, 37.5, 29.3, { u: 'piece', g: 30, label: 'piece', aka: 'baklawa baklavas' }),
+  c('Kunafa', 355, 6.1, 45.8, 17.1, { g: 100, label: 'piece', aka: 'knafeh kanafeh kunefe künefe konafa kadayif' }),
+  c('Basbousa', 282, 4.8, 43.8, 9.9, { u: 'piece', g: 80, label: 'piece', aka: 'hareeseh revani namoura semolina cake' }),
+
   // ---- Fruit and vegetables --------------------------------------------------
   c('Mandarin', 53, 0.8, 11.5, 0.3, { u: 'piece', g: 75, label: 'mandarin', aka: 'clementine' }),
   c('Watermelon', 30, 0.6, 7.5, 0.2, { g: 250, label: 'slice', aka: 'melone' }),

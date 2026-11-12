@@ -183,6 +183,12 @@ const T = {
   'common:schokokrapfen-rewe-': [1.5, 19.7, 10.6, 0.65], 'common:chocolate-donut-rewe-': [1.5, 22, 11, 0.8], 'common:nut-donut-rewe-': [2, 27.9, 12.6, 0.88],
   'common:nussecke-rewe-': [3, 29.1, 11.6, 0.3], 'common:mohnschnecke-rewe-': [3, 18, 9.7, 0.8], 'common:streuselschnecke-rewe-': [1.5, 28.2, 0.8, 0.6],
   'common:vanillestange-rewe-': [1, 8.9, 10, 0.6], 'common:puddingf-cher-rewe-': [1, 14.1, 2.8, 0.93],
+  // Middle Eastern: USDA / nutrition databases; fibre and sugar partly typical
+  'common:tabbouleh': [1.8, 1.3, 2, 1.24], 'common:fattoush': [2, 3, 1.5, 0.8], 'common:baba-ganoush': [3, 3, 1.85, 0.55],
+  'common:labneh': [0, 4.4, 8.1, 0.36], 'common:tahini': [9.3, 0.5, 7.5, 0.29], 'common:pita-bread': [2.2, 1.3, 0.2, 1.34],
+  'common:chicken-shawarma-wrap': [1.5, 2, 1.5, 1.2], 'common:stuffed-vine-leaves': [2, 1.5, 1.6, 1], 'common:koshari': [2.7, 1.3, 0.3, 0.5],
+  'common:ful-medames': [2.9, 0.8, 0.5, 0.6], 'common:baklava': [2.5, 12.8, 11, 0.78], 'common:kunafa': [1, 25, 7.1, 0.5],
+  'common:basbousa': [0.8, 29.8, 2, 0.2],
 };
 
 /** { fibre, sugar, satFat, salt } per 100 g/ml for a built-in food id, or null. */
