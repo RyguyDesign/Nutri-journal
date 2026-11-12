@@ -288,6 +288,35 @@ export async function deleteFood(id) {
   emit('foods');
 }
 
+// ---- Water and workouts ----------------------------------------------------
+// Kept in kv, so backups include them. Burned kcal is not part of any budget.
+
+export const getWater = async () => (await db.get('kv', 'water')) || {};
+
+export async function addWaterMl(date, deltaMl) {
+  const { addWater } = await import('../core/activity.js');
+  await db.put('kv', addWater(await getWater(), date, deltaMl), 'water');
+  emit('water');
+}
+
+export const getWorkouts = async () => (await db.get('kv', 'workouts')) || [];
+
+export async function saveWorkout(workout) {
+  const list = await getWorkouts();
+  const w = { ...workout, id: workout.id || newId() };
+  const i = list.findIndex((x) => x.id === w.id);
+  if (i >= 0) list[i] = w;
+  else list.push(w);
+  await db.put('kv', list, 'workouts');
+  emit('workouts');
+  return w;
+}
+
+export async function deleteWorkout(id) {
+  await db.put('kv', (await getWorkouts()).filter((w) => w.id !== id), 'workouts');
+  emit('workouts');
+}
+
 // ---- Backup --------------------------------------------------------------
 
 export const BACKUP_APP = 'nutri-journal';

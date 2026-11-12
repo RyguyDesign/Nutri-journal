@@ -166,3 +166,10 @@ Calorie card corner (replaces the 230px ring): `drawSwoosh()` in `lights.js` dra
 - Dashboard edit mode (`editView()` in `dashboard.js`): opened with "Edit dashboard" at the bottom or a long press on any card. Each card shows a dashed outline, a red × (hide the card) and a blue grip (drag; arrow keys move it one place). Cards can't be used while editing (`inert`). A dashed "Add a card" card lists the hidden cards with their descriptions; tapping one puts it after the last shown card. "Done" saves and leaves; leaving the page also leaves edit mode. "Show as a list" opens the tiles page.
 - Tiles page: the ↑ ↓ arrows are replaced by a grip (drag or arrow keys).
 - Pure functions in `core/tiles.js`: `placeTile(layout, id, beforeId, { toEnd })`, `showTile`, `hideTile` (tested). The saved shape is unchanged.
+
+## Water and workouts
+
+- `js/core/activity.js` (tested in `tests/activity.test.js`): water per day in ml (2.5 L goal, 250 ml per tap, clamped 0–10 L), workout validation, totals per day, and the burn estimate kcal = MET × body weight (kg) × hours, with MET values from the Compendium of Physical Activities (Ainsworth et al., 2011; activity codes in the source). "Other" has no MET value, so the person enters the calories.
+- Stored in the kv store: `water` = `{ 'YYYY-MM-DD': ml }`, `workouts` = `[{ id, date, time, type, minutes, kcal, kcalAuto }]`. Backups include kv, so both are backed up; no database migration.
+- Burned calories are shown on their own and never added to the calorie budget (owner's choice). No other total depends on them.
+- Dashboard: `water` and `workout` tiles (wide, on by default; people with a saved layout get them at the end, switched on). Workout page at `#/workout?date=` (new) and `#/workout?id=` (edit/delete with undo), `js/ui/workout.js`. The kcal field follows the estimate until the person types their own number; clearing it goes back to the estimate.

@@ -10,6 +10,8 @@ export const TILES = [
   { id: 'meals', group: 'detail', size: 'wide', on: false },
   { id: 'fasting', group: 'diet', size: 'wide', on: true },
   { id: 'idea', group: 'diet', size: 'wide', on: false },
+  { id: 'water', group: 'body', size: 'wide', on: true },
+  { id: 'workout', group: 'body', size: 'wide', on: true },
   { id: 'journal', group: 'shortcuts', size: 'small', on: true },
   { id: 'recipes', group: 'shortcuts', size: 'small', on: true },
   { id: 'diet', group: 'shortcuts', size: 'small', on: true },
@@ -17,7 +19,7 @@ export const TILES = [
   { id: 'likes', group: 'shortcuts', size: 'small', on: false },
 ];
 
-export const TILE_GROUPS = ['glance', 'detail', 'diet', 'shortcuts'];
+export const TILE_GROUPS = ['glance', 'detail', 'diet', 'body', 'shortcuts'];
 
 const BY_ID = new Map(TILES.map((t) => [t.id, t]));
 
