@@ -173,3 +173,7 @@ Calorie card corner (replaces the 230px ring): `drawSwoosh()` in `lights.js` dra
 - Stored in the kv store: `water` = `{ 'YYYY-MM-DD': ml }`, `workouts` = `[{ id, date, time, type, minutes, kcal, kcalAuto }]`. Backups include kv, so both are backed up; no database migration.
 - Burned calories are shown on their own and never added to the calorie budget (owner's choice). No other total depends on them.
 - Dashboard: `water` and `workout` tiles (wide, on by default; people with a saved layout get them at the end, switched on). Workout page at `#/workout?date=` (new) and `#/workout?id=` (edit/delete with undo), `js/ui/workout.js`. The kcal field follows the estimate until the person types their own number; clearing it goes back to the estimate.
+
+## Link previews
+
+`index.html` carries Open Graph tags so a shared link shows the app icon, name and description in WhatsApp, Telegram, iMessage and others. The image is `icons/share.jpg` (512×512 JPEG, the app icon on the dark background, ~26 KB; WhatsApp ignores images over ~300 KB). `og:image` must be an absolute https URL. Messengers cache previews per URL; adding `?v=2` to a link forces a fresh preview.
