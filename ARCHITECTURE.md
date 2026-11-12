@@ -145,3 +145,5 @@ Regional dishes in `js/foods/common.js` come from non-US sources where possible:
 ## Look (dark mode)
 
 Blue glass from the owner's ChatGPT design (App.jsx/App.css, Nov 2026): navy gradient background with two blurred blue lights, glass cards (`.card`), Inter font, accent #48baff, protein #ff647d, carbs #39baff, fat #ffb52e, fibre #00d99a. Icons are Lucide shapes in `js/ui/icons.js`. The dashboard header shows the date, the day title with ‹ › to change day, and a round + button whose menu offers Add food and Scan barcode. Light mode keeps its own colours.
+
+Matched to the owner's target picture: contour lines in the top-right of the background (inline SVG in `body` background), a blue rim light on every glass card, a curved light streak in the bottom-right corner of the fasting, calorie and idea cards (`::after`), a glowing gradient calorie ring (`calGrad`) with eaten/target/used rows beside it, macros in their own card with three columns and dividers, a small bar on each nutrient card, and a glowing rim on the tab bar.

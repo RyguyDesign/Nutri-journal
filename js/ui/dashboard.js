@@ -23,16 +23,18 @@ const grams = (n) => fmtNumber(Math.abs(n), Math.abs(n) < 10 && !Number.isIntege
 const amountText = (s) => t('dash.gOf', { eaten: fmtNumber(s.eaten), target: fmtNumber(s.target) });
 
 /** A progress ring of `size` px with a `stroke`-wide line. */
-function ringSvg(ratio, label, size = 88, stroke = 7) {
+function ringSvg(ratio, label, size = 88, stroke = 7, gradId = null) {
   const r = (size - stroke) / 2;
   const C = 2 * Math.PI * r;
   const c = size / 2;
   return svg(
     'svg',
     { viewBox: `0 0 ${size} ${size}`, role: 'img', 'aria-label': label, class: 'progress-ring' },
+    gradId ? svg('defs', {}, svg('linearGradient', { id: gradId, x1: '0', y1: '0', x2: '1', y2: '1' },
+      svg('stop', { offset: '0', 'stop-color': '#9be3ff' }), svg('stop', { offset: '0.55', 'stop-color': '#3aa8ff' }), svg('stop', { offset: '1', 'stop-color': '#1d5fff' }))) : null,
     svg('g', { transform: `rotate(-90 ${c} ${c})`, fill: 'none' },
       svg('circle', { class: 'ring-track', cx: c, cy: c, r, 'stroke-width': stroke }),
-      svg('circle', { class: 'ring-fill', cx: c, cy: c, r, 'stroke-width': stroke, 'stroke-linecap': ratio > 0.005 ? 'round' : 'butt', 'stroke-dasharray': `${(Math.max(0, Math.min(1, ratio)) * C).toFixed(1)} ${C.toFixed(1)}` })),
+      svg('circle', { class: 'ring-fill', cx: c, cy: c, r, 'stroke-width': stroke, stroke: gradId ? `url(#${gradId})` : null, 'stroke-linecap': ratio > 0.005 ? 'round' : 'butt', 'stroke-dasharray': `${(Math.max(0, Math.min(1, ratio)) * C).toFixed(1)} ${C.toFixed(1)}` })),
   );
 }
 
@@ -53,7 +55,7 @@ function macroCard(goal, eaten) {
       ? t('dash.macroOver', { pct: s.pct, n: fmtNumber(s.eaten - s.target) })
       : t('dash.macroLeft', { pct: s.pct, n: fmtNumber(Math.max(0, s.target - s.eaten)) })),
   ));
-  return h(
+  return [h(
     'section',
     { class: `card glass calorie-card${over ? ' over' : ''}` },
     h(
@@ -62,7 +64,7 @@ function macroCard(goal, eaten) {
       h(
         'div',
         { class: 'calorie-ring' },
-        ringSvg(ratio, t('dash.calRing', { eaten: fmtKcal(eaten.kcal), target: fmtKcal(goal.kcal) }), 220, 17),
+        ringSvg(ratio, t('dash.calRing', { eaten: fmtKcal(eaten.kcal), target: fmtKcal(goal.kcal) }), 220, 17, 'calGrad'),
         h('div', { class: 'calorie-center' },
           icon('flame', 'cal-flame'),
           h('strong', { class: 'num' }, fmtKcal(Math.abs(rem.kcal))),
@@ -71,13 +73,16 @@ function macroCard(goal, eaten) {
       h(
         'div',
         { class: 'calorie-stats' },
-        h('div', {}, h('strong', { class: 'num' }, fmtKcal(eaten.kcal)), h('span', {}, t('dash.eatenWord'))),
-        h('div', {}, h('strong', { class: 'num' }, fmtKcal(goal.kcal)), h('span', {}, t('dash.targetWord'))),
-        h('div', {}, h('strong', { class: 'num' }, `${Math.round(ratio * 100)}%`), h('span', {}, t('dash.usedWord'))),
+        statRow('utensils', fmtKcal(eaten.kcal), t('dash.eatenWord')),
+        statRow('target', fmtKcal(goal.kcal), t('dash.targetWord')),
+        statRow('clock', `${Math.round(ratio * 100)}%`, t('dash.usedWord')),
       ),
     ),
-    h('div', { class: 'macro-grid' }, cols),
-  );
+  ), h('section', { class: 'card glass macro-card', 'aria-label': t('dash.macrosLabel') }, h('div', { class: 'macro-grid' }, cols))];
+}
+
+function statRow(name, value, label) {
+  return h('div', { class: 'stat-row' }, icon(name, 'stat-icon'), h('div', {}, h('strong', { class: 'num' }, value), h('span', {}, label)));
 }
 
 const NUT_ICON = { fibre: 'leaf', sugar: 'candy', satFat: 'droplet', salt: 'salt' };
@@ -97,7 +102,8 @@ function ring(r, count) {
     icon(NUT_ICON[r.key], 'nutrient-icon'),
     h('h3', {}, t(`dash.nutName.${r.key}`)),
     h('p', { class: 'num' }, t('dash.gOf', { eaten: value, target: fmtNumber(r.target) })),
-    h('small', { class: 'num' }, sub),
+    h('span', { class: 'mini-bar', 'aria-hidden': 'true' }, h('span', { style: { width: `${Math.min(1, r.ratio) * 100}%` } })),
+    r.state === 'over' ? h('small', { class: 'num' }, sub) : null,
     unknown > 0 ? h('small', { class: 'nring-unknown' }, t(unknown === 1 ? 'dash.unknown1' : 'dash.unknown', { n: unknown })) : null,
   );
 }
@@ -180,7 +186,7 @@ async function ideaCard() {
   return h(
     'section',
     { class: 'card glass recipe-card' },
-    h('div', { class: 'recipe-label' }, icon('chart', 'ic-sm'), t('ideas.dashTitle', { meal: t(`meal.${s.meal}`) })),
+    h('div', { class: 'recipe-label' }, icon('trend', 'ic-sm'), h('span', {}, t('ideas.dashTitle', { meal: t(`meal.${s.meal}`) })), h('a', { class: 'recipe-more', href: '#/ideas', 'aria-label': t('ideas.dashMore') }, icon('chevronRight', 'ic-sm'))),
     h(
       'div',
       { class: 'recipe-content' },
@@ -205,14 +211,14 @@ function shortcut(href, name, title, sub) {
     'a',
     { class: 'quick-action', href },
     icon(SHORT_ICON[name], 'qa-icon'),
-    h('span', { class: 'qa-title' }, title),
-    h('small', {}, sub || '\u00a0'),
-    icon('chevronRight', 'action-arrow'),
+    h('span', { class: 'qa-title' }, title, icon('chevronRight', 'action-arrow')),
+    sub ? h('small', {}, sub) : null,
   );
 }
 
 /** Date, title and the round + button with its menu. */
 function header(date, rerender) {
+  const isToday = date === today();
   const go = (n) => {
     setSelectedDate(n === 0 ? today() : addDays(getSelectedDate(), n));
     rerender();
@@ -228,14 +234,13 @@ function header(date, rerender) {
     menu.hidden = !menu.hidden;
     addBtn.setAttribute('aria-expanded', String(!menu.hidden));
   });
-  const isToday = date === today();
   return h(
     'header',
     { class: 'dash-header' },
     h(
       'div',
       { class: 'dash-title' },
-      h('p', { class: 'date-label' }, fmtDate(parseISODate(date), { weekday: 'long', day: 'numeric', month: 'long' })),
+      h('p', { class: 'date-label' }, fmtDate(parseISODate(date), { weekday: 'short', day: 'numeric', month: 'short' }), isToday ? h('span', { class: 'date-today' }, ` • ${t('dash.today')}`) : null),
       h('div', { class: 'dash-day' },
         h('button', { type: 'button', class: 'day-step', 'aria-label': t('dash.prevDay'), onclick: () => go(-1) }, icon('chevronLeft', 'ic-sm')),
         h('h1', {}, dayLabel(date)),
@@ -296,9 +301,10 @@ export async function render(root, rerender) {
 
   const rows = [];
   for (const row of tileRows(tileLayout(settings.dashTiles))) {
-    const els = (await Promise.all(row.map((tile) => build[tile.id]()))).filter(Boolean);
+    const els = (await Promise.all(row.map((tile) => build[tile.id]()))).flat().filter(Boolean);
     if (!els.length) continue;
-    rows.push(row[0].size === 'small' ? h('div', { class: 'quick-actions' }, els) : els[0]);
+    if (row[0].size === 'small') rows.push(h('div', { class: 'quick-actions' }, els));
+    else rows.push(...els);
   }
 
   const edit = h('a', { class: 'link-btn edit-tiles', href: '#/tiles' }, icon('grid', 'shortcut-icon'), t('tiles.edit'));

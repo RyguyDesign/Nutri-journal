@@ -311,6 +311,7 @@ export default {
 
   'dash.add': 'Add food',
   'dash.eatenWord': 'eaten',
+  'dash.macrosLabel': 'Macros',
   'dash.targetWord': 'target',
   'dash.usedWord': 'used',
   'dash.macroLeft': '{pct}% · {n}g left',
