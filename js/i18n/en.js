@@ -310,6 +310,7 @@ export default {
   'ideas.ingredients': 'Ingredients: {list}',
 
   'dash.add': 'Add food',
+  'dash.addClose': 'Close add menu',
   'dash.eatenWord': 'eaten',
   'dash.macrosLabel': 'Macros',
   'dash.targetWord': 'target',
