@@ -12,7 +12,8 @@ import { macroBar, nutrientRings } from '../core/dash.js';
 import { withTypicalExtras } from '../foods/everyday.js';
 import { tileLayout, tileRows } from '../core/tiles.js';
 import { MEALS } from '../core/entry.js';
-import { icon, neonEdge } from './icons.js';
+import { icon } from './icons.js';
+import { withLights } from './lights.js';
 import { dayLabel } from './daynav.js';
 import { setSelectedDate } from './state.js';
 import { addDays, parseISODate } from '../core/dates.js';
@@ -306,10 +307,10 @@ export async function render(root, rerender) {
     if (row[0].size === 'small') rows.push(h('div', { class: 'quick-actions' }, els));
     else rows.push(...els);
   }
-  for (const el of rows) {
+  rows.forEach((el, i) => {
     const kind = el.classList?.contains('calorie-card') ? 'calorie' : el.classList?.contains('recipe-card') ? 'recipe' : el.classList?.contains('diet-status') ? 'fasting' : null;
-    if (kind) el.append(neonEdge(kind));
-  }
+    if (kind) rows[i] = withLights(el, kind);
+  });
 
   const edit = h('a', { class: 'link-btn edit-tiles', href: '#/tiles' }, icon('grid', 'shortcut-icon'), t('tiles.edit'));
   root.replaceChildren(...[header(date, rerender), notice, ...rows, edit].filter(Boolean));
