@@ -3,7 +3,6 @@ import { t, fmtKcal, fmtNumber } from '../i18n/i18n.js';
 import { sumNutrients, sumExtras, remainingNutrients, EXTRAS } from '../core/calc.js';
 import * as store from '../data/store.js';
 import { recommendationFor, estimatedTargetsOutdated } from './targets-compare.js';
-import { dayNav } from './daynav.js';
 import { getSelectedDate } from './state.js';
 import { todaysSuggestions, addToJournal } from './ideas.js';
 import { today } from '../core/dates.js';
@@ -13,36 +12,31 @@ import { macroBar, nutrientRings } from '../core/dash.js';
 import { withTypicalExtras } from '../foods/everyday.js';
 import { tileLayout, tileRows } from '../core/tiles.js';
 import { MEALS } from '../core/entry.js';
+import { icon } from './icons.js';
+import { dayLabel } from './daynav.js';
+import { setSelectedDate } from './state.js';
+import { addDays, parseISODate } from '../core/dates.js';
+import { fmtDate } from '../i18n/i18n.js';
 
 const grams = (n) => fmtNumber(Math.abs(n), Math.abs(n) < 10 && !Number.isInteger(n) ? 1 : 0);
 // Bar labels: what you've eaten of the target, e.g. "110 / 121 g"
 const amountText = (s) => t('dash.gOf', { eaten: fmtNumber(s.eaten), target: fmtNumber(s.target) });
 
-/** A progress ring; `big` is the calorie ring. */
-function ringSvg(ratio, label, big = false) {
-  const r = big ? 46 : 24;
+/** A progress ring of `size` px with a `stroke`-wide line. */
+function ringSvg(ratio, label, size = 88, stroke = 7) {
+  const r = (size - stroke) / 2;
   const C = 2 * Math.PI * r;
-  const size = big ? 104 : 60;
   const c = size / 2;
   return svg(
     'svg',
-    { viewBox: `0 0 ${size} ${size}`, role: 'img', 'aria-label': label },
+    { viewBox: `0 0 ${size} ${size}`, role: 'img', 'aria-label': label, class: 'progress-ring' },
     svg('g', { transform: `rotate(-90 ${c} ${c})`, fill: 'none' },
-      svg('circle', { class: 'ring-track', cx: c, cy: c, r, 'stroke-width': big ? 9 : 7 }),
-      svg('circle', { class: 'ring-fill', cx: c, cy: c, r, 'stroke-width': big ? 9 : 7, 'stroke-linecap': ratio > 0.005 ? 'round' : 'butt', 'stroke-dasharray': `${(Math.max(0, Math.min(1, ratio)) * C).toFixed(1)} ${C.toFixed(1)}` })),
+      svg('circle', { class: 'ring-track', cx: c, cy: c, r, 'stroke-width': stroke }),
+      svg('circle', { class: 'ring-fill', cx: c, cy: c, r, 'stroke-width': stroke, 'stroke-linecap': ratio > 0.005 ? 'round' : 'butt', 'stroke-dasharray': `${(Math.max(0, Math.min(1, ratio)) * C).toFixed(1)} ${C.toFixed(1)}` })),
   );
 }
 
-const GLYPH = {
-  flame: ['M12 3c1 3 4 4.5 4 8.5A4 4 0 0 1 12 15.5 4 4 0 0 1 8 11.5c0-1.6.8-2.6 1.6-3.4.2 1.4 1 2.2 1.9 2.4C11 8 11 5.5 12 3z', 'M12 21a5 5 0 0 1-5-5c0-1 .3-1.8.7-2.5'],
-  fibre: ['M5 19c4-4 8-6 14-14', 'M9 15c-2-1-3-3-2.5-5.5C9 10 10 12 9 15zM13 11c-2-1-3-3-2.5-5.5C13 6 14 8 13 11zM12 16c1 2 3 3 5.5 2.5C17 16 15 15 12 16zM16 12c1 2 3 3 5.5 2.5C21 12 19 11 16 12z'],
-  sugar: ['M12 3l8 4.5v9L12 21l-8-4.5v-9z', 'M4 7.5l8 4.5 8-4.5M12 12v9'],
-  satFat: ['M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z'],
-  salt: ['M8 9h8l1 11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z', 'M9 9V6a3 3 0 0 1 6 0v3', 'M11 5h.01M13 5h.01M12 3.6h.01'],
-  bolt: ['M13 2L4 14h7l-1 8 9-12h-7z'],
-  chevron: ['M9 6l6 6-6 6'],
-};
-const glyph = (name, cls) => svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: cls }, GLYPH[name].map((d) => svg('path', { d })));
+const MACRO_ICON = { protein: 'beef', carbs: 'wheat', fat: 'droplet' };
 
 function macroCard(goal, eaten) {
   const rem = remainingNutrients(goal, { ...eaten, kcal: Math.round(eaten.kcal) });
@@ -51,40 +45,42 @@ function macroCard(goal, eaten) {
   const { sections } = macroBar(goal, eaten);
   const cols = sections.map((s) => h(
     'div',
-    { class: `mc mc-${s.key}${s.over ? ' over' : ''}` },
-    h('span', { class: 'mc-pct num' }, `${s.pct}%`),
-    h('span', { class: 'mc-name' }, t(`nutrient.short.${s.key}`)),
-    h('span', { class: 'mc-line' },
-      h('span', { class: 'mc-bar', 'aria-hidden': 'true' }, h('span', { style: { width: `${s.ratio * 100}%` } })),
-      h('span', { class: 'mc-amount num' }, amountText(s))),
+    { class: `macro-item mc-${s.key}${s.over ? ' over' : ''}` },
+    h('div', { class: 'macro-heading' }, icon(MACRO_ICON[s.key], 'macro-icon'), h('span', {}, t(`nutrient.short.${s.key}`))),
+    h('div', { class: 'macro-value num' }, fmtNumber(s.eaten), ' ', h('small', {}, `/ ${fmtNumber(s.target)}g`)),
+    h('div', { class: 'progress-track', 'aria-hidden': 'true' }, h('div', { class: 'progress-fill', style: { width: `${Math.min(1, s.ratio) * 100}%` } })),
+    h('div', { class: 'macro-caption num' }, s.over
+      ? t('dash.macroOver', { pct: s.pct, n: fmtNumber(s.eaten - s.target) })
+      : t('dash.macroLeft', { pct: s.pct, n: fmtNumber(Math.max(0, s.target - s.eaten)) })),
   ));
   return h(
     'section',
-    { class: `card glass dash-cal${over ? ' over' : ''}` },
+    { class: `card glass calorie-card${over ? ' over' : ''}` },
     h(
       'div',
-      { class: 'cal-top' },
+      { class: 'calorie-main' },
       h(
         'div',
-        { class: 'cal-ring' },
-        ringSvg(ratio, t('dash.calRing', { eaten: fmtKcal(eaten.kcal), target: fmtKcal(goal.kcal) }), true),
-        h('div', { class: 'cal-ring-inner' },
-          glyph('flame', 'cal-flame'),
-          h('span', { class: 'cal-num num' }, fmtKcal(Math.abs(rem.kcal))),
-          h('span', { class: 'cal-unit' }, t(over ? 'dash.kcalOver' : 'dash.kcalLeft'))),
+        { class: 'calorie-ring' },
+        ringSvg(ratio, t('dash.calRing', { eaten: fmtKcal(eaten.kcal), target: fmtKcal(goal.kcal) }), 220, 17),
+        h('div', { class: 'calorie-center' },
+          icon('flame', 'cal-flame'),
+          h('strong', { class: 'num' }, fmtKcal(Math.abs(rem.kcal))),
+          h('span', {}, t(over ? 'dash.kcalOver' : 'dash.kcalLeft'))),
       ),
       h(
         'div',
-        { class: 'cal-target' },
-        h('span', { class: 'cal-of' }, t('dash.ofWord')),
-        h('span', { class: 'cal-target-num num' }, fmtKcal(goal.kcal)),
-        h('span', { class: 'cal-bar', 'aria-hidden': 'true' }, h('span', { style: { width: `${Math.min(1, ratio) * 100}%` } })),
-        h('span', { class: 'cal-eaten num' }, t('dash.eatenKcal', { n: fmtKcal(eaten.kcal) })),
+        { class: 'calorie-stats' },
+        h('div', {}, h('strong', { class: 'num' }, fmtKcal(eaten.kcal)), h('span', {}, t('dash.eatenWord'))),
+        h('div', {}, h('strong', { class: 'num' }, fmtKcal(goal.kcal)), h('span', {}, t('dash.targetWord'))),
+        h('div', {}, h('strong', { class: 'num' }, `${Math.round(ratio * 100)}%`), h('span', {}, t('dash.usedWord'))),
       ),
     ),
-    h('div', { class: 'cal-macros' }, cols),
+    h('div', { class: 'macro-grid' }, cols),
   );
 }
+
+const NUT_ICON = { fibre: 'leaf', sugar: 'candy', satFat: 'droplet', salt: 'salt' };
 
 function ring(r, count) {
   const value = r.key === 'salt' ? fmtNumber(r.value, 1) : fmtNumber(Math.round(r.value));
@@ -94,16 +90,15 @@ function ring(r, count) {
   const unknown = count - r.known;
   return h(
     'div',
-    { class: `card glass nring nring-${r.key}${r.state === 'over' ? ' over' : ''}` },
-    h('div', { class: 'nring-art' },
-      ringSvg(r.ratio, `${name}: ${value} / ${r.target} g, ${sub}`),
-      h('span', { class: 'nring-pct num', 'aria-hidden': 'true' }, `${r.pct}%`)),
-    glyph(r.key, 'nring-icon'),
-    h('span', { class: 'nring-name' }, name),
-    r.key === 'satFat' ? h('span', { class: 'nring-note' }, t('dash.partOfFat')) : null,
-    h('span', { class: 'nring-val num' }, t('dash.gOf', { eaten: value, target: fmtNumber(r.target) })),
-    r.state === 'over' || r.state === 'toGo' ? h('span', { class: 'nring-sub num' }, sub) : null,
-    unknown > 0 ? h('span', { class: 'nring-unknown' }, t(unknown === 1 ? 'dash.unknown1' : 'dash.unknown', { n: unknown })) : null,
+    { class: `nutrient-card nring-${r.key}${r.state === 'over' ? ' over-limit' : ''}` },
+    h('div', { class: 'nutrient-ring' },
+      ringSvg(r.ratio, `${name}: ${value} / ${r.target} g, ${sub}`, 88, 7),
+      h('strong', { class: 'num', 'aria-hidden': 'true' }, `${r.pct}%`)),
+    icon(NUT_ICON[r.key], 'nutrient-icon'),
+    h('h3', {}, t(`dash.nutName.${r.key}`)),
+    h('p', { class: 'num' }, t('dash.gOf', { eaten: value, target: fmtNumber(r.target) })),
+    h('small', { class: 'num' }, sub),
+    unknown > 0 ? h('small', { class: 'nring-unknown' }, t(unknown === 1 ? 'dash.unknown1' : 'dash.unknown', { n: unknown })) : null,
   );
 }
 
@@ -114,7 +109,7 @@ function ringsCard(entries, goal, dietStyle) {
   return h(
     'section',
     { class: 'dash-rings', 'aria-label': t('tile.nutrients') },
-    h('div', { class: 'nrings' }, rings.map((r) => ring(r, extras.count))),
+    h('div', { class: 'nutrient-grid' }, rings.map((r) => ring(r, extras.count))),
     anyUnknown ? h('p', { class: 'muted small dash-partial' }, t('dash.unknownHint')) : null,
   );
 }
@@ -184,31 +179,71 @@ async function ideaCard() {
   if (!s) return null;
   return h(
     'section',
-    { class: 'card idea-teaser' },
-    h('h2', {}, t('ideas.dashTitle', { meal: t(`meal.${s.meal}`) })),
-    h('p', {}, h('strong', {}, s.title)),
-    h('p', { class: 'muted small num' }, t('ideas.meta', { min: s.minutes, kcal: fmtKcal(s.totals.kcal) })),
-    h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn', onclick: () => addToJournal(s) }, t('ideas.add')), h('a', { class: 'link-btn', href: '#/ideas' }, t('ideas.dashMore'))),
+    { class: 'card glass recipe-card' },
+    h('div', { class: 'recipe-label' }, icon('chart', 'ic-sm'), t('ideas.dashTitle', { meal: t(`meal.${s.meal}`) })),
+    h(
+      'div',
+      { class: 'recipe-content' },
+      h('div', { class: 'recipe-image', 'aria-hidden': 'true' }, icon('utensils', 'ic-recipe')),
+      h(
+        'div',
+        { class: 'recipe-info' },
+        h('h2', {}, s.title),
+        h('p', { class: 'num' }, icon('clock', 'ic-xs'), t('ideas.meta', { min: s.minutes, kcal: fmtKcal(s.totals.kcal) })),
+        h('div', { class: 'recipe-buttons' },
+          h('button', { type: 'button', class: 'add-journal', onclick: () => addToJournal(s) }, t('ideas.add')),
+          h('a', { class: 'text-button', href: '#/ideas' }, t('ideas.dashMore'))),
+      ),
+    ),
   );
 }
 
-const ICON = {
-  journal: ['M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M9 8h6M9 12h6M9 16h4'],
-  recipes: ['M3 11h18', 'M5 11v6a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-6', 'M8 7c0-1.2 1-1.2 1-2.4M12 7c0-1.2 1-1.2 1-2.4M16 7c0-1.2 1-1.2 1-2.4'],
-  diet: ['M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1', 'M15 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4z', 'M9 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z', 'M17 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4z'],
-  scan: ['M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2', 'M8 8v8M11 8v8M14 8v8M17 8v8'],
-  likes: ['M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z'],
-  edit: ['M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z', 'M17 14v6M14 17h6'],
-};
+const SHORT_ICON = { journal: 'book', recipes: 'soup', diet: 'sliders', scan: 'scan', likes: 'heart' };
 
-function shortcut(href, icon, title, sub) {
+function shortcut(href, name, title, sub) {
   return h(
     'a',
-    { class: 'card glass shortcut', href },
-    svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: 'shortcut-icon' }, ICON[icon].map((d) => svg('path', { d }))),
-    h('span', { class: 'shortcut-title' }, title),
-    sub ? h('span', { class: 'shortcut-sub' }, sub) : null,
-    glyph('chevron', 'shortcut-chev'),
+    { class: 'quick-action', href },
+    icon(SHORT_ICON[name], 'qa-icon'),
+    h('span', { class: 'qa-title' }, title),
+    h('small', {}, sub || '\u00a0'),
+    icon('chevronRight', 'action-arrow'),
+  );
+}
+
+/** Date, title and the round + button with its menu. */
+function header(date, rerender) {
+  const go = (n) => {
+    setSelectedDate(n === 0 ? today() : addDays(getSelectedDate(), n));
+    rerender();
+  };
+  const menu = h(
+    'div',
+    { class: 'add-menu card glass', id: 'add-menu', hidden: true },
+    h('a', { href: `#/add?date=${date}` }, icon('utensils', 'ic-sm'), t('dash.add')),
+    h('a', { href: `#/add?date=${date}&scan=1` }, icon('scan', 'ic-sm'), t('tile.scan')),
+  );
+  const addBtn = h('button', { type: 'button', class: 'add-button', 'aria-label': t('dash.add'), 'aria-expanded': 'false', 'aria-controls': 'add-menu' }, icon('plus', 'ic-add'));
+  addBtn.addEventListener('click', () => {
+    menu.hidden = !menu.hidden;
+    addBtn.setAttribute('aria-expanded', String(!menu.hidden));
+  });
+  const isToday = date === today();
+  return h(
+    'header',
+    { class: 'dash-header' },
+    h(
+      'div',
+      { class: 'dash-title' },
+      h('p', { class: 'date-label' }, fmtDate(parseISODate(date), { weekday: 'long', day: 'numeric', month: 'long' })),
+      h('div', { class: 'dash-day' },
+        h('button', { type: 'button', class: 'day-step', 'aria-label': t('dash.prevDay'), onclick: () => go(-1) }, icon('chevronLeft', 'ic-sm')),
+        h('h1', {}, dayLabel(date)),
+        h('button', { type: 'button', class: 'day-step', 'aria-label': t('dash.nextDay'), onclick: () => go(1) }, icon('chevronRight', 'ic-sm'))),
+      isToday ? null : h('button', { type: 'button', class: 'link-btn', onclick: () => go(0) }, t('dash.goToToday')),
+    ),
+    addBtn,
+    menu,
   );
 }
 
@@ -263,11 +298,9 @@ export async function render(root, rerender) {
   for (const row of tileRows(tileLayout(settings.dashTiles))) {
     const els = (await Promise.all(row.map((tile) => build[tile.id]()))).filter(Boolean);
     if (!els.length) continue;
-    rows.push(row[0].size === 'small' ? h('div', { class: 'shortcuts' }, els) : els[0]);
+    rows.push(row[0].size === 'small' ? h('div', { class: 'quick-actions' }, els) : els[0]);
   }
 
-  const edit = h('a', { class: 'link-btn edit-tiles', href: '#/tiles' }, svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: 'shortcut-icon' }, ICON.edit.map((d) => svg('path', { d }))), t('tiles.edit'));
-  const add = h('a', { class: 'btn primary wide add-btn', href: `#/add?date=${date}` }, `+ ${t('dash.add')}`);
-
-  root.replaceChildren(...[dayNav(rerender), notice, ...rows, add, edit].filter(Boolean));
+  const edit = h('a', { class: 'link-btn edit-tiles', href: '#/tiles' }, icon('grid', 'shortcut-icon'), t('tiles.edit'));
+  root.replaceChildren(...[header(date, rerender), notice, ...rows, edit].filter(Boolean));
 }
