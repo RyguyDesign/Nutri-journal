@@ -263,3 +263,10 @@ test('evening with lots left: dinner recipes, not only snacks', async () => {
   assert.equal(r.meal, 'dinner');
   assert.ok(r.groups.regular.length > 0);
 });
+
+test('Middle Eastern dishes found under common spellings', async () => {
+  const { searchEveryday } = await import('../js/foods/everyday.js');
+  for (const q of ['tabouli', 'tabbouleh', 'shawarma', 'dolma', 'knafeh', 'foul medames', 'koshary', 'baba ghanoush'])
+    assert.ok(searchEveryday(q).length, q);
+  assert.equal(searchEveryday('tabouli')[0].name, 'Tabbouleh');
+});

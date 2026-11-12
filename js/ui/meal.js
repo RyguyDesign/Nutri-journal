@@ -207,6 +207,7 @@ export async function render(root, rerender, params = {}) {
 
   // ---- Search ---------------------------------------------------------------
   let token = 0;
+  let autoOnline;
   async function showResults() {
     const my = ++token;
     const text = search.value.trim();
@@ -241,6 +242,11 @@ export async function render(root, rerender, params = {}) {
     }
     results.replaceChildren(...sections);
     results.hidden = !sections.length;
+    // Nothing known by that name: look it up online without an extra tap
+    clearTimeout(autoOnline);
+    if (text.length >= 3 && !mealsShown.length && !(foods.length) && !results.querySelector('.suggest-pick')) {
+      autoOnline = setTimeout(() => { if (my === token && search.value.trim() === text) searchOnline(text); }, 700);
+    }
   }
 
   async function searchOnline(text) {
