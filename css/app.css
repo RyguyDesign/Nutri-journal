@@ -1499,3 +1499,44 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
   :root:not([data-theme='light']) .add-button:active { box-shadow: 0 0 10px rgba(50, 175, 252, 0.9), 0 0 30px rgba(30, 130, 255, 0.5), inset 0 2px 6px rgba(0, 30, 80, 0.4); }
   :root:not([data-theme='light']) .add-button.open { box-shadow: 0 0 22px rgba(50, 175, 252, 0.9), 0 0 60px rgba(30, 130, 255, 0.55), inset 0 1px 3px rgba(255, 255, 255, 0.55); }
 }
+
+/* ==== One card style everywhere: the Add food card ==== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .card,
+  :root:not([data-theme='light']) .diet-status,
+  :root:not([data-theme='light']) .calorie-card,
+  :root:not([data-theme='light']) .macro-card,
+  :root:not([data-theme='light']) .recipe-card,
+  :root:not([data-theme='light']) .nutrient-card,
+  :root:not([data-theme='light']) .quick-action {
+    background:
+      radial-gradient(120% 80% at 0% 0%, var(--lit-corner), rgba(16, 34, 68, 0.55) 30%, transparent 58%),
+      radial-gradient(90% 70% at 100% 100%, rgba(28, 82, 165, 0.5), rgba(14, 40, 90, 0.2) 40%, transparent 65%),
+      rgba(5, 13, 33, 0.9);
+    border: 1px solid rgba(30, 52, 98, 0.75);
+    border-radius: 24px;
+    box-shadow: inset 0 1px 0 rgba(120, 170, 240, 0.18), 0 18px 40px rgba(0, 0, 0, 0.55);
+  }
+  :root:not([data-theme='light']) .card::before,
+  :root:not([data-theme='light']) .diet-status::before,
+  :root:not([data-theme='light']) .calorie-card::before,
+  :root:not([data-theme='light']) .recipe-card::before,
+  :root:not([data-theme='light']) .nutrient-card::before,
+  :root:not([data-theme='light']) .quick-action::before {
+    background: linear-gradient(125deg, rgba(150, 200, 255, 0.16) 0%, rgba(120, 180, 255, 0.05) 14%, transparent 26%);
+    animation: none;
+  }
+  :root:not([data-theme='light']) .card::after,
+  :root:not([data-theme='light']) .diet-status::after,
+  :root:not([data-theme='light']) .calorie-card::after,
+  :root:not([data-theme='light']) .macro-card::after,
+  :root:not([data-theme='light']) .nutrient-card::after,
+  :root:not([data-theme='light']) .quick-action::after {
+    opacity: 1;
+    background: linear-gradient(135deg, rgba(110, 160, 230, 0.55) 0%, rgba(40, 70, 120, 0.2) 22%, transparent 40% 58%, rgba(42, 134, 215, 0.6) 78%, var(--lit-edge-bright) 100%);
+  }
+  /* The menu stays solid so nothing shows through it */
+  :root:not([data-theme='light']) .dash-header .add-menu.card {
+    background: radial-gradient(120% 80% at 0% 0%, rgba(37, 70, 119, 0.7), transparent 55%), rgba(4, 11, 28, 0.97);
+  }
+}
