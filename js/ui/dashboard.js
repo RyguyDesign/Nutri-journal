@@ -231,10 +231,33 @@ function header(date, rerender) {
     h('a', { href: `#/add?date=${date}&scan=1` }, icon('scan', 'ic-sm'), t('tile.scan')),
   );
   const addBtn = h('button', { type: 'button', class: 'add-button', 'aria-label': t('dash.add'), 'aria-expanded': 'false', 'aria-controls': 'add-menu' }, icon('plus', 'ic-add'));
-  addBtn.addEventListener('click', () => {
-    menu.hidden = !menu.hidden;
-    addBtn.setAttribute('aria-expanded', String(!menu.hidden));
-  });
+  const setOpen = (open, { focus = false } = {}) => {
+    menu.hidden = !open;
+    addBtn.classList.toggle('open', open);
+    addBtn.setAttribute('aria-expanded', String(open));
+    addBtn.setAttribute('aria-label', open ? t('dash.addClose') : t('dash.add'));
+    if (open) {
+      if (focus) menu.querySelector('a')?.focus();
+      // Close on a tap anywhere else, or on Escape.
+      setTimeout(() => document.addEventListener('pointerdown', onOutside, true));
+      document.addEventListener('keydown', onKey);
+    } else {
+      document.removeEventListener('pointerdown', onOutside, true);
+      document.removeEventListener('keydown', onKey);
+    }
+  };
+  const onOutside = (e) => { if (!menu.contains(e.target) && !addBtn.contains(e.target)) setOpen(false); };
+  const onKey = (e) => {
+    if (e.key === 'Escape') { setOpen(false); addBtn.focus(); return; }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const items = [...menu.querySelectorAll('a')];
+    const i = items.indexOf(document.activeElement);
+    e.preventDefault();
+    items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+  };
+  // detail === 0 means keyboard activation: move focus into the menu.
+  addBtn.addEventListener('click', (e) => setOpen(menu.hidden, { focus: e.detail === 0 }));
+  menu.addEventListener('click', (e) => { if (e.target.closest('a')) setOpen(false); });
   return h(
     'header',
     { class: 'dash-header' },
