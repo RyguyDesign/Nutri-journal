@@ -1190,3 +1190,109 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) body::after { display: none; }
 }
+
+/* ==== Premium glass + neon light system (owner's CSS, mapped to the app's classes) ==== */
+@keyframes ringIn { from { stroke-dasharray: 0 var(--circ, 999); } }
+@keyframes barIn { from { transform: scaleX(0); } }
+@keyframes lightSweep { 0%, 100% { background-position: 150% 0; } 50% { background-position: -150% 0; } }
+@keyframes neonPulse { 0%, 100% { opacity: .85; } 50% { opacity: 1; } }
+.progress-ring .ring-fill { animation: ringIn 1.1s cubic-bezier(.2, .8, .2, 1) both; }
+.progress-fill, .mini-bar span { transform-origin: left; animation: barIn .9s cubic-bezier(.2, .8, .2, 1) both; }
+.neon-edge { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; overflow: visible; display: none; }
+
+@media (prefers-color-scheme: dark) {
+  /* Old CSS swooshes give way to the SVG curves */
+  :root:not([data-theme='light']) .calorie-card::after,
+  :root:not([data-theme='light']) .recipe-card::after,
+  :root:not([data-theme='light']) .diet-status::after { content: none; }
+
+  /* Glass: layered blur, depth */
+  :root:not([data-theme='light']) .card,
+  :root:not([data-theme='light']) .diet-status,
+  :root:not([data-theme='light']) .nutrient-card,
+  :root:not([data-theme='light']) .quick-action {
+    position: relative; overflow: hidden; isolation: isolate;
+    background: linear-gradient(135deg, rgba(40, 70, 120, 0.32), rgba(12, 25, 52, 0.76) 45%, rgba(17, 31, 59, 0.88));
+    -webkit-backdrop-filter: blur(28px) saturate(150%); backdrop-filter: blur(28px) saturate(150%);
+    border: 1px solid rgba(154, 202, 255, 0.22);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), inset 0 -1px 1px rgba(72, 186, 255, 0.08), 0 15px 40px rgba(0, 0, 0, 0.28);
+  }
+  /* Reflective top edge */
+  :root:not([data-theme='light']) .card::before,
+  :root:not([data-theme='light']) .diet-status::before,
+  :root:not([data-theme='light']) .nutrient-card::before,
+  :root:not([data-theme='light']) .quick-action::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: -1;
+    background: linear-gradient(125deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.035) 12%, transparent 35%, transparent 75%, rgba(72, 186, 255, 0.07) 100%);
+  }
+  /* Slow light sweep across the calorie and idea cards */
+  :root:not([data-theme='light']) .calorie-card::before,
+  :root:not([data-theme='light']) .recipe-card::before {
+    background:
+      linear-gradient(110deg, transparent 15%, rgba(255, 255, 255, 0.035) 35%, rgba(72, 186, 255, 0.12) 50%, transparent 65%) 0 0 / 250% 100%,
+      linear-gradient(125deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.035) 12%, transparent 35%);
+    animation: lightSweep 9s ease-in-out infinite;
+  }
+  /* Edge lighting, strongest on the calorie card */
+  :root:not([data-theme='light']) .calorie-card {
+    border-color: rgba(120, 200, 255, 0.34);
+    box-shadow: inset 1px 0 1px rgba(160, 220, 255, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 0 25px rgba(35, 145, 255, 0.12), 0 20px 50px rgba(0, 0, 0, 0.35);
+  }
+  /* Ambient blue light behind selected cards */
+  :root:not([data-theme='light']) .diet-status { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 0 35px rgba(42, 130, 255, 0.12), 0 15px 40px rgba(0, 0, 0, 0.28); }
+  :root:not([data-theme='light']) .recipe-card { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 0 30px rgba(42, 130, 255, 0.13), 0 20px 40px rgba(0, 0, 0, 0.25); }
+
+  /* Neon SVG curves wrapping the cards */
+  :root:not([data-theme='light']) .neon-edge { display: block; filter: drop-shadow(0 0 4px rgba(65, 185, 255, 0.9)) drop-shadow(0 0 14px rgba(65, 185, 255, 0.45)); animation: neonPulse 6s ease-in-out infinite; }
+  :root:not([data-theme='light']) .neon-faint { opacity: .45; }
+
+  /* Macro glow, each in its own colour */
+  :root:not([data-theme='light']) .mc-protein .progress-fill { box-shadow: 0 0 8px #ff647d, 0 0 18px rgba(255, 100, 125, 0.45); }
+  :root:not([data-theme='light']) .mc-carbs .progress-fill { box-shadow: 0 0 8px #39baff, 0 0 18px rgba(57, 186, 255, 0.45); }
+  :root:not([data-theme='light']) .mc-fat .progress-fill { box-shadow: 0 0 8px #ffb52e, 0 0 18px rgba(255, 181, 46, 0.45); }
+  :root:not([data-theme='light']) .macro-item.over .progress-fill { box-shadow: 0 0 8px var(--over), 0 0 18px rgba(255, 181, 46, 0.45); }
+
+  /* Nutrient rings: neon glow and a tinted ambient light per nutrient */
+  :root:not([data-theme='light']) .nutrient-card .ring-fill { filter: drop-shadow(0 0 5px var(--c)); }
+  :root:not([data-theme='light']) .nutrient-card .mini-bar span { box-shadow: 0 0 6px var(--c); }
+  :root:not([data-theme='light']) .nring-fibre { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 20px rgba(0, 217, 154, 0.06); }
+  :root:not([data-theme='light']) .nring-sugar { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 100, 125, 0.08); }
+  :root:not([data-theme='light']) .nring-satFat { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 25px rgba(255, 181, 46, 0.12); }
+  :root:not([data-theme='light']) .nring-salt { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 25px rgba(57, 186, 255, 0.12); }
+
+  /* Buttons */
+  :root:not([data-theme='light']) .add-button { box-shadow: 0 0 15px rgba(72, 186, 255, 0.6), 0 0 40px rgba(72, 186, 255, 0.35), inset 0 1px 3px rgba(255, 255, 255, 0.5); }
+  :root:not([data-theme='light']) .add-journal { box-shadow: 0 0 12px rgba(72, 186, 255, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.12); }
+
+  /* Background: flowing contour rings top right, plus one thin light streak */
+  :root:not([data-theme='light']) body::before {
+    content: ''; position: fixed; top: -100px; right: -100px; width: 500px; height: 600px; border-radius: 0; filter: none; opacity: 1; z-index: 0; pointer-events: none;
+    background: repeating-radial-gradient(ellipse at top right, transparent 0 35px, rgba(49, 139, 255, 0.10) 36px, transparent 37px 55px);
+    -webkit-mask-image: linear-gradient(to bottom, black, transparent 85%); mask-image: linear-gradient(to bottom, black, transparent 85%);
+  }
+  :root:not([data-theme='light']) body::after {
+    display: block; content: ''; position: fixed; left: -20%; right: auto; bottom: 22%; width: 140%; height: 1px; border: 0; border-radius: 0; filter: none; opacity: .6; z-index: 0; pointer-events: none; box-shadow: 0 0 10px rgba(72, 186, 255, 0.6);
+    background: linear-gradient(90deg, transparent 10%, rgba(72, 186, 255, 0.0) 25%, rgba(110, 200, 255, 0.7) 60%, transparent 85%);
+    transform: rotate(-18deg);
+  }
+
+  /* Bottom nav glass */
+  :root:not([data-theme='light']) .tabbar {
+    background: rgba(17, 29, 52, 0.86);
+    -webkit-backdrop-filter: blur(35px) saturate(160%); backdrop-filter: blur(35px) saturate(160%);
+    border: 1px solid rgba(178, 207, 255, 0.25);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 25px rgba(60, 150, 255, 0.08);
+  }
+
+  /* Interaction: press feedback on phones, lift on hover elsewhere */
+  :root:not([data-theme='light']) .quick-action,
+  :root:not([data-theme='light']) .nutrient-card { transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+  :root:not([data-theme='light']) .quick-action:active { transform: scale(.97); border-color: rgba(72, 186, 255, 0.55); }
+}
+@media (hover: hover) and (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .quick-action:hover,
+  :root:not([data-theme='light']) .nutrient-card:hover { transform: translateY(-4px); border-color: rgba(72, 186, 255, 0.55); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

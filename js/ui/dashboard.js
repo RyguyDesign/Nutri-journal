@@ -12,7 +12,7 @@ import { macroBar, nutrientRings } from '../core/dash.js';
 import { withTypicalExtras } from '../foods/everyday.js';
 import { tileLayout, tileRows } from '../core/tiles.js';
 import { MEALS } from '../core/entry.js';
-import { icon } from './icons.js';
+import { icon, neonEdge } from './icons.js';
 import { dayLabel } from './daynav.js';
 import { setSelectedDate } from './state.js';
 import { addDays, parseISODate } from '../core/dates.js';
@@ -34,7 +34,7 @@ function ringSvg(ratio, label, size = 88, stroke = 7, gradId = null) {
       svg('stop', { offset: '0', 'stop-color': '#9be3ff' }), svg('stop', { offset: '0.55', 'stop-color': '#3aa8ff' }), svg('stop', { offset: '1', 'stop-color': '#1d5fff' }))) : null,
     svg('g', { transform: `rotate(-90 ${c} ${c})`, fill: 'none' },
       svg('circle', { class: 'ring-track', cx: c, cy: c, r, 'stroke-width': stroke }),
-      svg('circle', { class: 'ring-fill', cx: c, cy: c, r, 'stroke-width': stroke, stroke: gradId ? `url(#${gradId})` : null, 'stroke-linecap': ratio > 0.005 ? 'round' : 'butt', 'stroke-dasharray': `${(Math.max(0, Math.min(1, ratio)) * C).toFixed(1)} ${C.toFixed(1)}` })),
+      svg('circle', { class: 'ring-fill', cx: c, cy: c, r, 'stroke-width': stroke, stroke: gradId ? `url(#${gradId})` : null, 'stroke-linecap': ratio > 0.005 ? 'round' : 'butt', 'stroke-dasharray': `${(Math.max(0, Math.min(1, ratio)) * C).toFixed(1)} ${C.toFixed(1)}`, style: `--circ:${C.toFixed(1)}` })),
   );
 }
 
@@ -305,6 +305,10 @@ export async function render(root, rerender) {
     if (!els.length) continue;
     if (row[0].size === 'small') rows.push(h('div', { class: 'quick-actions' }, els));
     else rows.push(...els);
+  }
+  for (const el of rows) {
+    const kind = el.classList?.contains('calorie-card') ? 'calorie' : el.classList?.contains('recipe-card') ? 'recipe' : el.classList?.contains('diet-status') ? 'fasting' : null;
+    if (kind) el.append(neonEdge(kind));
   }
 
   const edit = h('a', { class: 'link-btn edit-tiles', href: '#/tiles' }, icon('grid', 'shortcut-icon'), t('tiles.edit'));
