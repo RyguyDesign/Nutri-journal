@@ -75,3 +75,33 @@ export function tileRows(layout) {
 }
 
 export const DEFAULT_LAYOUT = tileLayout(null);
+
+/**
+ * Move a tile so it sits just before `beforeId`. With no `beforeId` it goes
+ * after the last shown tile (or, with toEnd, to the very end of the list).
+ * Unchanged if either id is unknown.
+ */
+export function placeTile(layout, id, beforeId, { toEnd = false } = {}) {
+  const moving = layout.find((t) => t.id === id);
+  if (!moving || id === beforeId) return layout;
+  const rest = layout.filter((t) => t.id !== id);
+  let i;
+  if (beforeId) {
+    i = rest.findIndex((t) => t.id === beforeId);
+    if (i < 0) return layout;
+  } else {
+    i = toEnd ? rest.length : rest.map((t) => t.on).lastIndexOf(true) + 1;
+  }
+  rest.splice(i, 0, moving);
+  return rest;
+}
+
+/** Turn a tile on and put it after the last shown tile. */
+export function showTile(layout, id) {
+  return placeTile(layout.map((t) => (t.id === id ? { ...t, on: true } : t)), id, null);
+}
+
+/** Turn a tile off; it keeps its place in the list. */
+export function hideTile(layout, id) {
+  return layout.map((t) => (t.id === id ? { ...t, on: false } : t));
+}

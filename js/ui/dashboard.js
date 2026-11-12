@@ -10,7 +10,8 @@ import { dashboardStatus } from './diet-status.js';
 import { DIETS, FASTING, nutrientGoals, activeFast } from '../core/diet.js';
 import { macroBar, nutrientRings } from '../core/dash.js';
 import { withTypicalExtras } from '../foods/everyday.js';
-import { tileLayout, tileRows } from '../core/tiles.js';
+import { tileLayout, tileRows, saveShape, placeTile, showTile, hideTile } from '../core/tiles.js';
+import { dragSort, keyMove } from './drag-sort.js';
 import { MEALS } from '../core/entry.js';
 import { icon } from './icons.js';
 import { withLights } from './lights.js';
@@ -323,8 +324,16 @@ export async function render(root, rerender) {
     likes: () => shortcut('#/tastes', 'likes', t('tastes.title'), null),
   };
 
+  const layout = tileLayout(settings.dashTiles);
+  const saveLayout = async (next) => store.saveSettings({ ...(await store.getSettings()), dashTiles: saveShape(next) });
+
+  if (editing) {
+    root.replaceChildren(...(await editView({ layout, build, saveLayout, rerender })));
+    return;
+  }
+
   const rows = [];
-  for (const row of tileRows(tileLayout(settings.dashTiles))) {
+  for (const row of tileRows(layout)) {
     const els = (await Promise.all(row.map((tile) => build[tile.id]()))).flat().filter(Boolean);
     if (!els.length) continue;
     if (row[0].size === 'small') rows.push(h('div', { class: 'quick-actions' }, els));
@@ -335,6 +344,101 @@ export async function render(root, rerender) {
     if (kind) rows[i] = withLights(el, kind);
   });
 
-  const edit = h('a', { class: 'link-btn edit-tiles', href: '#/tiles' }, icon('grid', 'shortcut-icon'), t('tiles.edit'));
-  root.replaceChildren(...[header(date, rerender), notice, ...rows, edit].filter(Boolean));
+  const edit = h('button', { type: 'button', class: 'link-btn edit-tiles', onclick: () => enterEdit(rerender) }, icon('grid', 'shortcut-icon'), t('dash.edit.start'));
+  const view = [header(date, rerender), notice, ...rows, edit].filter(Boolean);
+  root.replaceChildren(...view);
+  // Long-press any card to start rearranging
+  longPressToEdit(root, rerender);
+}
+
+// ---- Edit mode: rearrange the dashboard in place --------------------------
+
+let editing = false;
+window.addEventListener('hashchange', () => { editing = false; });
+
+function enterEdit(rerender) {
+  editing = true;
+  navigator.vibrate?.(15);
+  rerender();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function longPressToEdit(root, rerender) {
+  root.__editRerender = rerender;
+  if (root.__longPress) return; // attach once; the view root lives across renders
+  root.__longPress = true;
+  let timer = 0;
+  let start = null;
+  const clear = () => { clearTimeout(timer); timer = 0; };
+  root.addEventListener('pointerdown', (e) => {
+    const onDashboard = ['', '#', '#/'].includes(location.hash);
+    if (editing || !onDashboard) return;
+    const card = e.target.closest('.card, .nutrient-card, .quick-action, .dash-rings');
+    if (!card || e.target.closest('input, select, textarea, .add-menu')) return;
+    start = { x: e.clientX, y: e.clientY };
+    timer = setTimeout(() => {
+      timer = 0;
+      // the long press must not also open whatever was under the finger
+      const swallow = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+      window.addEventListener('click', swallow, { capture: true, once: true });
+      setTimeout(() => window.removeEventListener('click', swallow, true), 400);
+      enterEdit(root.__editRerender);
+    }, 550);
+  });
+  root.addEventListener('pointermove', (e) => { if (timer && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) clear(); });
+  root.addEventListener('pointerup', clear);
+  root.addEventListener('pointercancel', clear);
+  root.addEventListener('contextmenu', (e) => { if (e.target.closest('.card, .quick-action, .nutrient-card')) e.preventDefault(); });
+}
+
+async function editView({ layout, build, saveLayout }) {
+  const name = (id) => t(`tile.${id}`);
+
+  const slot = async (tile) => {
+    let content = [await build[tile.id]()].flat().filter(Boolean);
+    if (!content.length) {
+      content = [h('div', { class: `card edit-empty${tile.size === 'small' ? ' small' : ''}` }, h('strong', {}, name(tile.id)), h('small', { class: 'muted' }, t('dash.edit.emptyNow')))];
+    }
+    const body = h('div', { class: 'edit-body' }, content);
+    body.inert = true; // the card itself can't be used while rearranging
+    const remove = h('button', { type: 'button', class: 'edit-remove', 'data-no-drag': '', 'aria-label': t('dash.edit.remove', { name: name(tile.id) }), onclick: () => saveLayout(hideTile(layout, tile.id)) }, icon('x', 'ic'));
+    const grip = h('button', { type: 'button', class: 'edit-grip', 'aria-label': t('tiles.drag', { name: name(tile.id) }) }, icon('grip', 'ic'));
+    keyMove(grip, (dir) => saveLayout(moveShown(layout, tile.id, dir)));
+    return h('div', { class: `edit-slot ${tile.size}`, 'data-id': tile.id, 'data-inline': tile.size === 'small' ? '' : null }, body, remove, grip);
+  };
+
+  const parts = [];
+  for (const row of tileRows(layout)) {
+    const els = await Promise.all(row.map(slot));
+    if (row[0].size === 'small') parts.push(h('div', { class: 'quick-actions edit-row' }, els));
+    else parts.push(...els);
+  }
+  const board = h('div', { class: 'edit-board' }, parts);
+  dragSort(board, { slotSelector: '.edit-slot', handleSelector: '.edit-grip', onDrop: (id, before) => saveLayout(placeTile(layout, id, before)) });
+
+  // The + card: suggests the cards that aren't on the dashboard yet
+  const hidden = layout.filter((tl) => !tl.on);
+  const addCard = h(
+    'section',
+    { class: 'add-card' },
+    h('div', { class: 'add-card-head' }, h('span', { class: 'add-card-plus' }, icon('plus', 'ic')), h('div', {}, h('h2', {}, t('dash.edit.addTitle')), h('p', { class: 'muted' }, hidden.length ? t('dash.edit.addHint') : t('dash.edit.allOn')))),
+    hidden.length
+      ? h('div', { class: 'add-card-list' }, hidden.map((tl) => h('button', { type: 'button', class: 'add-card-item', onclick: () => saveLayout(showTile(layout, tl.id)) },
+          icon('plus', 'ic-sm'), h('span', {}, h('strong', {}, name(tl.id)), h('small', {}, t(`tile.${tl.id}.desc`))))))
+      : null,
+  );
+
+  const bar = h('div', { class: 'edit-bar' },
+    h('div', {}, h('h1', {}, t('dash.edit.title')), h('p', { class: 'muted' }, t('dash.edit.hint'))),
+    h('button', { type: 'button', class: 'btn primary edit-done', onclick: () => { editing = false; saveLayout(layout); } }, icon('check', 'ic-sm'), t('tiles.done')));
+  return [bar, board, addCard, h('a', { class: 'link-btn edit-tiles', href: '#/tiles' }, t('dash.edit.list'))];
+}
+
+/** Move a shown tile one place among the shown tiles (keyboard reordering). */
+function moveShown(layout, id, dir) {
+  const shown = layout.filter((tl) => tl.on).map((tl) => tl.id);
+  const i = shown.indexOf(id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= shown.length) return layout;
+  return placeTile(layout, id, dir < 0 ? shown[j] : shown[j + 1] ?? null);
 }

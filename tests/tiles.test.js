@@ -40,3 +40,30 @@ test('rows: wide tiles alone, small tiles up to three per row', () => {
   l = moveTile(l, 'fasting', 1); // fasting now after idea (off) -> still before shortcuts
   assert.deepEqual(tileRows(tileLayout({ order: ['journal', 'calories', 'recipes'], off: [] })).slice(0, 3).map((r) => r.map((t) => t.id)), [['journal'], ['calories'], ['recipes']]);
 });
+
+test('placeTile moves a tile before another, after the last shown, or to the end', async () => {
+  const { placeTile, showTile, hideTile } = await import('../js/core/tiles.js');
+  const l = tileLayout(null);
+  // before another tile
+  let m = placeTile(l, 'diet', 'calories');
+  assert.deepEqual(ids(m).slice(0, 2), ['diet', 'calories']);
+  assert.equal(m.length, l.length);
+  // no target: after the last shown tile ('diet' is the last shown by default)
+  m = placeTile(l, 'calories', null);
+  assert.deepEqual(on(m).slice(-1), ['calories']);
+  // toEnd: very end of the list
+  m = placeTile(l, 'calories', null, { toEnd: true });
+  assert.equal(ids(m).at(-1), 'calories');
+  // unknown ids leave it alone
+  assert.equal(placeTile(l, 'bogus', 'calories'), l);
+  assert.equal(placeTile(l, 'calories', 'bogus'), l);
+  assert.equal(placeTile(l, 'calories', 'calories'), l);
+  // show puts a hidden tile after the last shown one; hide keeps its place
+  m = showTile(l, 'idea');
+  assert.deepEqual(on(m).slice(-1), ['idea']);
+  const h = hideTile(m, 'nutrients');
+  assert.deepEqual(ids(h), ids(m));
+  assert.equal(h.find((t) => t.id === 'nutrients').on, false);
+  // round trip through the saved shape
+  assert.deepEqual(saveShape(tileLayout(saveShape(h))), saveShape(h));
+});
