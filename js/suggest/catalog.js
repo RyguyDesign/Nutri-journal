@@ -61,7 +61,7 @@ export const FOODS = [
   f('lentils', 'Lentils', 'protein', 116, 8.9, 15.6, 0.5, { short: 'Lentils', prep: 'cooked', min: 100, max: 300, tags: ['main'] }),
 
   f('steak', 'Beef steak (rump)', 'protein', 169, 31.8, 0, 4.6, { short: 'Steak', prep: 'cooked', min: 120, max: 250, flags: ['meat'], tags: ['main'] }),
-  f('chicken-thigh', 'Chicken thigh (skinless)', 'protein', 187, 23.9, 0, 10.2, { short: 'Chicken thigh', prep: 'cooked', min: 100, max: 250, flags: ['meat'], tags: ['main'] }),
+  f('chicken-thigh', 'Chicken thigh (with skin)', 'protein', 187, 23.9, 0, 10.2, { short: 'Chicken thigh', prep: 'cooked', min: 100, max: 250, flags: ['meat'], tags: ['main'] }),
   f('turkey-mince', 'Turkey mince', 'protein', 150, 27, 0, 4.5, { prep: 'cooked', min: 80, max: 220, flags: ['meat'], tags: ['main'] }),
   f('mixed-mince', 'Mixed beef and pork mince', 'protein', 270, 24, 0, 19, { short: 'Mince', prep: 'cooked', min: 80, max: 200, flags: ['meat', 'pork'], tags: ['main'] }),
   f('pork-chop', 'Pork chop', 'protein', 247, 32.9, 0, 12.8, { prep: 'cooked', min: 120, max: 250, flags: ['meat', 'pork'], tags: ['main'] }),

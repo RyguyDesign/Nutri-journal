@@ -129,9 +129,10 @@ export function searchEveryday(query, limit = 6) {
     .sort((a, b) => b.m.reduce((n, v) => n + v, 0) - a.m.reduce((n, v) => n + v, 0) || rank(a.x) - rank(b.x) || a.x.f.name.length - b.x.f.name.length);
   if (exact.length || words.length < 2) return exact.slice(0, limit).map((s) => s.x.f);
   // No food matches every word ("pumpkin soup"): offer the closest ones,
-  // those matching the most words, favouring the last word ("soup").
+  // those matching the most words; the last word ("soup") is what the food
+  // is, so it weighs more than any one other word.
   const last = words[words.length - 1];
-  return scored.map((s) => ({ f: s.x.f, n: s.m.filter((v, i) => v > 0 && words[i].length > 2).length + (s.m[s.m.length - 1] > 0 ? 0.5 : 0) }))
+  return scored.map((s) => ({ f: s.x.f, n: s.m.filter((v, i) => v > 0 && words[i].length > 2).length + (s.m[s.m.length - 1] > 0 ? 1.5 : 0) }))
     .filter((x) => x.n >= 1)
     .sort((a, b) => b.n - a.n || Number(fold(b.f.name).includes(last)) - Number(fold(a.f.name).includes(last)) || a.f.name.length - b.f.name.length)
     .slice(0, limit)

@@ -470,7 +470,8 @@ export async function render(root, rerender, params = {}) {
       list,
       saveRow,
     ),
-    h('p', { class: 'add-detail' }, h('a', { class: 'link-btn', href: `#/add/detail?meal=${mealSel.value}&date=${dateIn.value}`, onclick: (e) => { e.currentTarget.href = `#/add/detail?meal=${mealSel.value}&date=${dateIn.value}`; } }, t('add.detailed'))),
+    h('p', { class: 'add-detail' }, h('a', { class: 'link-btn', href: `#/add/detail?meal=${mealSel.value}&date=${dateIn.value}`, onclick: (e) => { e.currentTarget.href = `#/add/detail?meal=${mealSel.value}&date=${dateIn.value}`; } }, t('add.detailed')),
+      h('a', { class: 'link-btn', id: 'juice-link', href: '#/juice', onclick: (e) => { e.currentTarget.href = `#/juice?date=${dateIn.value}`; } }, t('add.juice'))),
     h('div', { class: 'actions sticky add-actions' }, saveBtn),
   );
 

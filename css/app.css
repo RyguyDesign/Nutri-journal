@@ -905,6 +905,7 @@ input[type='text'], input[type='search'], input[type='number'], input[type='time
 .plate .save-meal-row[hidden] { display: none; }
 .add-detail { margin: 0; text-align: center; }
 .add-detail .link-btn { display: inline-flex; align-items: center; min-height: 44px; }
+.add-detail { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 18px; }
 .add-actions { background: linear-gradient(180deg, transparent, var(--bg) 30%); padding-top: 14px; }
 .btn.primary.add-save { width: 100%; min-height: 58px; border-radius: 999px; font-size: 1.0625rem; font-weight: 800; }
 
@@ -1651,3 +1652,22 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
   :root:not([data-theme='light']) .act-icon { box-shadow: 0 0 14px color-mix(in srgb, var(--c) 35%, transparent); }
   :root:not([data-theme='light']) .act-icon .ic { filter: drop-shadow(0 0 5px var(--c)); }
 }
+
+/* ---- Juice mixer (js/ui/juice.js) ---- */
+.juice-card h2 { font-size: 1rem; margin: 0 0 12px; }
+.juice-presets .chip { min-height: 44px; }
+.juice-rows { display: grid; gap: 10px; margin-bottom: 12px; }
+.juice-row { display: grid; grid-template-columns: minmax(0, 1fr) 6.5rem 44px; gap: 8px; align-items: center; }
+.juice-row select, .juice-row input { min-height: 44px; width: 100%; min-width: 0; }
+.juice-remove { width: 44px; height: 44px; }
+.juice-remove:disabled { opacity: 0.35; }
+.juice-add { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; }
+.juice-totals { margin: 16px 0 4px; padding-top: 14px; border-top: 1px solid var(--line); }
+.juice-big { margin: 0 0 10px; font-size: 1rem; }
+.juice-big strong { font-size: 1.9rem; color: var(--accent); }
+.juice-macros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.juice-macros div { min-width: 0; }
+.juice-macros dt { color: var(--muted); font-size: 0.78rem; }
+.juice-macros dd { margin: 2px 0 0; font-weight: 600; }
+.juice-note { margin: 10px 0 14px; }
+.juice-note.warn { color: var(--error); }
