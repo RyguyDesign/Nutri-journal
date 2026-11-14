@@ -88,3 +88,33 @@ test('streak and fasts', () => {
   assert.equal(activeFast(fasts).id, 2);
   assert.equal(fastHours(fasts[0]), 16);
 });
+
+test('carnivore: about 10 g carbs, protein 2 g/kg, fat fills the rest; plant foods flagged', async () => {
+  const { recommendTargets } = await import('../js/core/calc.js');
+  const { dayCheck, nutrientGoals } = await import('../js/core/diet.js');
+  const p = { sex: 'male', age: 35, heightCm: 180, weightKg: 80, targetWeightKg: 80, activity: 'moderate', goal: 'maintain', dietStyle: 'carnivore' };
+  const r = recommendTargets(p);
+  assert.equal(r.carbs, 10);
+  assert.equal(r.protein, 160);
+  assert.ok(Math.abs(r.protein * 4 + r.carbs * 4 + r.fat * 9 - r.calories) <= 10, 'macros add up to the calorie target');
+  const ok = dayCheck({ entries: [{ name: 'Ribeye steak', kcal: 500, carbs: 0 }, { name: 'Black coffee', kcal: 2, carbs: 0 }, { name: 'Eggs', kcal: 140, carbs: 0.3 }, { name: 'Chicken shawarma meat', kcal: 300, carbs: 1.6 }, { name: 'Bone broth', kcal: 40, carbs: 0 }], diet: 'carnivore' });
+  assert.equal(ok.diet.ok, true);
+  const off = dayCheck({ entries: [{ name: 'Steak', kcal: 500, carbs: 0 }, { name: 'Banana', kcal: 95, carbs: 21 }, { name: 'Olive oil', kcal: 90, carbs: 0 }], diet: 'carnivore' });
+  assert.deepEqual(off.diet.off, ['Banana', 'Olive oil']);
+  assert.equal(nutrientGoals({ kcal: 2200, carbs: 10, fat: 160 }, 'carnivore').fibre.target, 0);
+});
+
+test('carnivore suggestions use only animal foods', async () => {
+  const { suggest } = await import('../js/suggest/engine.js');
+  const animal = new Set(['meat', 'pork', 'fish', 'shellfish', 'egg', 'dairy']);
+  for (const now of ['08:00', '13:00', '16:00', '19:00']) {
+    const s = suggest({ remaining: { kcal: 1500, protein: 120, carbs: 10, fat: 90 }, profile: { dietStyle: 'carnivore' }, now, seed: 'c' });
+    const all = Object.values(s.groups).flat();
+    assert.ok(all.length > 0, `suggestions at ${now}`);
+    for (const m of all) for (const it of m.items) {
+      if (it.id === 'salt-pepper') continue;
+      const f = FOOD_BY_ID[it.id] || EXTRA[it.id];
+      assert.ok(f.flags.some((fl) => animal.has(fl)), `${m.title}: ${f.name}`);
+    }
+  }
+});

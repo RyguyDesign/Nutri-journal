@@ -16,6 +16,8 @@
 //          macros don't add up to the calories; that's expected)
 //   aka    other names to match, incl. German
 
+import { juiceFoods } from './juices.js';
+
 const c = (name, kcal, protein, carbs, fat, o = {}) => ({
   id: `common:${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
   name,
@@ -43,8 +45,8 @@ export const COMMON = [
 
   // ---- Cold drinks -------------------------------------------------------
   c('Water', 0, 0, 0, 0, { ml: true, g: 250, label: 'glass', aka: 'wasser sparkling mineral' }),
-  c('Orange juice', 45, 0.7, 10, 0.2, { ml: true, g: 200, label: 'glass', aka: 'orangensaft' }),
-  c('Apple juice', 46, 0.1, 11, 0.1, { ml: true, g: 200, label: 'glass', aka: 'apfelsaft' }),
+  c('Orange juice', 51, 0.5, 11.1, 0.5, { ml: true, g: 200, label: 'glass', aka: 'orangensaft o-saft' }), // Swiss database
+  c('Apple juice', 45, 0.1, 10.8, 0.1, { ml: true, g: 200, label: 'glass', aka: 'apfelsaft' }), // Swiss database
   c('Apple spritzer', 24, 0, 6, 0, { ml: true, g: 330, label: 'glass', aka: 'apfelschorle schorle' }),
   c('Cola', 42, 0, 10.6, 0, { ml: true, g: 330, label: 'can', aka: 'coke soft drink' }),
   c('Cola zero / diet', 0.3, 0, 0, 0, { ml: true, g: 330, label: 'can', aka: 'coke light' }),
@@ -555,4 +557,7 @@ export const COMMON = [
   c('Ketchup', 110, 1.2, 25, 0.2, { g: 15, label: 'tablespoon' }),
   c('Pesto', 450, 5, 6, 45, { g: 30, label: 'portion' }),
   c('Salad dressing', 300, 0.2, 6, 30, { g: 20, label: 'portion', aka: 'vinaigrette dressing' }),
+
+  // ---- Fresh juices: singles and mixes (js/foods/juices.js has the sources) --
+  ...juiceFoods().map((j) => c(j.name, j.kcal, j.protein, j.carbs, j.fat, j.opts)),
 ];

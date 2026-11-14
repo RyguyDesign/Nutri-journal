@@ -78,6 +78,7 @@ export function exclusionsFrom(profile = {}) {
 export function dietFor(profile = {}) {
   if (DIETS[profile.dietStyle] && profile.dietStyle !== 'balanced') return profile.dietStyle;
   const text = (profile.diet || []).join(' ');
+  if (/carnivor/i.test(text)) return 'carnivore';
   if (/keto/i.test(text)) return 'keto';
   if (/low.?carb|lchf/i.test(text)) return 'lowcarb';
   return profile.dietStyle && DIETS[profile.dietStyle] ? profile.dietStyle : 'balanced';
@@ -93,6 +94,7 @@ export function carbLimit(carbsShare) {
 
 export function isAllowed(food, ex) {
   if (food.flags.some((fl) => ex.flags.has(fl))) return false;
+  if (ex.only && !food.flags.some((fl) => ex.only.has(fl))) return false;
   const hay = `${norm(food.name)} ${food.id}`;
   return !ex.terms.some((t) => hay.includes(t));
 }
@@ -156,6 +158,8 @@ function recipeAllowed(recipe, ctx) {
     const f = foodOf(ing[0]);
     if (!f || ing[2]?.optional) continue;
     if (f.flags.some((fl) => ctx.ex.flags.has(fl))) return false;
+    // Carnivore: every real ingredient must be an animal food (salt, a knob of fat is fine)
+    if (ctx.ex.only && !isSmall(ing) && !f.flags.some((fl) => ctx.ex.only.has(fl))) return false;
     const hay = `${norm(f.name)} ${ing[0]}`;
     if (ctx.ex.terms.some((t) => hay.includes(t))) return false;
     // Low carb / keto: no starchy or sugary ingredients (a spoon of vinegar is fine)
@@ -309,6 +313,7 @@ export function suggest({ remaining, tastes = {}, profile = {}, now = '12:00', l
   const ex = exclusionsFrom(profile);
   const diet = DIETS[dietFor(profile)];
   for (const fl of diet.exclude || []) ex.flags.add(fl);
+  if (diet.only) ex.only = new Set(diet.only);
   const lowCarb = diet.maxCarbs100 != null;
   const ctx = {
     ex,

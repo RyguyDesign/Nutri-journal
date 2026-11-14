@@ -9,6 +9,7 @@
 //   fatShare      share of calories from fat when carbs fill the rest
 //   maxCarbs100   leave out foods with this many carbs per 100 g or more
 //   exclude       food flags left out (see suggest/catalog.js)
+//   only          suggestions use only foods with one of these flags
 //   check         the daily check shown in the journal
 export const DIETS = {
   balanced: { fatShare: 0.27 },
@@ -18,6 +19,9 @@ export const DIETS = {
   mediterranean: { fatShare: 0.35, prefer: ['fish', 'legumes', 'olive-oil', 'veg'] },
   vegetarian: { fatShare: 0.27, exclude: ['meat', 'fish', 'shellfish'], check: 'foods' },
   vegan: { fatShare: 0.27, exclude: ['meat', 'fish', 'shellfish', 'dairy', 'egg'], check: 'foods' },
+  // Animal foods only. Carbs are the trace from eggs and dairy; protein
+  // 2 g/kg, fat fills the rest of the calories.
+  carnivore: { proteinPerKg: 2.0, carbs: 10, maxCarbs100: 5, only: ['meat', 'pork', 'fish', 'shellfish', 'egg', 'dairy'], check: 'carnivore' },
 };
 export const DIET_IDS = Object.keys(DIETS);
 
@@ -112,6 +116,8 @@ export function recordDiet(history, date, diet, fasting) {
 // Words that mark meat/fish, and other animal foods, in an entry's name
 const MEAT = /chicken|turkey|beef|pork|steak|ham\b|bacon|salami|sausage|wurst|mince|lamb|veal|duck|venison|goulash|schnitzel|kebab|döner|doner|meatball|frikadelle|burger|nugget|salmon|cod|tuna|trout|mackerel|prawn|shrimp|fish|sardine|anchov|currywurst|bolognese|chili con carne|pho\b|ramen/i;
 const ANIMAL = /milk|cheese|käse|kase|quark|skyr|yog|cream|butter|egg|omelette|honey|whey|mozzarella|feta|gouda|parmesan|halloumi|camembert|emmental|cottage|ice cream|pudding/i;
+// Carnivore: further animal foods, and zero-calorie drinks/seasoning that fit
+const CARNIVORE_OK = /liver|heart|kidney|offal|tongue|marrow|bone broth|broth|tallow|lard|schmalz|ghee|shawarma|kofta|kafta|gyros|mett|tartare|carpaccio|biltong|jerky|pemmican|chicharr|pork rind|crackling|roe|caviar|oyster|mussel|clam|scallop|crab|lobster|squid|calamari|octopus|herring|sardine|anchov|sprat|water|coffee|espresso|tea\b|salt|mineral/i;
 
 /**
  * How a day went for the diet and fasting plan that applied then.
@@ -131,6 +137,10 @@ export function dayCheck({ entries, diet = 'balanced', fasting = 'none', profile
   } else if (d.check === 'foods') {
     const re = diet === 'vegan' ? new RegExp(`${MEAT.source}|${ANIMAL.source}`, 'i') : MEAT;
     const off = entries.filter((e) => re.test(e.name));
+    dietResult = { ok: !off.length, kind: 'foods', off: off.map((e) => e.name) };
+  } else if (d.check === 'carnivore') {
+    // Anything that isn't an animal food, unless it's a zero-calorie drink or seasoning
+    const off = entries.filter((e) => !MEAT.test(e.name) && !ANIMAL.test(e.name) && !CARNIVORE_OK.test(e.name) && ((e.kcal || 0) > 5 || (e.carbs || 0) > 1));
     dietResult = { ok: !off.length, kind: 'foods', off: off.map((e) => e.name) };
   }
 
@@ -173,6 +183,7 @@ export function streak(checksByDate, today) {
  *   vegan          35       50, ≤ carb target       8% of calories                6
  *   lowcarb        25       25, ≤ carb target      12% of calories                6
  *   keto           20       15, ≤ carb target      a third of the fat target      6
+ *   carnivore       0        5, ≤ carb target      none (animal fat is the diet)   6
  *
  * Fibre 30 g and salt 6 g follow the DGE, saturated fat 10% the WHO. The
  * low-carb and keto values are practical limits for those diets (more of
@@ -186,6 +197,8 @@ const NUTRIENT_RULES = {
   vegan: { fibre: 35, sugar: 50, satFat: (t) => (t.kcal * 0.08) / 9 },
   lowcarb: { fibre: 25, sugar: 25, satFat: (t) => (t.kcal * 0.12) / 9 },
   keto: { fibre: 20, sugar: 15, satFat: (t) => t.fat / 3 },
+  // No plant foods means no fibre goal; saturated fat is not limited
+  carnivore: { fibre: 0, sugar: 5, satFat: (t) => t.fat },
 };
 
 export function nutrientGoals(targets, dietStyle) {

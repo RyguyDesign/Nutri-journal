@@ -6,6 +6,8 @@
 // home; ready meals, bread, cheese and cold cuts include their usual salt.
 //
 //   id: [fibre, sugar, saturated fat, salt]
+import { juiceFoods } from './juices.js';
+
 const T = {
   // Meat, fish, eggs, plant protein
   chicken: [0, 0, 1, 0.2], turkey: [0, 0, 0.3, 0.15], 'beef-mince': [0, 0, 3, 0.2], 'pork-fillet': [0, 0, 1.2, 0.15],
@@ -204,6 +206,9 @@ const T = {
   'common:perch': [0, 0, 0.1, null], 'common:surimi-crab-sticks-': [0, 2.1, 0.5, null], 'common:beef-fillet': [0, 0, 0.9, null],
   'common:entrec-te-rib-eye-': [0, 0, 2.2, null], 'common:rabbit': [0, 0, 2.5, null], 'common:baklava': [3, 20, 6, 0.68],
 };
+
+// Fresh juices (js/foods/juices.js); same id rule as js/foods/common.js
+for (const j of juiceFoods()) T[`common:${j.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`] = j.extras;
 
 /** { fibre, sugar, satFat, salt } per 100 g/ml for a built-in food id, or null. */
 const EXTRA_KEYS = ['fibre', 'sugar', 'satFat', 'salt'];

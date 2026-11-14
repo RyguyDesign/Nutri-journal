@@ -803,4 +803,83 @@ export const RECIPES = [
     'Add the rest of the oil, the sliced onion, peppers and garlic and stir-fry for 3 minutes.',
     'Add the oyster sauce, the black pepper and 2 tbsp water. Return the beef and toss until coated in a glossy sauce. Serve with the rice.',
   ]),
+  // ---- Carnivore: animal foods only (salt and pepper aside) ----
+  r('steak-and-eggs', 'Steak and eggs fried in butter', { meals: ['breakfast', 'lunch', 'dinner'], minutes: 15, method: 'pan', cuisine: '' }, [
+    ['steak', 200], ['eggs', 120], ['butter', 10, T('2 tsp')], SP,
+  ], [
+    'Take the steak out of the fridge 20 minutes before cooking and pat it dry. Season with salt.',
+    'Heat a heavy pan until very hot. Sear the steak 2–3 minutes per side for medium-rare, then rest it on a plate for 5 minutes.',
+    'Turn the heat down, add the butter and fry the eggs until the whites are set.',
+    'Slice the steak against the grain and serve with the eggs; season with pepper.',
+  ]),
+  r('butter-basted-steak', 'Butter-basted steak', { meals: ['lunch', 'dinner'], minutes: 15, method: 'pan', cuisine: '' }, [
+    ['steak', 250], ['butter', 15, T('1 tbsp')], SP,
+  ], [
+    'Pat the steak dry and season well with salt.',
+    'Sear in a very hot pan for 2 minutes per side.',
+    'Lower the heat, add the butter and spoon the foaming butter over the steak for 1–2 minutes.',
+    'Rest for 5 minutes, slice and pour over the pan butter.',
+  ]),
+  r('airfryer-crispy-chicken-thighs', 'Air-fryer crispy chicken thighs', { meals: ['lunch', 'dinner'], minutes: 25, method: 'airfryer', cuisine: '' }, [
+    ['chicken-thigh', 250], SP,
+  ], [
+    'Pat the thighs dry and season with salt and pepper on both sides.',
+    'Air-fry skin side down at 200 °C for 10 minutes, turn and cook 10–12 minutes more until the skin is crisp and the inside reaches 75 °C.',
+    'Rest for 3 minutes before serving.',
+  ]),
+  r('salmon-butter', 'Pan-fried salmon in brown butter', { meals: ['lunch', 'dinner'], minutes: 12, method: 'pan', cuisine: '' }, [
+    ['salmon', 200], ['butter', 10, T('2 tsp')], SP,
+  ], [
+    'Pat the salmon dry and season with salt.',
+    'Fry skin side down in a medium-hot pan for 5 minutes until crisp, then turn and cook 2 minutes more.',
+    'Add the butter, let it turn nutty brown and spoon it over the fish.',
+  ]),
+  r('cheeseburger-patties', 'Bunless cheeseburger patties', { meals: ['lunch', 'dinner'], minutes: 15, method: 'pan', cuisine: '' }, [
+    ['beef-mince', 200], ['gouda', 30], SP,
+  ], [
+    'Shape the mince into two patties, press a dimple in the middle and season with salt and pepper.',
+    'Fry in a hot pan for 3–4 minutes per side.',
+    'Lay a slice of gouda on each, cover the pan for 1 minute to melt the cheese and serve.',
+  ]),
+  r('grilled-lamb-chops', 'Grilled lamb chops', { meals: ['lunch', 'dinner'], minutes: 15, method: 'grill', cuisine: '' }, [
+    ['lamb-chops', 220], SP,
+  ], [
+    'Season the chops with salt and leave them at room temperature for 15 minutes.',
+    'Grill or pan-fry on high heat for 3 minutes per side, standing them on the fat edge for the last minute to render it.',
+    'Rest for 3 minutes and season with pepper.',
+  ]),
+  r('eggs-smoked-salmon', 'Soft scrambled eggs with smoked salmon', { meals: ['breakfast', 'lunch'], minutes: 8, method: 'pan', cuisine: '' }, [
+    ['eggs', 180], ['smoked-salmon', 60], ['butter', 5, T('1 tsp')], SP,
+  ], [
+    'Whisk the eggs with a pinch of salt.',
+    'Melt the butter over low heat, add the eggs and stir slowly until just set and still glossy.',
+    'Serve with the smoked salmon and black pepper.',
+  ]),
+  r('pork-chop-pan', 'Pan-fried pork chop', { meals: ['lunch', 'dinner'], minutes: 15, method: 'pan', cuisine: 'german' }, [
+    ['pork-chop', 220], ['butter', 5, T('1 tsp')], SP,
+  ], [
+    'Snip the fat edge every 2 cm so the chop stays flat, then season with salt.',
+    'Fry in a medium-hot pan for 4–5 minutes per side until 63 °C inside, adding the butter for the last minute.',
+    'Rest for 3 minutes.',
+  ]),
+  r('butter-cod', 'Butter-poached cod', { meals: ['lunch', 'dinner'], minutes: 12, method: 'pan', cuisine: '' }, [
+    ['cod', 220], ['butter', 15, T('1 tbsp')], SP,
+  ], [
+    'Season the cod with salt.',
+    'Melt the butter in a small pan over low heat, add the cod and cook gently for 4 minutes per side, spooning the butter over it.',
+    'Serve with the butter from the pan.',
+  ]),
+  r('eggs-and-cheese-snack', 'Boiled eggs with gouda', { meals: ['breakfast', 'snacks'], minutes: 10, method: 'nocook', cuisine: '' }, [
+    ['eggs', 120], ['gouda', 30], SP,
+  ], [
+    'Boil the eggs for 8 minutes, cool them in cold water and peel.',
+    'Serve halved with salt, pepper and slices of gouda.',
+  ]),
+  r('ham-cheese-rolls', 'Ham and cheese roll-ups', { meals: ['snacks', 'breakfast'], minutes: 3, method: 'nocook', cuisine: 'german' }, [
+    ['ham', 80], ['gouda', 30],
+  ], [
+    'Lay the ham slices out flat and put a slice of gouda on each.',
+    'Roll each one up tightly from the short end and cut in half if you like.',
+  ]),
+
 ];
