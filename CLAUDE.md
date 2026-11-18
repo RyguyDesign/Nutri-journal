@@ -56,6 +56,13 @@ The current visual direction is the "neon glass" dark look (near-black backgroun
 - Push your branch and open/update a pull request into `main` only when asked or when the project owner has established that workflow.
 - Do not merge your own work into `main` unless explicitly authorised.
 
+## Security and privacy (OWASP and GDPR)
+
+The app is shared with friends for free. Every change must follow:
+- **OWASP** (Top 10 and ASVS where they apply to a static PWA): no secrets in the code, escape or text-only rendering of any data from users, files, barcodes or Open Food Facts (no `innerHTML` with untrusted data), a strict Content Security Policy, validated imports and backups, dependencies kept minimal and current, HTTPS only.
+- **GDPR**: data minimisation; personal and health data (weight, food, fasting, workouts) stays on the device unless the person chooses otherwise; no tracking, analytics or third-party scripts; say plainly what leaves the device (e.g. food search words sent to Open Food Facts); the person can export and delete all their data; a privacy notice in the app.
+- When a change touches data, storage, network requests or rendering, check it against both and mention the result in the completion report.
+
 ## Files and scope
 
 - Do not modify lockfiles by hand. Use the repository's package manager.

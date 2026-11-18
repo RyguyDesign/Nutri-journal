@@ -1,3 +1,13 @@
+/* Inter (SIL Open Font License, fonts/Inter-LICENSE.txt), bundled with the
+   app so no font request goes to a third party. */
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/InterVariable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Nutri-journal — mobile-first, system fonts, light and dark. */
 
 :root {
@@ -1671,3 +1681,10 @@ body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-
 .juice-macros dd { margin: 2px 0 0; font-weight: 600; }
 .juice-note { margin: 10px 0 14px; }
 .juice-note.warn { color: var(--error); }
+
+/* ---- Privacy notice (js/ui/privacy.js) ---- */
+.privacy-card h2 { font-size: 1rem; margin: 0 0 8px; }
+.privacy-card p { margin: 0 0 10px; line-height: 1.5; }
+.privacy-card p:last-child { margin-bottom: 0; }
+#delete-all { min-height: 44px; }
+.data-privacy { margin: 14px 0 6px; }

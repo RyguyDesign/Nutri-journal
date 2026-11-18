@@ -334,22 +334,72 @@ export async function buildBackup() {
   };
 }
 
+// Limits for imported backups (OWASP: validate untrusted input). Far above
+// anything real use produces: years of daily logging stay well below them.
+export const BACKUP_LIMITS = { bytes: 50 * 1024 * 1024, entries: 200000, foods: 50000, kvKeys: 1000, depth: 12, string: 20000 };
+
+const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+/**
+ * Every value in a backup must be plain JSON data of sane size: strings up
+ * to BACKUP_LIMITS.string characters, finite numbers, booleans, null, arrays
+ * and objects nested at most BACKUP_LIMITS.depth deep.
+ */
+function checkJsonValue(v, depth, where) {
+  if (depth > BACKUP_LIMITS.depth) throw new Error(`The backup is nested too deeply (${where}).`);
+  if (v === null || typeof v === 'boolean') return;
+  if (typeof v === 'number') {
+    if (!Number.isFinite(v)) throw new Error(`The backup contains an invalid number (${where}).`);
+    return;
+  }
+  if (typeof v === 'string') {
+    if (v.length > BACKUP_LIMITS.string) throw new Error(`The backup contains text that is too long (${where}).`);
+    return;
+  }
+  if (Array.isArray(v)) {
+    for (const x of v) checkJsonValue(x, depth + 1, where);
+    return;
+  }
+  if (isPlainObject(v)) {
+    for (const x of Object.values(v)) checkJsonValue(x, depth + 1, where);
+    return;
+  }
+  throw new Error(`The backup contains invalid data (${where}).`);
+}
+
+// Numbers that must never be negative in an entry and in its per-amount values
+const ENTRY_NUMS = ['quantity'];
+const PER_NUMS = ['amount', 'kcal', 'protein', 'carbs', 'fat'];
+const badNum = (v) => v !== undefined && v !== null && (typeof v !== 'number' || !Number.isFinite(v) || v < 0);
+
 /** Throws with a readable message when the file is not a usable backup. */
 export function validateBackup(obj) {
-  if (!obj || typeof obj !== 'object') throw new Error('The file is not valid JSON backup data.');
+  if (!isPlainObject(obj)) throw new Error('The file is not valid JSON backup data.');
   if (obj.app !== BACKUP_APP) throw new Error('This file is not a Nutri-journal backup.');
   if (typeof obj.schema !== 'number' || obj.schema > BACKUP_SCHEMA)
     throw new Error('This backup was made by a newer version of the app. Update the app first.');
   const d = obj.data;
-  if (!d || typeof d.kv !== 'object' || !Array.isArray(d.entries)) throw new Error('The backup is incomplete.');
+  if (!isPlainObject(d) || !isPlainObject(d.kv) || !Array.isArray(d.entries)) throw new Error('The backup is incomplete.');
+  if (Object.keys(d.kv).length > BACKUP_LIMITS.kvKeys) throw new Error('The backup has too many settings.');
+  if (d.entries.length > BACKUP_LIMITS.entries) throw new Error('The backup has too many journal entries.');
   for (const e of d.entries) {
-    if (!e || typeof e.id !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(e.date || ''))
+    if (!isPlainObject(e) || typeof e.id !== 'string' || !e.id || e.id.length > 200 || !/^\d{4}-\d{2}-\d{2}$/.test(e.date || ''))
+      throw new Error('The backup contains an invalid journal entry.');
+    if (e.name !== undefined && typeof e.name !== 'string') throw new Error('The backup contains an invalid journal entry.');
+    if (e.per !== undefined && !isPlainObject(e.per)) throw new Error('The backup contains an invalid journal entry.');
+    if (ENTRY_NUMS.some((k) => badNum(e[k])) || PER_NUMS.some((k) => badNum(e.per?.[k])))
       throw new Error('The backup contains an invalid journal entry.');
   }
   if (d.foods !== undefined && !Array.isArray(d.foods)) throw new Error('The backup is incomplete.');
+  if ((d.foods || []).length > BACKUP_LIMITS.foods) throw new Error('The backup has too many saved foods.');
   for (const f of d.foods || []) {
-    if (!f || typeof f.id !== 'string' || typeof f.name !== 'string' || !f.per) throw new Error('The backup contains an invalid food.');
+    if (!isPlainObject(f) || typeof f.id !== 'string' || !f.id || f.id.length > 200 || typeof f.name !== 'string' || !isPlainObject(f.per))
+      throw new Error('The backup contains an invalid food.');
+    if (PER_NUMS.some((k) => badNum(f.per[k]))) throw new Error('The backup contains an invalid food.');
   }
+  checkJsonValue(d.kv, 1, 'settings');
+  checkJsonValue(d.entries, 1, 'journal');
+  checkJsonValue(d.foods || [], 1, 'foods');
   return obj;
 }
 
@@ -360,6 +410,30 @@ export async function restoreBackup(obj) {
     entries: obj.data.entries.map((value) => ({ value })),
     foods: (obj.data.foods || []).map((value) => ({ value })), // schema 1 backups have no foods
   });
+  emit('restore');
+}
+
+// ---- Privacy -------------------------------------------------------------
+
+/** Whether the person agreed to download the label reader (see ocr.js). */
+export const getOcrConsent = async () => (await db.get('kv', 'ocrConsent')) === true;
+export const setOcrConsent = (yes) => db.put('kv', !!yes, 'ocrConsent');
+
+/**
+ * Erase everything the app stored on this device (GDPR: right to erasure):
+ * journal, foods, profile, settings, and the label reader's downloaded files.
+ * The app's own program files stay cached so it still opens offline.
+ */
+export async function deleteAllData() {
+  await db.replaceAll({ kv: [], entries: [], foods: [] });
+  try { localStorage.clear(); sessionStorage.clear(); } catch { /* not available */ }
+  // Tesseract.js keeps its language files in this IndexedDB database.
+  try {
+    await new Promise((resolve) => {
+      const req = indexedDB.deleteDatabase('keyval-store');
+      req.onsuccess = req.onerror = req.onblocked = () => resolve();
+    });
+  } catch { /* not available */ }
   emit('restore');
 }
 

@@ -305,6 +305,10 @@ async function dataCard() {
     const file = fileInput.files?.[0];
     fileInput.value = '';
     if (!file) return;
+    if (file.size > store.BACKUP_LIMITS.bytes) {
+      toast(t('data.importFailed', { msg: t('data.tooBig') }), 'error');
+      return;
+    }
     try {
       const obj = store.validateBackup(JSON.parse(await file.text()));
       const date = new Date(obj.exportedAt).toLocaleString();
@@ -315,6 +319,19 @@ async function dataCard() {
       toast(t('data.importFailed', { msg: err instanceof SyntaxError ? 'not a JSON file.' : err.message }), 'error');
     }
   });
+
+  // GDPR right to erasure. Two steps, because it can't be undone.
+  const deleteAll = async () => {
+    if (!confirm(t('data.deleteConfirm'))) return;
+    if (!confirm(t('data.deleteConfirm2'))) return;
+    try {
+      await store.deleteAllData();
+      toast(t('data.deleted'));
+      location.hash = '#/';
+    } catch (err) {
+      toast(t('err.generic', { msg: err.message }), 'error');
+    }
+  };
 
   const exportBackup = async () => {
     try {
@@ -356,6 +373,9 @@ async function dataCard() {
       h('button', { type: 'button', class: 'btn', onclick: () => fileInput.click() }, t('data.import')),
       fileInput,
     ),
+    h('p', { class: 'small data-privacy' }, h('a', { href: '#/privacy', class: 'link-btn' }, t('privacy.link'))),
+    h('div', { class: 'actions' },
+      h('button', { type: 'button', class: 'btn danger', id: 'delete-all', onclick: deleteAll }, t('data.deleteAll'))),
   );
 }
 

@@ -194,3 +194,12 @@ Ingredient catalog (`js/suggest/catalog.js`): 76 of 97 foods now use the Swiss f
 - Juice mixer at `#/juice?date=` (`js/ui/juice.js`, linked from Add food): rows of fruit/vegetable + ml, presets fill the rows at the current total, live totals; "Add to journal" hands one drink (meal: drinks) to the entry form, with the parts in the notes.
 - The generic "Orange juice" and "Apple juice" now use Swiss values (food ids unchanged).
 - Search: when no food matches every word, the last word ("soup" in "carrot ginger soup") outweighs any one other word.
+
+## Security and privacy (OWASP and GDPR)
+The app is shared with friends for free; CLAUDE.md has the rules. `tests/security.test.js` guards them.
+- **No third parties on start-up.** Inter is bundled (`fonts/InterVariable.woff2`, SIL OFL licence next to it); Google Fonts was removed, because loading it sends the visitor's IP address to Google.
+- **Content Security Policy** (meta tag in `index.html`; GitHub Pages can't set headers): scripts only from the app itself plus cdn.jsdelivr.net (label reader); no inline scripts (the start-up safety net moved to `js/boot.js`), no eval except `wasm-unsafe-eval` for the label reader; network only to the app, `*.openfoodfacts.org` and cdn.jsdelivr.net; `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `upgrade-insecure-requests`, `referrer: no-referrer`. Inline style attributes are allowed (`'unsafe-inline'` for styles only), as the UI sets widths and CSS variables.
+- **Rendering**: all text goes in with `textContent` (`js/ui/dom.js`); no `innerHTML`, `eval` or `document.write` anywhere (tested).
+- **Label reader**: Tesseract.js pinned to 5.1.1 on jsDelivr (its worker, core and language files follow that version). The first use asks for consent (kv `ocrConsent`), saying jsDelivr sees the IP address and the photo stays on the phone. Limitation: no Subresource Integrity hash, since the package couldn't be fetched to compute one; self-hosting it would remove the CDN entirely.
+- **Backup import** (`validateBackup` in `js/data/store.js`): max 50 MB, plain JSON only, finite non-negative numbers, string and nesting limits, counts capped, required fields typed. A backup is untrusted input.
+- **GDPR**: data stays in IndexedDB on the phone; privacy notice at `#/privacy` (what is stored, what leaves the phone and to whom: Open Food Facts, jsDelivr, GitHub Pages); export (backup) and erasure ("Delete all my data" on Me, two confirmations: clears all stores, local/session storage and the label reader's cached files).

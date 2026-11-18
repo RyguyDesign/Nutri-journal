@@ -455,6 +455,15 @@ export async function render(root, rerender, params = {}) {
     const file = $.file.files?.[0];
     $.file.value = '';
     if (!file) return;
+    // GDPR: the label reader comes from a third-party CDN, so ask once
+    // before the first download. The photo itself never leaves the phone.
+    if (!(await store.getOcrConsent())) {
+      if (!confirm(t('ocr.consent'))) {
+        setStatus(t('ocr.declined'));
+        return;
+      }
+      await store.setOcrConsent(true);
+    }
     setStatus(t('ocr.loading'));
     try {
       const text = await recognizeLabel(file, ({ stage, progress }) => {

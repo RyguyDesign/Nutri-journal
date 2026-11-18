@@ -1,14 +1,16 @@
 // On-device text recognition for label photos, using Tesseract.js.
 // Free and private: the photo never leaves the phone. The recogniser
-// (~15 MB for German + English) is downloaded on first use and cached by
-// the browser, after which it works offline.
+// (~15 MB for German + English) is downloaded from jsDelivr on first use,
+// only after the person agrees (see ocrConsent in js/ui/entry-form.js), and
+// cached by the browser, after which it works offline. The version is pinned
+// so a new upload to the CDN can't change the code the app runs.
 
 import { parseLabelText } from './label-parse.js';
 
 // Lines that hold a nutrient value (German and English labels)
 const NUTRIENT_LINE = /energ|brennwert|kcal|kj|fett|fat|kohlen|carbo|eiwei|protein|zucker|sugar|salz|salt|ballast|fib/i;
 
-const TESSERACT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+const TESSERACT_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
 
 let loader;
 
@@ -20,6 +22,7 @@ function loadTesseract() {
     s.src = TESSERACT_SRC;
     s.async = true;
     s.crossOrigin = 'anonymous';
+    s.referrerPolicy = 'no-referrer';
     s.onload = () => (globalThis.Tesseract ? resolve(globalThis.Tesseract) : reject(new Error('download')));
     s.onerror = () => {
       loader = null;
